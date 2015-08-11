@@ -1,0 +1,130 @@
+#!/bin/sh
+#
+# This is an idempotent script which is run after a new version of the 
+# viab-conf RPM is installed. During testing, it can be run at any time 
+# on a Vac-in-a-Box machine to apply changes to the configuration.
+#
+
+export VIAB_SITENAME=`cat /etc/viab/sitename`
+export VIAB_SPACENAME=`cat /etc/viab/spacename`
+
+cp -f /etc/cron.daily/yum-autoupdate /etc/cron.hourly/yum-autoupdate
+sed -i -e 's/^ENABLED=.*/ENABLED=true/' -e 's/^SENDEMAIL=.*/SENDEMAIL=false/' -e 's/^MAXWAITTIME=.*/MAXWAITTIME=50/' /etc/sysconfig/yum-autoupdate
+
+sed -i -e '$aproxy=http://127.0.0.1:3128/' -e '/^#*proxy=/d' /etc/yum.conf
+
+# Make /etc/vac.d/factories.conf and settings.conf
+
+/bin/echo -e '[settings]\nfactories = '`cut -d' ' -f2 /etc/viab/hosts-network` > /etc/vac.d/factories.conf.tmp
+if [ $? = 0 ] ; then
+ mv /etc/vac.d/factories.conf.tmp /etc/vac.d/factories.conf
+fi
+
+echo '[settings]' > /etc/vac.d/settings.conf
+grep "^$HOSTNAME;" /etc/viab/hosts-settings | sed 's/;/\n/g' | tail --lines=+2 >> /etc/vac.d/settings.conf
+
+# Create PEM versions of encrypted p12 keys
+/usr/sbin/viab-conf-p12
+
+# Disable IPv6 localhost name
+sed -i 's/^::1/# ::1/' /etc/hosts
+
+# Put our dnsmasq wrapper in place
+if [ -f /usr/sbin/dnsmasq ] ; then
+ mv -f /usr/sbin/dnsmasq /usr/sbin/dnsmasq-real
+ ln -s /usr/sbin/dnsmasq-wrapper /usr/sbin/dnsmasq
+fi
+
+# Make /etc/dhcp/dhcpd.conf and /etc/ethers
+
+echo 'option domain-name "'`dnsdomainname`'";' >/etc/dhcp/dhcpd.conf.tmp
+echo 'option domain-name-servers 8.8.8.8, 8.8.4.4;' >>/etc/dhcp/dhcpd.conf.tmp
+
+cat >>/etc/dhcp/dhcpd.conf.tmp <<EOF
+default-lease-time 86400;
+max-lease-time 86400;
+use-host-decl-names on;
+allow bootp;
+allow booting;
+not authoritative;
+subnet 169.254.0.0 netmask 255.255.0.0 { option domain-name-servers 169.254.169.254; option routers 169.254.169.254; }
+EOF
+
+rm -f /etc/ethers.tmp
+touch /etc/ethers.tmp
+cp -f /etc/squid/squid.conf.template /etc/squid/squid.conf.tmp
+
+cat /etc/viab/subnets | (
+
+while read subnet netmask router nameservers
+do
+ echo "subnet $subnet netmask $netmask { option routers $router; option domain-name-servers $nameservers; }" >>/etc/dhcp/dhcpd.conf.tmp
+done
+
+)
+
+# Host entries for other factories
+cat /etc/viab/hosts-network | (
+
+while read mac factory ip
+do
+  echo "host $factory { hardware ethernet $mac; filename \"pxelinux.0\"; fixed-address $ip; next-server $HOSTNAME; }" >>/etc/dhcp/dhcpd.conf.tmp
+
+  if [ "$factory" != "$HOSTNAME" ] ; then
+    echo "$mac $ip" >>/etc/ethers.tmp
+  fi
+  
+  echo "acl localnet src $ip/32"			>>/etc/squid/squid.conf.tmp
+  echo "cache_peer $factory sibling 3128 3130 default"	>>/etc/squid/squid.conf.tmp
+done
+)
+
+hostprefix=`echo $HOSTNAME | cut -d. -f1`
+hostsuffix=`echo $HOSTNAME | cut -d. -f2-`
+
+# Host entries for VMs on this factory
+for i in '' 1 2 3 4 5 6 7 8 9
+do
+  for j in 0 1 2 3 4 5 6 7 8 9
+  do
+    ijhex=`printf '%02x' $i$j`
+    echo "host $hostprefix-$i$j.$hostsuffix { hardware ethernet 56:4d:a9:fe:a9:$ijhex; fixed-address 169.254.169.$i$j; }" >>/etc/dhcp/dhcpd.conf.tmp 
+  done
+done
+
+mv -f /etc/dhcp/dhcpd.conf.tmp /etc/dhcp/dhcpd.conf
+chkconfig dhcpd on 
+service dhcpd force-reload
+
+mv -f /etc/ethers.tmp /etc/ethers
+arp -f /etc/ethers
+
+mv -f /etc/squid/squid.conf.tmp /etc/squid/squid.conf
+chkconfig squid on
+service squid reload
+
+# Make custom /var/lib/tftpboot/pxelinux.cfg/default
+
+mkdir -p /var/lib/tftpboot/pxelinux.cfg
+
+(
+
+cat <<EOF
+default install
+ipappend 2
+label install
+  kernel vmlinuz
+EOF
+
+# Using our kickstart file means hosts installing from this host use its Squid cache
+echo "  append ks=http://viab.gridpp.ac.uk/ks/$VIAB_SITENAME/$VIAB_SPACENAME/ks-$HOSTNAME.cfg ksdevice=bootif initrd=initrd.img text"
+    
+) > /var/lib/tftpboot/pxelinux.cfg/default.tmp
+
+mv -f /var/lib/tftpboot/pxelinux.cfg/default.tmp /var/lib/tftpboot/pxelinux.cfg/default
+
+# Make sure tftpd is not disabled
+
+sed -i 's/^[[:space:]]*disable.*/disable = no/' /etc/xinetd.d/tftp
+service xinetd reload
+

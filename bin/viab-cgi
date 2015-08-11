@@ -1,0 +1,1185 @@
+#!/usr/bin/python
+#
+#  viabcgi - Vac-in-a-Box CGI script
+#
+#  Andrew McNab, University of Manchester.
+#  Copyright (c) 2015. All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or
+#  without modification, are permitted provided that the following
+#  conditions are met:
+#
+#    o Redistributions of source code must retain the above
+#      copyright notice, this list of conditions and the following
+#      disclaimer. 
+#    o Redistributions in binary form must reproduce the above
+#      copyright notice, this list of conditions and the following
+#      disclaimer in the documentation and/or other materials
+#      provided with the distribution. 
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+#  CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+#  INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+#  BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+#  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+#  TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+#  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+#  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+#  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+#  Contacts: Andrew.McNab@cern.ch  http://www.gridpp.ac.uk/vac/
+#
+
+import os
+import sys
+import cgi
+import time
+import shutil
+import hashlib
+import tempfile
+import inspect
+import MySQLdb
+import textwrap
+
+db  = None
+cur = None
+
+# viab_cgi_conf.py must define these variables:
+#
+# mysqlUser     = 'username'
+# mysqlPassword = 'PAsSWoRd'
+# adminDNs      = [ '/DC=com/DC=example/CN=name' ] 
+# formHashSalt  = '1234567890'
+#
+import viab_cgi_conf
+
+def oddEven(n):
+  return 'even' if n % 2 == 0 else 'odd'
+
+def htmlFormCookie(userDN):
+
+  timeForm = str(int(time.time()))
+
+  print ('<input type="hidden" name="formcookie" value="' + 
+         timeForm + ':' +
+         hashlib.sha256(timeForm + userDN + viab_cgi_conf.formHashSalt).hexdigest()         
+         + '">')
+
+def htmlHeader(title):
+  print 'Content-Type: text/html'
+  print
+  print open('/var/lib/viab/www/header.html', 'r').read().replace('##TITLE##',title)
+
+def htmlFooter():
+  print open('/var/lib/viab/www/footer.html', 'r').read()
+
+def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, vmtypeName, vmtypeID):
+
+  global cur
+
+  try:
+    if cgiForm.getfirst('action') == 'uploadp12':
+
+      cur.execute('UPDATE vmtypes SET p12=%s,p12updated=NOW() WHERE vmtypeid=%s', (cgiForm.getfirst('p12file'), vmtypeID) )
+
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+  except:
+    pass
+
+  try:
+    if cgiForm['action'].value == 'clonevmtype' and cgiForm['clonename']:
+
+      cloneName = cgiForm['clonename'].value.strip()
+
+      if cloneName.translate(None, 'abcdefghijklmnopqrstuvwxyz01234567890.-') != '':
+        print 'Content-Type: text/html'
+        print
+        print 'vmtype names are limited to lowercase letters numbers -'
+        return
+
+      # Exclude any reserved /etc/vac.d/*.conf filenames here
+      if cloneName == 'settings':
+        print 'Content-Type: text/html'
+        print
+        print 'vmtypes cannot be called settings'
+        return
+
+      cur.execute('INSERT INTO vmtypes SET spaceid=%s,vmtypename=%s', (spaceID, cloneName))
+
+      cur.execute('INSERT INTO vmtypeopts (vmtypeid,optname,value) SELECT %s,optname,value FROM vmtypeopts WHERE vmtypeid=%s',
+                  (cur.lastrowid, vmtypeID) )
+
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk/admin/' + siteName + '/' + spaceName + '/vmtypes/' + cloneName + '/'
+      print
+      return
+  except:
+    pass
+
+  try:
+    if cgiForm['action'].value == 'addoption' and cgiForm['optname'] and cgiForm['value']:
+      cur.execute('INSERT INTO vmtypeopts SET vmtypeid=%s,optname=%s,value=%s',
+                  (vmtypeID, cgiForm['optname'].value, cgiForm['value'].value.strip()))
+
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+  except:
+    pass
+
+  try:
+    if cgiForm['action'].value == 'updateoption' and cgiForm['optname']:
+    
+      try:
+        value = cgiForm['value'].value.strip()
+      except:
+        value = None
+      else:
+        if value == '':
+          value = None
+          
+      if value is None:
+        cur.execute('DELETE FROM vmtypeopts WHERE vmtypeid=%s AND optname=%s', 
+                    (vmtypeID, cgiForm['optname'].value))
+      else:
+        try:
+          cur.execute('UPDATE vmtypeopts SET value=%s WHERE vmtypeid=%s AND optname=%s', 
+                      (value, vmtypeID, cgiForm['optname'].value))
+        except:
+          pass
+
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+  except:
+    pass
+
+  htmlHeader('Vmtype ' + vmtypeName)
+  
+  print ('<div class="breadcrumbs"><a href="/admin/">All Sites</a> ' + 
+         '/ <a href="/admin/' + siteName + '/">' + siteName + '</a> ' +
+         '/ <a href="/admin/' + siteName + '/' + spaceName + '/">' + spaceName + '</a> ' +
+         '/ ' + vmtypeName + '</div>')
+
+  print '<h1>Vmtype&nbsp;' + vmtypeName + '</h1>'
+
+  print '<h2>Options</h2>'
+  
+  print '<p>To remove an option, set its value blank and update it'
+  
+  cur.execute('SELECT vmtypeoptid,optname,value FROM vmtypeopts WHERE vmtypeid=%s', vmtypeID)
+  rows = cur.fetchall()
+
+  print '<p><table class="center">'
+
+  print '<tr><th class="oddeven">Option</th><th class="oddeven">&nbsp;</th><th class="oddeven">Value</th></tr>'
+
+  n=0    
+  for row in rows:
+    print '<tr><td class="' + oddEven(n) + '">' + row['optname'] + '</td>'
+    print '<td class="' + oddEven(n) + '"> = </td><td class="' + oddEven(n) + '">'
+    
+    print '<form method="post" action="' + requestURI + '">' 
+    print '<input type="hidden" name="action" value="updateoption">'
+    print '<input type="hidden" name="optname" value="' + row['optname'] + '">'
+    print '<input type="text" name="value" value="' + row['value'] + '">'
+    htmlFormCookie(userDN)
+    print '<input type="submit" value="Update option">'
+    print '</form>'    
+    print '</td></tr>\n'
+    n += 1
+
+  print '</table>'
+
+  print '<h3>Add option</h3>'
+
+  print '<form method="post" action="' + requestURI + '">'
+  print '<input type="text" name="optname"> = <input type="text" name="value">'
+  htmlFormCookie(userDN)
+  print '<input type="submit" value="Add option"> <input type="hidden" name="action" value="addoption">'  
+  print '</form>'
+
+  print '<h2>Clone vmtype</h2>'
+
+  print '<form method="post" action="' + requestURI + '">'
+  print 'New vmtype name: <input type="text" name="clonename">'
+  htmlFormCookie(userDN)
+  print '<input type="submit" value="Clone vmtype"><input type="hidden" name="action" value="clonevmtype">'
+  print '</form>'
+
+  print '<h2>Certificate/key .p12 file</h2>'
+
+  cur.execute('SELECT LENGTH(p12) AS p12len,p12,p12updated FROM vmtypes WHERE vmtypeid=%s', vmtypeID)
+  rows = cur.fetchall()
+  print '<p>.p12 file ' + str(rows[0]['p12len']) + ' bytes, updated ' + str(rows[0]['p12updated'])
+
+  print '<h3>Upload .p12 file</h3>'
+  
+  print '<form method="post" action="' + requestURI + '" enctype="multipart/form-data">'
+  print '<input type="file" name="p12file">'
+  htmlFormCookie(userDN)
+  print '<br><input type="submit" value="Upload .p12 file"> <input type="hidden" name="action" value="uploadp12">'  
+  print '</form>'
+
+  htmlFooter()
+
+def oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, hostName, hostID):
+
+  global cur
+            
+  try:
+
+    if cgiForm['action'].value == 'updatehost' and cgiForm['ip'] and cgiForm['mac']:
+
+      try:
+        mbPerMachine = int(cgiForm['mb_per_machine'].value)
+      except:
+        mbPerMachine = 0
+
+      try:
+        udpTimeoutSeconds = float(cgiForm['udp_timeout_seconds'].value)
+      except:
+        udpTimeoutSeconds = 0.0
+
+      try:
+        totalMachines = int(cgiForm['total_machines'].value)
+      except:
+        totalMachines = 0
+
+      try:
+        cpuTotal = int(cgiForm['cpu_total'].value)
+      except:
+        cpuTotal = 0
+
+      try:
+        cpuPerMachine = int(cgiForm['cpu_per_machine'].value)
+      except:
+        cpuPerMachine = 0
+
+      try:
+        hs06PerCpu = float(cgiForm['hs06_per_cpu'].value)
+      except:
+        hs06PerCpu = 0.0
+
+      cur.execute('UPDATE hosts SET ip=%s,mac=%s,mb_per_machine=%s,udp_timeout_seconds=%s,' +
+                  'total_machines=%s,' +
+                  'cpu_total=%s,cpu_per_machine=%s,hs06_per_cpu=%s,updated=NOW() ' +
+                  'WHERE hostid=%s AND spaceid=%s',
+                  ( cgiForm['ip'].value, cgiForm['mac'].value, mbPerMachine, udpTimeoutSeconds,
+                    totalMachines, 
+                    cpuTotal, cpuPerMachine, hs06PerCpu,
+                    hostID, spaceID) )
+
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+
+  except:
+    pass
+
+  htmlHeader('Host ' + hostName)
+    
+  cur.execute('SELECT ip,mac,mb_per_machine,udp_timeout_seconds,total_machines,cpu_total,cpu_per_machine,hs06_per_cpu FROM hosts WHERE hostID=%s', hostID)
+  
+  rows = cur.fetchall()
+
+  print ('<div class="breadcrumbs"><a href="/admin/">All Sites</a> ' + 
+         '/ <a href="/admin/' + siteName + '/">' + siteName + '</a> ' +
+         '/ <a href="/admin/' + siteName + '/' + spaceName + '/">' + spaceName + '</a> ' +
+         '/ ' + hostName + '</div>')
+
+  print '<h1>Host ' + hostName + '</h1>'
+    
+  print '<form method="post" action="' + requestURI + '">'
+ 
+  print '<table class="center">'
+
+  print '<tr><td>IP:</td><td><input type="text" name="ip" value="' + rows[0]['ip'] + '"></td></tr>'
+  print '<tr><td>MAC:</td><td><input type="text" name="mac" value="' + rows[0]['mac'] + '"></td></tr>'
+  print '<tr><td>mb_per_machine:</td><td><input type="text" name="mb_per_machine" value="' + str(rows[0]['mb_per_machine']) + '"></td></tr>'
+  print '<tr><td>udp_timeout_seconds:</td><td><input type="text" name="udp_timeout_seconds" value="' + str(rows[0]['udp_timeout_seconds']) + '"></td></tr>'
+  print '<tr><td>total_machines:</td><td><input type="text" name="total_machines" value="' + str(rows[0]['total_machines']) + '"></td></tr>'
+  print '<tr><td>cpu_total:</td><td><input type="text" name="cpu_total" value="' + str(rows[0]['cpu_total']) + '"></td></tr>'
+  print '<tr><td>cpu_per_machine:</td><td><input type="text" name="cpu_per_machine" value="' + str(rows[0]['cpu_per_machine']) + '"></td></tr>'
+  print '<tr><td>hs06_per_cpu:</td><td><input type="text" name="hs06_per_cpu" value="' + str(rows[0]['hs06_per_cpu']) + '"></td></tr>'
+
+  print '<tr><td colspan=2 style="text-align: center"><input type="submit" value="Update host"></td></tr>'
+  htmlFormCookie(userDN)
+  print '<input type="hidden" name="action" value="updatehost">'
+  print '</table>'
+  print '</form>'
+ 
+  htmlFooter()
+  
+def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID):
+
+  # Set up the temporary directory tree
+  try:
+    tempDir = tempfile.mkdtemp(prefix='viab-cgi-')
+    os.mkdir(tempDir + '/viab-conf')
+    os.mkdir(tempDir + '/viab-conf/vac.d')
+    os.mkdir(tempDir + '/viab-conf/viab')
+    os.mkdir(tempDir + '/viab-conf/vmtypes')
+    open(tempDir + '/viab-conf/viab/sitename', 'w').write(siteName)
+    open(tempDir + '/viab-conf/viab/spacename', 'w').write(spaceName)
+  except:
+    return None
+
+  # Create the authorized_keys file from site sshkeys (or empty file if none)
+
+  try:
+    cur.execute('SELECT keyvalue,keyid FROM sshkeys WHERE siteid=%s', siteID)
+    rows = cur.fetchall()
+
+    f = open(tempDir + '/viab-conf/authorized_keys', 'w')
+    for row in rows:
+      f.write('ssh-rsa ' + row['keyvalue'] + ' ' + str(row['keyid']) + '\n')
+    f.close()
+  except:
+    return None
+
+  # Create the subnets file from space subnets (or empty file if none)
+
+  try:
+    cur.execute('SELECT subnet,netmask,router,nameservers FROM subnets WHERE spaceid=%s', spaceID)
+    rows = cur.fetchall()
+
+    f = open(tempDir + '/viab-conf/viab/subnets', 'w')
+    for row in rows:
+      f.write(row['subnet'] + ' ' + row['netmask'] + ' ' + row['router'] + ' ' + row['nameservers'] + '\n')
+    f.close()
+  except:
+    return None
+
+  # Create hosts-network and hosts-settings files
+
+  try:
+    cur.execute('SELECT * FROM hosts WHERE spaceid=%s', spaceID)
+    rows = cur.fetchall()
+
+    fHostsNetwork  = open(tempDir + '/viab-conf/viab/hosts-network', 'w')
+    fHostsSettings = open(tempDir + '/viab-conf/viab/hosts-settings', 'w')
+
+    for row in rows:
+      fHostsNetwork.write(row['mac'] + ' ' + row['hostname'] + ' ' + row['ip'] + '\n')
+      fHostsSettings.write(row['hostname'] +          
+                           ';vac_space = '           + spaceName +        
+                           ';gocdb_sitename = '      + siteName +
+                           ';mb_per_machine = '      + str(row['mb_per_machine']) +
+                           ';udp_timeout_seconds = ' + str(row['udp_timeout_seconds']) +
+                           ';total_machines = '      + str(row['total_machines']) +
+                           ';cpu_total = '           + str(row['cpu_total']) +
+                           ';cpu_per_machine = '     + str(row['cpu_per_machine']) +
+                           ';hs06_per_cpu = '        + str(row['hs06_per_cpu']) +
+                          '\n')
+
+    fHostsNetwork.close()
+    fHostsSettings.close()
+
+  except:
+    return None
+
+  # Create the vmtypes directories, p12 files, and .conf files for this space
+
+  try:
+    cur.execute('SELECT vmtypename,vmtypeid,p12 FROM vmtypes WHERE spaceid=%s', spaceID)
+    vmtypeRows = cur.fetchall()
+
+    for vmtypeRow in vmtypeRows:
+      os.mkdir(tempDir + '/viab-conf/vmtypes/' + vmtypeRow['vmtypename'])
+
+      if 'p12' in vmtypeRow:
+        f = open(tempDir + '/viab-conf/vmtypes/' + vmtypeRow['vmtypename'] + '/hostcertkey.p12', 'w')
+        f.write(vmtypeRow['p12'])
+        f.close()
+    
+      cur.execute('SELECT optname,value FROM vmtypeopts WHERE vmtypeid=%s', vmtypeRow['vmtypeid'])
+      optRows = cur.fetchall()
+
+      if optRows:
+        f = open(tempDir + '/viab-conf/vac.d/' + vmtypeRow['vmtypename'] + '.conf', 'w')
+        f.write('[vmtype ' + vmtypeRow['vmtypename'] + ']\n')
+        
+        for optRow in optRows:
+          f.write(optRow['optname'] + ' = ' + optRow['value'] + '\n')
+
+        f.close()                      
+  except:
+    return None
+
+  # Run the viab-publish script on our temporary directory
+  
+  try:
+    f = os.popen('/var/lib/viab/bin/viab-publish ' + tempDir + ' 2>&1', 'r')    
+    commandOutput = f.read()
+    retCode = f.close()    
+  except:
+    return None  
+
+  # Clean up our temporary directory tree
+  shutil.rmtree(tempDir)
+      
+  cur.execute('UPDATE spaces SET published=NOW(),publishlog=%s WHERE spaceID=%s', (str(commandOutput), str(spaceID)) )
+
+  print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+  print 'Location: https://viab.gridpp.ac.uk' + requestURI
+  print
+  return
+
+def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, published):
+
+  global cur
+  
+  try:
+    if cgiForm['action'].value == 'publish':
+               
+      publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID)
+      return
+
+  except:
+    pass
+          
+  try:
+    if cgiForm['action'].value == 'addsubnet' and cgiForm['subnet'].value:
+      subnet      = cgiForm['subnet'].value.strip()
+      netmask     = cgiForm['netmask'].value.strip()
+      router      = cgiForm['router'].value.strip()
+      nameservers = cgiForm['nameservers'].value.strip()
+
+      cur.execute('INSERT INTO subnets SET spaceid=%s,subnet=%s,netmask=%s,router=%s,nameservers=%s',
+                  (spaceID, subnet, netmask, router, nameservers)) 
+
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+
+  except:
+    pass
+          
+  try:
+    if cgiForm['action'].value == 'deletesubnets' and cgiForm['deletelist'].value:
+         
+      deleteList = cgiForm.getlist('deletelist')
+
+      for deleteSubnet in deleteList:              
+        cur.execute('DELETE FROM subnets WHERE spaceid=%s AND subnetid=%s',
+                    [ spaceID, deleteSubnet] )
+     
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+
+  except:
+    pass
+    
+  try:
+    if cgiForm['action'].value == 'addhost' and cgiForm['hostname'].value and cgiForm['ip'] and cgiForm['mac']:
+         
+      hostName = cgiForm['hostname'].value
+      if hostName.translate(None, 'abcdefghijklmnopqrstuvwxyz01234567890.-') != '':
+        print 'Content-Type: text/html'
+        print
+        print 'Host names are limited to lowercase letters numbers . -'
+        return
+      
+      ip  = cgiForm['ip'].value
+      if ip.translate(None, '01234567890.') != '':
+        print 'Content-Type: text/html'
+        print
+        print 'IP addreses are limited to digits and .'
+        return
+
+      mac = cgiForm['mac'].value.lower()
+      if mac.translate(None, 'abcdef01234567890:') != '':
+        print 'Content-Type: text/html'
+        print
+        print 'MAC addreses are limited to hexadecimal digits and :'
+        return
+      
+      cur.execute('INSERT INTO hosts SET siteid=%s,spaceid=%s,hostname=%s,ip=%s,mac=%s,' + 
+                  'mb_per_machine=%s,udp_timeout_seconds=%s,' +
+                  'total_machines=%s,' +
+                  'cpu_total=%s,cpu_per_machine=%s,hs06_per_cpu=%s,updated=NOW()',
+                  ( siteID, spaceID, hostName, ip, mac,
+                    int(cgiForm['mb_per_machine'].value), float(cgiForm['udp_timeout_seconds'].value),
+                    int(cgiForm['total_machines'].value), int(cgiForm['cpu_total'].value),
+                    int(cgiForm['cpu_per_machine'].value), float(cgiForm['hs06_per_cpu'].value)) )
+
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+
+  except:
+    pass
+          
+  try:
+    if cgiForm['action'].value == 'addvmtype' and cgiForm['vmtypename'].value:
+         
+      vmtypeName = cgiForm['vmtypename'].value.strip()
+
+      if vmtypeName.translate(None, 'abcdefghijklmnopqrstuvwxyz01234567890.-') != '':
+        print 'Content-Type: text/html'
+        print
+        print 'vmtype names are limited to lowercase letters numbers -'
+        return
+
+      # Exclude any reserved /etc/vac.d/*.conf filenames here
+      if vmtypeName == 'settings':
+        print 'Content-Type: text/html'
+        print
+        print 'vmtypes cannot be called settings'
+        return
+      
+      cur.execute('INSERT INTO vmtypes SET spaceid=%s,vmtypename=%s', (spaceID, vmtypeName))
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+
+  except:
+    pass
+          
+  try:
+    if cgiForm['action'].value == 'deletehosts' and cgiForm['deletelist']:
+         
+      deleteList = cgiForm.getlist('deletelist')
+
+      for deleteHost in deleteList:              
+        cur.execute('DELETE FROM hosts WHERE spaceid=%s AND hostid=%s', ( spaceID, deleteHost ) )
+     
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+
+  except:
+    pass
+         
+  try:
+    if cgiForm['action'].value == 'deletevmtypes' and cgiForm['deletelist']:
+         
+      deleteList = cgiForm.getlist('deletelist')
+
+      for deleteVmtype in deleteList:              
+        cur.execute('DELETE FROM vmtypes WHERE spaceid=%s AND vmtypeid=%s', ( spaceID, int(deleteVmtype) ) )
+     
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+
+  except:
+    pass
+         
+  htmlHeader('Space ' + spaceName)
+  cur.execute('SELECT hostid,hostname,ip,mac,total_machines,hs06_per_cpu FROM hosts WHERE spaceid=%s ORDER BY hostname', spaceID)
+  
+  rows = cur.fetchall()
+
+  print ('<div class="breadcrumbs"><a href="/admin/">All Sites</a> / ' + 
+         '<a href="/admin/' + siteName + '/">' + siteName + '</a> ' +
+         '/ ' + spaceName + '</div>')
+
+  print '<h1>Space&nbsp;' + spaceName + '</h1>'
+
+  print '<form method="post" action="' + requestURI + '">'
+  print '<p>Configuration RPM for space ' + spaceName + ' was published on ' + str(published) + '. ' 
+  print '<input type="hidden" name="action" value="publish">'
+
+  htmlFormCookie(userDN)
+  print '<p><input type="submit" value="Publish configuration RPM">'
+  print '</form>'
+
+  print '<p>If you need to (re)install this space from scratch, boot the first factory using the '
+  print '<a href="/iso/' + siteName + '/' + spaceName + '/viab-usb.iso">USB .iso image</a>.'
+
+  print '<h2>Hosts in this space</h2>'
+
+  print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletehosts">'
+    
+  print '<table class="center">'
+  print '<tr><th class="oddeven">Hostname</th><th class="oddeven">IP</th><th class="oddeven">MAC</th><th class="oddeven">VMs</th><th class="oddeven">HS06/cpu</th><th class="oddeven">&nbsp;</th></tr>'
+
+  n=0    
+  for row in rows:
+    print ('<tr><td class="' + oddEven(n) + '"><a href="/admin/' + siteName + '/' + spaceName + '/hosts/' + row['hostname'] + '/">' + row['hostname'] + '</a></td>' +
+           '<td class="' + oddEven(n) + '">' + row['ip'] + '</td>' +
+           '<td class="' + oddEven(n) + '">' + row['mac'] + '</td>' +
+           '<td class="' + oddEven(n) + '">' + str(row['total_machines']) + '</td>' +
+           '<td class="' + oddEven(n) + '">' + str(row['hs06_per_cpu']) + '</td>' +
+           '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['hostid']) + '"></td>' +
+           '</tr>\n') 
+    n += 1
+                
+  print '<tr><td colspan="6" style="text-align: center"><input type="submit" value="Delete selected hosts"></td></tr>'
+  print '</table>'
+
+  htmlFormCookie(userDN)
+  print '</form>'
+
+  # Add a host, possibly with defaults from last host updated
+
+  print '<h3>Add a host</h3>'
+  
+  print '<form method="post" action="' + requestURI + '">'
+  print '<table>'
+  print '<tr><td>Hostname:</td><td><input type="text" name="hostname"></td><tr>'
+  print '<tr><td>IP:</td><td><input type="text" name="ip"></td></tr>'
+  print '<tr><td>MAC:</td><td><input type="text" name="mac"></td></tr>'
+
+  cur.execute('SELECT mb_per_machine,udp_timeout_seconds,total_machines,cpu_total,cpu_per_machine,hs06_per_cpu FROM hosts WHERE spaceID=%s ORDER BY updated DESC LIMIT 1', 
+              spaceID)
+  
+  try:
+    row = cur.fetchall()[0]
+  except:
+    row = { 'mb_per_machine'      : 2048,
+            'udp_timeout_seconds' : 5.0,
+            'total_machines'      : 1,
+            'cpu_total'		  : 1,
+            'cpu_per_machine'     : 1,
+            'hs06_per_cpu'	  : 10.0 }
+
+  print '<tr><td>mb_per_machine:</td><td><input type="text" name="mb_per_machine" value="' + str(row['mb_per_machine']) + '"></td></tr>'
+  print '<tr><td>udp_timeout_seconds:</td><td><input type="text" name="udp_timeout_seconds" value="' + str(row['udp_timeout_seconds']) + '"></td></tr>'
+  print '<tr><td>total_machines:</td><td><input type="text" name="total_machines" value="' + str(row['total_machines']) + '"></td></tr>'
+  print '<tr><td>cpu_total:</td><td><input type="text" name="cpu_total" value="' + str(row['cpu_total']) + '"></td></tr>'
+  print '<tr><td>cpu_per_machine:</td><td><input type="text" name="cpu_per_machine" value="' + str(row['cpu_per_machine']) + '"></td></tr>'
+  print '<tr><td>hs06_per_cpu:</td><td><input type="text" name="hs06_per_cpu" value="' + str(row['hs06_per_cpu']) + '"></td></tr>'
+
+  print '<tr><td colspan=2><input type="submit" value="Add host"></td><tr>'
+  htmlFormCookie(userDN)
+  print '<input type="hidden" name="action" value="addhost">'
+  print '</table>'
+  print '</form>'
+
+  cur.execute('SELECT vmtypename,vmtypeid FROM vmtypes WHERE spaceid=%s ORDER BY vmtypename', spaceID)
+  
+  rows = cur.fetchall()
+
+  print '<h2>Vmtypes in this space</h2>'
+
+  print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletevmtypes">'
+
+  print '<table class="center">'
+  print '<tr><th class="oddeven">Vmtype name</th><th class="oddeven">&nbsp;</th></tr>'
+
+  n=0    
+  for row in rows:
+    print ('<tr><td class="' + oddEven(n) + '"><a href="/admin/' + siteName + '/' + spaceName + '/vmtypes/' + row['vmtypename'] + '/">' + row['vmtypename'] + '</a></td>' +
+           '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['vmtypeid']) + '"></td>' +
+           '</tr>\n') 
+    n += 1
+                
+  print '<tr><td colspan="6" style="text-align: center"><input type="submit" value="Delete selected vmtypes"></td></tr>'
+  print '</table>'
+
+  htmlFormCookie(userDN)
+  print '</form>'
+
+  print '<h3>Add a vmtype</h3>'
+  
+  print '<form method="post" action="' + requestURI + '">'
+  print 'New vmtype name: <input type="text" name="vmtypename">'
+  htmlFormCookie(userDN)
+  print '<input type="submit" value="Add vmtype">'
+  print '<input type="hidden" name="action" value="addvmtype">'
+  print '</form>'
+
+  # Subnets for this space
+
+  cur.execute('SELECT subnetid,subnet,netmask,router,nameservers FROM subnets WHERE spaceid=%s', spaceID)
+  rows = cur.fetchall()
+
+  print '<h2>Subnets</h2>'
+  
+  print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletesubnets">'
+  print '<table>'
+  print '<tr><th class="oddeven">Subnet</th><th class="oddeven">Netmask</th>'
+  print '<th class="oddeven">Router</th><th class="oddeven">Nameservers</th><th class="oddeven">&nbsp;</th></tr>'
+    
+  n = 0
+  for row in rows:
+    print ('<tr><td class="' + oddEven(n)+ '">' + row['subnet'] + '</td>' +
+           '<td class="' + oddEven(n)+ '">' + row['netmask'] + '</td>' +
+           '<td class="' + oddEven(n)+ '">' + str(row['router']) + '</td>' +
+           '<td class="' + oddEven(n)+ '">' + str(row['nameservers']) + '</td>' +
+           '<td class="' + oddEven(n)+ '"><input type="checkbox" name="deletelist" value="' + str(row['subnetid']) + '"></td>' +
+           '</tr>')
+    n += 1
+                
+  print '</table>'
+
+  htmlFormCookie(userDN)
+  print '<input type="submit" value="Delete selected subnets">'
+  print '</form>'
+  
+  print '<h3>Add a subnet</h3>'
+
+  print '<form method="post" action="' + requestURI + '">'
+  print '<table>'
+  print '<tr><td>Subnet:</td><td><input type="text" name="subnet"></td></tr>'
+  print '<tr><td>Netmask:</td><td><input type="text" name="netmask"></td></tr>'
+  print '<tr><td>Router:</td><td><input type="text" name="router"></td></tr>'
+  print '<tr><td>Nameservers:</td><td><input type="text" name="nameservers"></td></tr>'
+  print '</table>'
+  print '<input type="submit" value="Add subnet">'
+  htmlFormCookie(userDN)
+  print '<input type="hidden" name="action" value="addsubnet">'
+  print '</form>'
+
+  htmlFooter()
+
+def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
+
+  global cur
+  
+  try:
+    if cgiForm['action'].value == 'addsshkey' and cgiForm['keyvalue'].value:
+         
+      keyValue = cgiForm['keyvalue'].value.strip()
+      try:
+        comment = cgiForm['comment'].value.strip()
+      except:
+        comment = ''
+
+      cur.execute('INSERT INTO sshkeys SET siteid=%s,keyvalue=%s,comment=%s,added=NOW()', (siteID, keyValue, comment))
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+
+  except:
+    pass
+          
+  try:
+    if cgiForm['action'].value == 'deletekeys' and cgiForm['deletelist'].value:
+         
+      deleteList = cgiForm.getlist('deletelist')
+
+      for deleteKey in deleteList:              
+        cur.execute('DELETE FROM sshkeys WHERE siteid=' + str(siteID) + ' AND keyid=' + str(deleteKey))
+     
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+
+  except:
+    pass
+    
+  try:
+    if cgiForm['action'].value == 'addx509dn' and cgiForm['dn'].value:
+         
+      dn = cgiForm['dn'].value.strip()
+
+      cur.execute('INSERT INTO siteadmins SET siteid=%s,dn=%s,added=NOW()', (siteID, dn))
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+
+  except:
+    pass
+          
+  try:
+    if cgiForm['action'].value == 'deletex509dns' and cgiForm['deletelist'].value:
+         
+      deleteList = cgiForm.getlist('deletelist')
+
+      for deleteDN in deleteList:              
+        cur.execute('DELETE FROM siteadmins WHERE siteid=%s AND dn=%s', (siteID, deleteDN))
+     
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+
+  except:
+    pass
+    
+  try:
+    if cgiForm['action'].value == 'addspace' and cgiForm['spacename'].value:
+         
+      spaceName = cgiForm['spacename'].value
+
+      if spaceName.translate(None, 'abcdefghijklmnopqrstuvwxyz01234567890.-') != '':
+        print 'Content-Type: text/html'
+        print
+        print 'Space names are limited to lowercase letters numbers . -'
+        return
+      
+      cur.execute('INSERT INTO spaces SET siteid=%s,spacename=%s', (siteID, spaceName))
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+
+  except:
+    pass
+
+  htmlHeader('Site ' + siteName)
+  
+  cur.execute('SELECT spacename,published FROM spaces WHERE siteid=%s ORDER BY spacename', siteID)
+  
+  rows = cur.fetchall()
+
+  print ('<div class="breadcrumbs"><a href="/admin/">All Sites</a> / ' + siteName + '</div>')
+
+  print '<h1>Site ' + siteName
+
+  print '<h2>Spaces</h2>'
+
+  print '<table class="center">'
+  print '<tr><th class="oddeven">Space</th><th class="oddeven">USB .iso</th><th class="oddeven">RPM published</th></tr>'
+
+  n=0    
+  for row in rows:
+    print '<tr><td class="' + oddEven(n) + '"><a href="/admin/' + siteName + '/' + row['spacename'] + '/">' + row['spacename'] + '</a></td>'
+    print '<td class="' + oddEven(n) + '"><a href="/iso/' + siteName + '/' + row['spacename'] + '/viab-usb.iso">Download</a></td>' 
+    print '<td class="' + oddEven(n) + '">' + str(row['published']) + '</td></tr>\n'
+    n += 1 
+                
+  print '</table>'
+
+  print '<h3>Add a space</h3>'  
+  print '<p>Space names should be in the DNS namespace controlled by the site, but they do not need to be registered in its name servers.'
+  print '<form method="post" action="' + requestURI + '">'
+  print '<input type="text" name="spacename">'
+  print '<input type="submit" value="Add space">'
+  htmlFormCookie(userDN)
+  print '<input type="hidden" name="action" value="addspace">'
+  print '</form>'
+
+  cur.execute('SELECT keyid,keyvalue,comment,added FROM sshkeys WHERE siteid=%s', siteID)
+  rows = cur.fetchall()
+   
+  print '<h2>SSH keys</h2>'
+  print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletekeys">'
+  print '<table class="center">'
+  print '<tr><th class="oddeven">Key</th><th class="oddeven">Comment</th><th class="oddeven" colspan="2">Added</th></tr>'
+
+  n = 0    
+  for row in rows:
+    print ('<tr><td class="' + oddEven(n) + '">' + ' '.join(textwrap.wrap(row['keyvalue'],40)) + '</td>' +
+           '<td class="' + oddEven(n) + '">' + row['comment'] + '</td>' +
+           '<td class="' + oddEven(n) + '">' + str(row['added']) + '</td>' +
+           '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['keyid']) + '"></td>' +
+           '</tr>')
+                
+  print '</table>'
+
+  htmlFormCookie(userDN)
+  print '<input type="submit" value="Delete selected keys">'
+  print '</form>'
+
+  print '<h3>Add an ssh key</h3>'
+  print '<p>The ssh keys will be installed on Vac factory machines to allow ssh access as root'
+  print '<form method="post" action="' + requestURI + '">'
+  print 'Key: <input type="text" name="keyvalue"> '
+  print 'Comment: <input type="text" name="comment"> '
+  print '<input type="submit" value="Add ssh key">'
+  htmlFormCookie(userDN)
+  print '<input type="hidden" name="action" value="addsshkey">'
+  print '</form>'
+
+  # Admin DNs
+
+  cur.execute('SELECT dn,added FROM siteadmins WHERE siteid=%s', siteID)
+  rows = cur.fetchall()
+
+  print '<h2>Site Admins</h2>'
+  print '<p>People with Vac-in-a-Box website admin rights are also able to update the site configuration.'
+  
+  if userDN in viab_cgi_conf.adminDNs:
+    print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletex509dns">'
+
+  print '<table>'
+  print '<tr><th class="oddeven">X.509 DN</th><th class="oddeven">Added</th>'
+
+  if userDN in viab_cgi_conf.adminDNs:
+    print '<th class="oddeven">&nbsp;</th>'
+  
+  print '</tr>'
+    
+  n = 0
+  for row in rows:
+    print ('<tr><td class="' + oddEven(n)+ '">' + row['dn'] + '</td>' +
+           '<td class="' + oddEven(n)+ '">' + str(row['added']) + '</td>')
+
+    if userDN in viab_cgi_conf.adminDNs:
+      print '<td class="' + oddEven(n)+ '"><input type="checkbox" name="deletelist" value="' + str(row['dn']) + '"></td>'
+
+    print '</tr>'
+    n += 1
+                
+  print '</table>'
+
+  if userDN in viab_cgi_conf.adminDNs:
+    htmlFormCookie(userDN)
+    print '<input type="submit" value="Delete selected DNs">'
+    print '</form>'
+  
+  if userDN in viab_cgi_conf.adminDNs:
+    print '<h3 class="admin">Add a site admin X.509 DN</h3>'
+
+    print '<form method="post" action="' + requestURI + '">'
+    print 'X.509 DN:<input type="text" name="dn">'
+    print '<input type="submit" value="Add X.509 DN">'
+    htmlFormCookie(userDN)
+    print '<input type="hidden" name="action" value="addx509dn">'
+    print '</form>'
+
+  htmlFooter()
+
+def allSites(requestURI, userDN, cgiForm):
+
+  global cur
+
+  try:
+    if cgiForm['action'].value == 'addsite' and cgiForm['sitename'].value:
+         
+      siteName = cgiForm['sitename'].value
+
+      if siteName.translate(None, 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567890.-_') != '':
+        print 'Content-Type: text/html'
+        print
+        print 'Site names are limited to letters numbers . - _'
+        return
+      
+      cur.execute('INSERT INTO sites SET sitename=%s', siteName)
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+
+  except:
+    pass
+          
+  htmlHeader('All Vac-in-a-Box sites')
+  
+  print ('<div class="breadcrumbs">All Sites</div>')
+
+  print '<h1>All Vac-in-a-Box sites</h1>'
+  
+  cur.execute('SELECT siteid,sitename FROM sites ORDER BY sitename')
+  
+  rows = cur.fetchall()
+
+  print '<table class="center">'
+  print '<tr><th class="oddeven">GOCDB Name</th></tr>'
+    
+  n = 0
+  for row in rows:
+    print '<tr><td class="' + oddEven(n) + '"><a href="/admin/' + row['sitename'] + '/">' + row['sitename'] + '</a></td></tr>\n'
+    n += 1
+                
+  print '</table>'
+  
+  if userDN in viab_cgi_conf.adminDNs:  
+    print '<h2 class="admin">Add another site</h2>'
+    print '<p>WLCG/EGI sites should use their name in the <a href="https://goc.egi.eu/portal/">GOCDB</a>'
+    print '<form method="post" action="' + requestURI + '">'
+    htmlFormCookie(userDN)
+    print 'Site GOCDB Name: '
+    print '<input type="text" name="sitename">'
+    print '<input type="submit" value="Add site">'
+    print '<input type="hidden" name="action" value="addsite">'
+    print '</form>'
+
+  htmlFooter()
+  
+#
+# PROGRAM MAIN
+#
+
+requestURI   = os.environ['REQUEST_URI']
+documentRoot = os.environ['DOCUMENT_ROOT']
+
+if requestURI == '/':
+  htmlHeader('Vac-in-a-Box')
+
+  try:
+    print open(documentRoot + '/index.html', 'r').read()
+  except:
+    pass  
+
+  htmlFooter()
+  sys.exit(0)
+    
+elif requestURI[:6] == '/docs/':
+
+  if requestURI == '/docs':
+    pageName  = 'index'
+    pageTitle = 'Vac-in-a-Box docs'
+  else:
+    pageName  = requestURI.split('/')[2]
+    pageTitle = pageName.replace('_',' ').title()
+
+  htmlHeader(pageTitle)
+
+  try:
+    print open(documentRoot + '/docs/' + pageName + '.html', 'r').read()
+  except:
+    pass  
+
+  htmlFooter()
+  sys.exit(0)
+
+# From now on, a client certificate is required
+
+try:
+  userDN = os.environ['SSL_CLIENT_S_DN']
+except:  
+  htmlHeader('Certificate required')
+  print '<p>You cannot access this page without a client certificate!'
+  htmlFooter()
+  sys.exit(0)
+  
+db  = MySQLdb.connect(host="localhost", user=viab_cgi_conf.mysqlUser, passwd=viab_cgi_conf.mysqlPassword, db='viab')
+cur = db.cursor(MySQLdb.cursors.DictCursor)
+
+siteName   = None
+siteID     = None
+spaceName  = None
+spaceID    = None
+vmtypeName = None
+vmtypeID   = None
+hostName   = None
+hostID     = None
+
+uriElements = requestURI.split('/')
+
+try: 
+  siteName  = uriElements[2]
+except:
+  pass
+
+if siteName:
+  try:
+    cur.execute('SELECT siteid FROM sites WHERE sitename=%s', siteName)
+    rows = cur.fetchall()
+    siteID = int(rows[0]['siteid'])
+  except:
+    print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+    print 'Location: https://viab.gridpp.ac.uk/admin/'
+    print 
+    sys.exit(0)
+  else:
+    if userDN not in viab_cgi_conf.adminDNs:  
+      try:
+        cur.execute('SELECT siteid FROM sites LEFT JOIN siteadmins ON sites.siteid=siteadmins.siteid WHERE dn=%s AND sites.siteid=%s', (userDN, siteID))
+
+        rows = cur.fetchall()
+        if rows.len == 0:
+          print 'Status: 403 Forbidden'
+          print 'Content-Type: text/html'
+          print
+          print 'You are not an admin for site ' + siteName
+          sys.exit(0)
+                
+      except:
+        print 'Status: 403 Forbidden'
+        print 'Content-Type: text/html'
+        print
+        print 'You are not listed as an admin for site ' + siteName
+        sys.exit(0)
+  
+  try:
+    spaceName = uriElements[3]
+  except:
+    pass
+
+if spaceName:
+  try:
+    cur.execute('SELECT spaceid,published FROM spaces WHERE siteid=%s AND spacename=%s', (siteID, spaceName))
+    rows = cur.fetchall() 
+    spaceID = int(rows[0]['spaceid'])
+    published = str(rows[0]['published'])
+  except:
+    print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+    print 'Location: https://viab.gridpp.ac.uk/admin/' + siteName + '/'
+    print
+    sys.exit(0)
+    
+  try:
+    if uriElements[4] == 'vmtypes':
+      vmtypeName = uriElements[5]
+    elif  uriElements[4] == 'hosts':
+      hostName   = uriElements[5]
+  except:
+    pass
+
+if hostName:
+  try:
+    cur.execute('SELECT hostid FROM hosts WHERE spaceid=%s AND hostname=%s', (spaceID, hostName))
+    rows = cur.fetchall() 
+    hostID = int(rows[0]['hostid'])
+  except:
+    print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+    print 'Location: https://viab.gridpp.ac.uk/admin/' + siteName + '/' + spaceName + '/'
+    print
+    sys.exit(0)
+
+if vmtypeName:
+  try:
+    cur.execute('SELECT vmtypeid FROM vmtypes WHERE spaceid=%s AND vmtypename=%s', (spaceID, vmtypeName))
+    rows = cur.fetchall() 
+    vmtypeID = int(rows[0]['vmtypeid'])
+  except:
+    print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+    print 'Location: https://viab.gridpp.ac.uk/admin/' + siteName + '/' + spaceName + '/'
+    print
+    sys.exit(0)
+
+cgiForm = cgi.FieldStorage()
+
+# Check the form cookie
+
+try:
+  action = cgiForm.getfirst('action')
+except:
+  action = None
+
+if action:
+  try:
+      formCookie = cgiForm.getfirst('formcookie')
+      (formTime, formHash) = formCookie.split(':')
+      calculatedHash = hashlib.sha256(formTime + userDN + viab_cgi_conf.formHashSalt).hexdigest()
+  except:
+      htmlHeader('Page expired')
+      print '<p>Page expired'
+      htmlFooter()
+      sys.exit(0)
+  
+  if formHash != calculatedHash:
+      htmlHeader('Page has expired')
+      print '<p>Page has expired'
+      htmlFooter()
+      sys.exit(0)
+
+if hostName:
+  oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, hostName, hostID)
+elif vmtypeName:
+  oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, vmtypeName, vmtypeID)
+elif spaceName:
+  oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, published)
+elif siteName:
+  oneSite(requestURI, userDN, cgiForm, siteName, siteID)
+else :
+  allSites(requestURI, userDN, cgiForm)
+
+sys.exit(0)

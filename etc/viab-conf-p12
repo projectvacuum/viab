@@ -1,0 +1,16 @@
+#!/bin/sh
+
+if [ ! -r /etc/viabkeys/viab-conf-passphrase ] ; then
+  echo 'You need to put your p12 files passphrase in /etc/viab-conf-passphrase !'
+  exit 1
+fi
+
+chmod go-r /etc/viabkeys/viab-conf-passphrase
+
+for i in /var/lib/vac/vmtypes/*
+do
+ cd $i
+ openssl pkcs12 -in hostcertkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out hostkey.pem  -nodes -nocerts
+ openssl pkcs12 -in hostcertkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out hostcert.pem -nokeys -clcerts
+ chmod ugo-w,go-r hostkey.pem 
+done

@@ -1,0 +1,15 @@
+#!/bin/sh
+#
+# Check for libvirt references on the command line
+echo "$*" | grep '/var/lib/libvirt' >/dev/null 2>/dev/null
+
+if [ $? = 0 ] ; then
+ # ViaB uses dhcpd so run dnsmasq with just a DNS service for libvirt
+ # It is not possible to do this just using libvirt network XML options
+ logger -p daemon.info -t dnsmasq-wrapper "Run dnsmasq-wrapper instead of dnsmasq $*"
+ exec /usr/sbin/dnsmasq-real --pid-file=/var/run/libvirt/network/vac_169.254.0.0.pid \
+  --conf-file= --interface=virbr1 --bind-interfaces --listen-address 169.254.169.254 \
+  --no-dhcp-interface=virbr1
+else
+ exec /usr/sbin/dnsmasq-real $*
+fi
