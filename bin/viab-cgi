@@ -1022,7 +1022,7 @@ if requestURI == '/':
     
 elif requestURI[:6] == '/docs/':
 
-  if requestURI == '/docs':
+  if requestURI == '/docs/':
     pageName  = 'index'
     pageTitle = 'Vac-in-a-Box docs'
   else:
