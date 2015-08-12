@@ -1,0 +1,35 @@
+<h1>Vac-in-a-Box overview</h1>
+
+<p>
+The central idea with Vac-in-a-Box (ViaB) is to operate a site as a
+collection of almost identical machines, each of which provide all the
+services needed to run the site. The avoids any headnode or gatekeeper,
+any configuration master, and dedicated servers like Squid caches.
+
+<p>
+The configuration has to come from somewhere, and this role is fulfilled
+by the viab.gridpp.ac.uk website, with the configuration of each site
+created and maintained via web forms. 
+
+<p>
+The configuration details are obtained by each physical machine at the site
+in the form of the viab-conf RPM from a YUM repository on the website. This
+is done automatically and asynchronously using YUM, which means if the
+website is temporarily unavailable the physical machines carry on working
+with their existing configuration.
+
+<p>
+Once installed, the physical machines operate as Vac VM
+factories, and the machines are referred to as factories in Vac terminology.
+A group of factories which communicate load information to each other are
+referred to as &quot;space&quot;. Each space also has one or more
+&quot;vmtypes&quot; associated with it which define the properties of a
+type of VM, usually one vmtype per experiment.
+
+<p>
+A site can contain one or more spaces, and sites are referred to using their
+GOCDB names, such as CERN or UKI-NORTHGRID-MAN-HEP. In ViaB, each site has a
+list of admins identified by X.509 DN who can modify the site's
+configuration. 
+
+
