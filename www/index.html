@@ -1,0 +1,28 @@
+<h1>Vac-in-a-Box</h1>
+
+<p>
+Vac-in-a-Box (ViaB) aims to make it ridiculously easy to install and
+configure Vac on your computers. 
+<a href="http://www.gridpp.ac.uk/vac/">Vac</a> 
+allows you to run VMs from HEP
+experiments to run their jobs, and ViaB allows you to manage the Vac VM
+factory machines and the VM settings here on the ViaB website. This way you
+don't need to use Puppet or configure things manually 
+(Vac's <a
+href="https://www.gridpp.ac.uk/vac/versions/current/doc/admin-guide.html">Admin
+ Guide</a> explains how to go down that route if you prefer.)
+
+<p>
+Each factory machine managed by ViaB are autonomous and equivalent, with the
+services needed for installation and operation at your site: DHCP, TFTP,
+Squid, and Vac. You install the first factory using a USB boot image you can
+download from the website, and subsequent factories can be installed from
+the first (and second, and third ...) factory using PXE. 
+
+<p>
+Even though the factories are self-contained, they co-operate to supply each
+other with DHCP and TFTP services at boot time, and participate in a
+distributed HTTP cache via Squid peering. This cache is used during
+installations and by cvmfs. Once Vac is running on a factory it also queries
+the other factories via the VacQuery UDP protocol to decide what types of VM
+to start. 

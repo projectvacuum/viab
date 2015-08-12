@@ -1,0 +1,49 @@
+<h1>USB and PXE installation</h1>
+
+<p>
+Once you have created a basic configuration of your site on the website, you
+can publish the configuration RPM and download the USB .iso image that
+publishing also creates. You then need to write the .iso image to a USB
+memory stick. The procedure differs by operating system, but in Linux ...
+And on a Mac .... If a CD/DVD drive is present, the image can burnt to a
+CD-ROM disc instead. 
+
+<p>
+You should also configure the BIOS to boot from USB (or CD/DVD), then PXE or
+network, then the first hard drive.
+
+<p>
+Next boot the factory from the USB stick but make sure you remove the stick
+as soon as initrd.img has finished loading and before the hardware
+initialization message. If you don't do this, the USB device is likely to be
+treated as /dev/sda, preventing the real disk(s) from being configured and
+probably resulting in the corruption of the USB stick. If this happens, you
+will need to rewrite the image to the stick.
+
+<p>
+The boot image is a slightly modified version of the Scientific Linux 6
+installer. It will ask you for network settings twice, and then proceed with
+an automatic installation and reboot. 
+
+<p>
+For the second machine, do not use the USB stick and let it boot via PXE
+from the first factory. The installation proceeds as before but this time
+without even the need to give the network settings. The SL6 images and RPMs
+are downloaded via the Squid cache of the factory to answer the DHCP query.
+Since ViaB runs the Squids with peering, RPMs already cached on any of the
+factories will be fetched locally rather than downloaded into your site
+again. 
+
+<p>
+The ViaB factories reboot once installation is complete but use kexec to go
+straight to booting Linux from the hard drive rather than loop through PXE
+again. The factory then runs normally, starting VMs etc. If there is another
+reboot, it will result in booting via PXE, one automated reinstallation, and
+then back to running normally. 
+
+<p>
+For the third and subsequent machines, installation should go much faster as
+the SL6 RPMs and images will have been cached in the Squid server(s). If you
+need to reinstall the first factory, you do not need to use the USB stick
+instead of PXE as long as at least one other factory is up and running
+correctly. 
