@@ -4,16 +4,19 @@
 Once you have created a basic configuration of your site on the website, you
 can publish the configuration RPM and download the USB .iso image that
 publishing also creates. You then need to write the .iso image to a USB
-memory stick. The procedure differs by operating system, but in Linux ...
-And on a Mac .... If a CD/DVD drive is present, the image can burnt to a
-CD-ROM disc instead. 
+memory stick. The procedure differs by operating system, but there is a
+<a href="http://wiki.centos.org/HowTos/InstallFromUSBkey">CentOS wiki
+page</a> explaining how to do it: ViaB uses the RHEL/CentOS/SL 6.6
+installer code and the .iso image can be written directly with dd. If a 
+CD/DVD drive is present, the image can burnt to a CD-ROM disc as an
+alternative.
 
 <p>
 You should also configure the BIOS to boot from USB (or CD/DVD) if available, 
 then try PXE or network, then try the first hard drive.
 
 <p>
-Next boot the factory from the USB stick but make sure you remove the stick
+Boot the first factory from the USB stick but make sure you remove the stick
 as soon as initrd.img has finished loading and before the hardware
 initialization message. If you don't do this, the USB device is likely to be
 treated as /dev/sda, preventing the real disk(s) from being configured and
