@@ -133,8 +133,8 @@ do
       -e "s/##VIAB_SPACENAME##/$VIAB_SPACENAME/g"		\
       -e "s/##VIAB_VERSION##/$VIAB_VERSION/g"     		\
       -e "s/##VIAB_PASSWORD_HASH##/$VIAB_PASSWORD_HASH/g"	\
-      -e "s/^url.*/& --proxy=http:\/\/$host:3128\//"		\
-      /var/lib/viab/etc/ks.cfg         		\
+      -e "s/^url.*/& --proxy=http:\/\/$ip:3128\//"		\
+      /var/lib/viab/etc/ks.cfg         				\
       > $DOCUMENT_ROOT/ks/$VIAB_SITENAME/$VIAB_SPACENAME/ks-$host.cfg
 done
 
