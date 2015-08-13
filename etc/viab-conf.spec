@@ -6,7 +6,7 @@ Summary: Vac-in-a-Box configuration
 License: BSD
 Group: System Environment
 Source: viab-conf.tgz
-URL: http://www.gridpp.ac.uk/vac/
+URL: http://viab.gridpp.ac.uk/
 Vendor: GridPP
 Packager: Andrew McNab <Andrew.McNab@cern.ch>
 Requires: vac,dhcp,tftp,tftp-server,syslinux-tftpboot,squid,ca-policy-lcg,xauth,tigervnc,ntp,yum-autoupdate,apel-ssm,emi-release,epel-release

@@ -101,6 +101,8 @@ cp -p /var/lib/viab/etc/viab-conf-postinstall \
       /var/lib/viab/etc/lazyssh \
       /var/lib/viab/etc/dnsmasq-wrapper \
       /var/lib/viab/etc/squid.conf.template \
+      /var/lib/viab/etc/vac-ssmsend-cron \
+      /var/lib/viab/etc/vac-ssmsend-prod.cfg \
       viab-conf
 cp /var/lib/viab/isolinux/vmlinuz /var/lib/viab/isolinux/initrd.img viab-conf
 tar zcvf SOURCES/viab-conf.tgz --owner=root --group=root --exclude-backups viab-conf
