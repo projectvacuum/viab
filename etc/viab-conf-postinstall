@@ -85,7 +85,7 @@ do
   fi
   
   echo "acl localnet src $ip/32"			>>/etc/squid/squid.conf.tmp
-  echo "cache_peer $factory sibling 3128 3130 default"	>>/etc/squid/squid.conf.tmp
+  echo "cache_peer $ip sibling 3128 3130 default"	>>/etc/squid/squid.conf.tmp
 done
 )
 
