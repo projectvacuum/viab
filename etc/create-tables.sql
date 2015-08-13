@@ -1,8 +1,4 @@
 
---
--- Table structure for table `hosts`
---
-
 DROP TABLE IF EXISTS `hosts`;
 CREATE TABLE `hosts` (
   `hostid` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -23,11 +19,6 @@ CREATE TABLE `hosts` (
   UNIQUE KEY `mac` (`mac`,`siteid`),
   UNIQUE KEY `ip` (`ip`,`siteid`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
-
---
--- Table structure for table `siteadmins`
---
-
 DROP TABLE IF EXISTS `siteadmins`;
 CREATE TABLE `siteadmins` (
   `siteid` mediumint(8) unsigned NOT NULL,
@@ -35,23 +26,15 @@ CREATE TABLE `siteadmins` (
   `added` datetime NOT NULL,
   UNIQUE KEY `siteid` (`siteid`,`dn`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
-
---
--- Table structure for table `sites`
---
-
 DROP TABLE IF EXISTS `sites`;
 CREATE TABLE `sites` (
   `siteid` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
   `sitename` varchar(255) NOT NULL,
+  `p12` blob NOT NULL,
+  `p12updated` datetime NOT NULL,
   PRIMARY KEY (`siteid`),
   UNIQUE KEY `sitename` (`sitename`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
-
---
--- Table structure for table `spaces`
---
-
 DROP TABLE IF EXISTS `spaces`;
 CREATE TABLE `spaces` (
   `spaceid` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -62,11 +45,6 @@ CREATE TABLE `spaces` (
   PRIMARY KEY (`spaceid`),
   UNIQUE KEY `spacename` (`spacename`,`siteid`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
-
---
--- Table structure for table `sshkeys`
---
-
 DROP TABLE IF EXISTS `sshkeys`;
 CREATE TABLE `sshkeys` (
   `keyid` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -76,11 +54,6 @@ CREATE TABLE `sshkeys` (
   `added` datetime NOT NULL,
   PRIMARY KEY (`keyid`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
-
---
--- Table structure for table `subnets`
---
-
 DROP TABLE IF EXISTS `subnets`;
 CREATE TABLE `subnets` (
   `subnetid` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -92,11 +65,6 @@ CREATE TABLE `subnets` (
   PRIMARY KEY (`subnetid`),
   UNIQUE KEY `spaceid` (`spaceid`,`subnet`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
-
---
--- Table structure for table `vmtypeopts`
---
-
 DROP TABLE IF EXISTS `vmtypeopts`;
 CREATE TABLE `vmtypeopts` (
   `vmtypeoptid` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
@@ -106,11 +74,6 @@ CREATE TABLE `vmtypeopts` (
   PRIMARY KEY (`vmtypeoptid`),
   UNIQUE KEY `vmtypeid` (`vmtypeid`,`optname`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
-
---
--- Table structure for table `vmtypes`
---
-
 DROP TABLE IF EXISTS `vmtypes`;
 CREATE TABLE `vmtypes` (
   `vmtypeid` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,

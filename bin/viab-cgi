@@ -748,6 +748,18 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
   global cur
   
   try:
+    if cgiForm.getfirst('action') == 'uploadp12':
+
+      cur.execute('UPDATE sites SET p12=%s,p12updated=NOW() WHERE siteid=%s', (cgiForm.getfirst('p12file'), siteID) )
+
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+  except:
+    pass
+
+  try:
     if cgiForm['action'].value == 'addsshkey' and cgiForm['keyvalue'].value:
          
       keyValue = cgiForm['keyvalue'].value.strip()
@@ -894,6 +906,23 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
   print '<input type="submit" value="Add ssh key">'
   htmlFormCookie(userDN)
   print '<input type="hidden" name="action" value="addsshkey">'
+  print '</form>'
+
+  print '<h2>APEL certificate/key .p12 file</h2>'
+
+  print '<p>Uploading a valid cert/key will cause APEL accounting reports to be sent. '
+  print 'The sitename ' + siteName + ' will be used when reporting to APEL. '
+
+  cur.execute('SELECT LENGTH(p12) AS p12len,p12,p12updated FROM sites WHERE siteid=%s', siteID)
+  rows = cur.fetchall()
+  print '<p>.p12 file ' + str(rows[0]['p12len']) + ' bytes, updated ' + str(rows[0]['p12updated'])
+
+  print '<h3>Upload .p12 file</h3>'
+  
+  print '<form method="post" action="' + requestURI + '" enctype="multipart/form-data">'
+  print '<input type="file" name="p12file">'
+  htmlFormCookie(userDN)
+  print '<br><input type="submit" value="Upload .p12 file"> <input type="hidden" name="action" value="uploadp12">'  
   print '</form>'
 
   # Admin DNs
