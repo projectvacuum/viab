@@ -37,6 +37,7 @@
 import os
 import sys
 import cgi
+import stat
 import time
 import shutil
 import hashlib
@@ -348,6 +349,23 @@ def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID):
   except:
     return None
 
+  # Create the APEL .p12 file for the site (or empty file if none)
+
+  try:
+    cur.execute('SELECT p12 FROM sites WHERE siteid=%s', siteID)
+    rows = cur.fetchall()
+    f = open(tempDir + '/viab-conf/viab/vac-apel-certkey.p12', 'w')
+    
+    try:
+      f.write(rows[0]['p12'])
+    except:
+      pass
+      
+    f.close()  
+    os.chmod(tempDir + '/viab-conf/viab/vac-apel-certkey.p12', stat.S_IRUSR)
+  except:
+    return None
+
   # Create the subnets file from space subnets (or empty file if none)
 
   try:
@@ -402,6 +420,7 @@ def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID):
         f = open(tempDir + '/viab-conf/vmtypes/' + vmtypeRow['vmtypename'] + '/hostcertkey.p12', 'w')
         f.write(vmtypeRow['p12'])
         f.close()
+        os.chmod(tempDir + '/viab-conf/vmtypes/' + vmtypeRow['vmtypename'] + '/hostcertkey.p12', stat.S_IRUSR)
     
       cur.execute('SELECT optname,value FROM vmtypeopts WHERE vmtypeid=%s', vmtypeRow['vmtypeid'])
       optRows = cur.fetchall()
