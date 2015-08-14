@@ -52,6 +52,7 @@ CREATE TABLE `sshkeys` (
   `keyvalue` text NOT NULL,
   `comment` text NOT NULL,
   `added` datetime NOT NULL,
+  `keytype` varchar(20) NOT NULL DEFAULT 'ssh-rsa',
   PRIMARY KEY (`keyid`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 DROP TABLE IF EXISTS `subnets`;

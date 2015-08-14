@@ -339,12 +339,12 @@ def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID):
   # Create the authorized_keys file from site sshkeys (or empty file if none)
 
   try:
-    cur.execute('SELECT keyvalue,keyid FROM sshkeys WHERE siteid=%s', siteID)
+    cur.execute('SELECT keytype,keyvalue,keyid FROM sshkeys WHERE siteid=%s', siteID)
     rows = cur.fetchall()
 
     f = open(tempDir + '/viab-conf/authorized_keys', 'w')
     for row in rows:
-      f.write('ssh-rsa ' + row['keyvalue'] + ' ' + str(row['keyid']) + '\n')
+      f.write(row['keytype'] + ' ' + row['keyvalue'] + ' ' + str(row['keyid']) + '\n')
     f.close()
   except:
     return None
@@ -506,21 +506,21 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   try:
     if cgiForm['action'].value == 'addhost' and cgiForm['hostname'].value and cgiForm['ip'] and cgiForm['mac']:
          
-      hostName = cgiForm['hostname'].value
+      hostName = cgiForm['hostname'].value.strip()
       if hostName.translate(None, 'abcdefghijklmnopqrstuvwxyz01234567890.-') != '':
         print 'Content-Type: text/html'
         print
         print 'Host names are limited to lowercase letters numbers . -'
         return
       
-      ip  = cgiForm['ip'].value
+      ip  = cgiForm['ip'].value.strip()
       if ip.translate(None, '01234567890.') != '':
         print 'Content-Type: text/html'
         print
         print 'IP addreses are limited to digits and .'
         return
 
-      mac = cgiForm['mac'].value.lower()
+      mac = cgiForm['mac'].value.strip().lower()
       if mac.translate(None, 'abcdef01234567890:') != '':
         print 'Content-Type: text/html'
         print
@@ -895,17 +895,18 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
   print '<input type="hidden" name="action" value="addspace">'
   print '</form>'
 
-  cur.execute('SELECT keyid,keyvalue,comment,added FROM sshkeys WHERE siteid=%s', siteID)
+  cur.execute('SELECT keyid,keyvalue,keytype,comment,added FROM sshkeys WHERE siteid=%s', siteID)
   rows = cur.fetchall()
    
   print '<h2>SSH keys</h2>'
   print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletekeys">'
   print '<table class="center">'
-  print '<tr><th class="oddeven">Key</th><th class="oddeven">Comment</th><th class="oddeven" colspan="2">Added</th></tr>'
+  print '<tr><th class="oddeven">Key</th><th class="oddeven">Type</th><th class="oddeven">Comment</th><th class="oddeven" colspan="2">Added</th></tr>'
 
   n = 0    
   for row in rows:
     print ('<tr><td class="' + oddEven(n) + '">' + ' '.join(textwrap.wrap(row['keyvalue'],40)) + '</td>' +
+           '<td class="' + oddEven(n) + '">' + row['keytype'] + '</td>' +
            '<td class="' + oddEven(n) + '">' + row['comment'] + '</td>' +
            '<td class="' + oddEven(n) + '">' + str(row['added']) + '</td>' +
            '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['keyid']) + '"></td>' +

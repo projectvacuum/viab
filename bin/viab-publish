@@ -152,8 +152,8 @@ echo -n '#### Make viab-usb.iso ' ; date
 
 ISOTEMPDIR=`mktemp -d`
 
-cp /var/lib/viab/isolinux/* \
-   /var/lib/viab/etc/splash.jpg \
+cp /var/lib/viab/isolinux/* $ISOTEMPDIR
+cp /var/lib/viab/etc/splash.jpg \
    /var/lib/viab/etc/isolinux.cfg $ISOTEMPDIR
 sed -i "s/##VIAB_SITENAME##/$VIAB_SITENAME/g" $ISOTEMPDIR/isolinux.cfg
 sed -i "s/##VIAB_SPACENAME##/$VIAB_SPACENAME/g" $ISOTEMPDIR/isolinux.cfg
