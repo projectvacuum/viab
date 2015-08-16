@@ -81,6 +81,16 @@ def htmlFooter():
 def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, vmtypeName, vmtypeID):
 
   global cur
+  
+  vmtypePresets = {
+
+   'example' : { url        : 'sdfs',
+                 root_image : 'sdfsdfs' },
+
+   'GridPP'  : { url        : 'sdfs',
+                 root_image : 'sdfsdfs' }   
+
+                  }
 
   try:
     if cgiForm.getfirst('action') == 'uploadp12':
@@ -116,6 +126,30 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
 
       cur.execute('INSERT INTO vmtypeopts (vmtypeid,optname,value) SELECT %s,optname,value FROM vmtypeopts WHERE vmtypeid=%s',
                   (cur.lastrowid, vmtypeID) )
+
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk/admin/' + siteName + '/' + spaceName + '/vmtypes/' + cloneName + '/'
+      print
+      return
+  except:
+    pass
+
+  try:
+    if cgiForm['action'].value == 'addpresets' and cgiForm['submit']:
+
+      presetVmtypeName = cgiForm['submit'].value.strip()
+
+      if presetVmtypeName in vmtypePresets:
+        for presetOptname in vmtypePresets[presetVmtypeName]:                
+          cur.execute('INSERT INTO vmtypeopts SET vmtypeid=%s,optname=%s,value=%ss', 
+                      (vmtypeID, 
+                       presetOptName, 
+                       vmtypePresets[presetVmtypeName][presetOptName]))      
+      else:
+        print 'Content-Type: text/html'
+        print
+        print 'vmtype presets not found!'
+        return
 
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
       print 'Location: https://viab.gridpp.ac.uk/admin/' + siteName + '/' + spaceName + '/vmtypes/' + cloneName + '/'
@@ -209,12 +243,28 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
   print '<input type="submit" value="Add option"> <input type="hidden" name="action" value="addoption">'  
   print '</form>'
 
+  print '<h3>Pre-set options</h3>'
+
+  print '<p>You can use the buttons below to add preset options to this '
+  print 'vmtype if they do not already exist. Some options will still need '
+  print "to be edited in line with the vmtype's own instructions and they "
+  print 'have the default value PLACEHOLDER .'
+
+  print '<form method="post" action="' + requestURI + '">'
+  htmlFormCookie(userDN)
+  print '<input type="hidden" name="action" value="addpresets">'
+
+  for presetName in vmtypePresets:
+    print '<input type="submit" name="submit" value="' + presetName + '">'
+
+  print '</form>'
+
   print '<h2>Clone vmtype</h2>'
 
   print '<form method="post" action="' + requestURI + '">'
-  print 'New vmtype name: <input type="text" name="clonename">'
+  print '<input type="text" name="optname"> = <input type="text" name="value">'
   htmlFormCookie(userDN)
-  print '<input type="submit" value="Clone vmtype"><input type="hidden" name="action" value="clonevmtype">'
+  print '<input type="submit" value="Add option"> <input type="hidden" name="action" value="addoption">'  
   print '</form>'
 
   print '<h2>Certificate/key .p12 file</h2>'
