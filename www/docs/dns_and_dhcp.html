@@ -1,3 +1,95 @@
 <h1>DNS and DHCP</h1>
 
 <p>
+Vac-in-a-Box (ViaB) maintains a list of the factory machines in each of the
+spaces which in turn form a ViaB site. For each factory, the DNS hostname
+and MAC and IP addresses are recorded. Each factory has a copy of this
+information and uses it to build its /etc/hosts file and the configuration
+of its built-in DHCP service and Squid cache. These network settings are
+required when creating hosts on the ViaB website, which is done from the
+space configuration page.
+
+<p>
+Consequently, it is not a requirement that ViaB factory machines are
+registered with your site's DNS servers, although it is good practice and
+convenient to do so. You may even find that some Grid services reject 
+requests from VMs on factories without matching DNS A and PTR records, as
+the requests appear to come from the factory itself due to Vac's internal NAT
+networking. Even then, it is not a requirement that the registered host
+names match those used internally by the ViaB site.
+
+<h2>DHCP and DNS during installation</h2>
+
+<p>
+When a ViaB factory machine boots up without a USB stick present, it uses PXE 
+and TFTP to begin a modified version of the Scientific Linux install
+procedure. DHCP is used to obtain the registered IP address based on the
+factory's MAC address, and the response from the first neighbouring factory
+to reply is used. Typically this replying factory will be the least loaded 
+machine.
+In normal operation, all of the factories' DHCP servers would respond with the 
+same IP address for a given MAC address. However, the DHCP server also 
+instructs the reinstalling factory to contact the TFTP service on the replying
+factory (which has the quickest DHCP server.) In turn, the files on that TFTP
+service instruct the reinstalling factory to use the Squid cache on the
+replying factory to fetch the images and RPMs needed for reinstallation.
+This &quot;DHCP race&quot; procedure produces a good degree of load balancing 
+and fault tolerance across replying factories.
+
+<p>
+Once the factory has finished reinstallation, it reboots into the installed
+operating system and obtains its IP address from DHCP again and looks up the
+corresponding hostname in its own /etc/hosts file. It now uses its internal
+Squid cache for RPM updates and for cvmfs requests from its VMs.
+
+<h2>Changing hostnames and IP or MAC addresses</h2>
+
+<p>
+If you need to change the registered network details of a factory, you must 
+update them on the website, republish the relevant space's configuration RPM
+and wait one hour for the new RPM to propogate to all of the other factories.
+This ensures that all of the DHCP, /etc/hosts, and Squid access control files 
+have been updated. You can then reboot the affected factory(s) which will
+be able to successfully install from their remaining neighbours. 
+
+<h2>Nameservers</h2>
+
+<p>
+Alongside the question of what to register with the site's DNS service, the
+factories need access to nameservers to look up other addresses outside the
+Vac space. These are set using the Subnets section of the form to
+configure the space in question. If the site's nameservers are not suitable,
+then the Google nameservers 8.8.8.8 and 8.8.4.4 are a viable substitute.
+However, if the site has a restrictive firewall, there may be no option but
+to use the officially permitted nameservers.
+
+<h2>Co-existing with other DHCP services</h2>
+
+<p>
+The ViaB DHCP server configuration is designed to work alongside any
+existing DHCP service at a site. The site DHCP servers should be configured
+to ignore the ViaB factory machines' MAC addresses. In many cases
+this is done by just omitting them from the white list of registered MAC
+addresses the local DHCP service will respond to. The ViaB DHCP servers are
+configured to give non-authoritative responses to MAC addresses they don't
+recognise, which tells that machine to keep trying to find an IP address
+elsewhere.
+
+<p>
+If it is not possible to prevent a local site DHCP service from responding
+to ViaB factory machines for some political or administrative reason, then
+the service should be configured with the same set of IP and MAC addresses
+as registered on the the ViaB website. In addition, the host entry in the
+DHCP configuration must include 
+<pre>filename "pxelinux.0"</pre>
+and
+<pre>next-server HOSTNAME</pre>
+options, where HOSTNAME is one of your factories. This scenario
+introduces that machine as a single point of failure, and a potential
+bottleneck as installation HTTP activity must go through its Squid cache.
+This factory must itself be reinstalled with a USB stick whenever that is 
+necessary. 
+
+<p>
+If you are unable to get changes made to the site DHCP service, then it is
+also possible to install every factory at a site one-by-one with a USB stick.

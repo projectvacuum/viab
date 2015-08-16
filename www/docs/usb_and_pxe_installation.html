@@ -1,7 +1,9 @@
 <h1>USB and PXE installation</h1>
 
 <p>
-Once you have created a basic configuration of your site on the website, you
+Once you have created a 
+<a href="basic_configuration">basic configuration</a> of your site on the 
+website, you
 can publish the configuration RPM and download the USB .iso image that
 publishing also creates. You then need to write the .iso image to a USB
 memory stick. The procedure differs by operating system, but there is a
@@ -29,10 +31,11 @@ installer. It will ask you for network settings twice, and then proceed with
 an automatic installation and reboot. 
 
 <p>
-For the second machine, do not use the USB stick and let it boot via PXE
+For the second machine, do not use the USB stick. Let it boot via PXE
 from the first factory. The installation proceeds as before but this time
 without even the need to give the network settings. The SL6 images and RPMs
-are downloaded via the Squid cache of the factory to answer the DHCP query.
+are downloaded via the Squid cache of the 
+first factory to answer the DHCP query.
 Since ViaB runs the Squids with peering, RPMs already cached on any of the
 factories will be fetched locally rather than downloaded into your site
 again. 

@@ -1,0 +1,102 @@
+<h1>Basic site configuration</h1>
+
+<p>
+This page explains how to create a basic configuration of a Vac-in-a-Box
+(ViaB) site for testing, with the intention to add real experiments'
+details once everything is working. The instructions should be
+straightforward to follow if you go through them while looking
+at the ViaB admin website.
+
+<p>
+To get started with a new ViaB site, you should ask the ViaB
+admins (currently Andrew McNab) to add it to the ViaB website and give the
+X.509 DNs of the people who should have admin rights over your site. The
+site must use its existing name in the GOCDB  
+(eg CERN or UKI-NORTHGRID-MAN-HEP) within ViaB too.
+
+<p>
+The site will then be created and listed on the <a href="/admin/">All
+Vac-in-a-Box sites</a> page. With your X.509 certificate loaded in your
+browser you can navigate the blank configuration for your new site.
+
+<h2>Add a space and ssh keys</h2>
+
+<p>
+From your site's main page, add a space to contain a set of similar
+factory machines which will co-operate. Spaces are equivalent to Compute
+Elements at CREAM or ARC based sites. A space name must take form of a
+lowercase DNS name. It should be within DNS space you are entitled to use
+but does not really have to be registered in it. Currently, it is only used
+as a unique identifier with CE-like syntax.
+
+<p>
+To be able to ssh into the factory machines at your site, you should add
+one or more ssh RSA public keys to the site's configuration. These will be
+used to make the /root/.ssh/authorized_keys file on the factories. The
+public key takes the form of the long, second string on each line of an ssh
+.authorized_keys or id_rsa.pub file.
+
+<h2>Add hosts and subnets</h2>
+
+<p>
+Next go to the page about the space you have created. This has information
+about when the space's configuration RPM was last published, and a link
+to the .iso image you can put on a USB stick to install the first 
+factory.
+
+<p>
+But before that, add at least one and ideally about three hosts in the
+&quot;Hosts in this space&quot; section. You will need to supply the
+hostname, IP and MAC addresses. The defaults for the other settings are
+sufficient for testing, but you will probably want to increase
+total_machines and cpu_total to match the number of logical processors on
+your factory machines. You can edit all of these settings on the host's
+own page. The default value of these settings are also based on the factory
+you've edited most recently in this space.
+
+<p>
+To match the networks containing their IP addresses, you must also define one
+or more Subnets. The system will automatically take care of using the right
+subnet details for a given host. So for example, if you a host with IP
+address 192.168.1.9 then subnet 192.168.1.0 with netmask 255.255.255.0 and
+router 192.168.1.250 would be set up when 192.168.1.9 is
+installed. 
+
+<p>
+You also need to give the nameservers to be used by all factories within
+that subnet. Nameservers must be given in a comma separated list. If you're
+unsure what to use, then Google's 8.8.8.8,8.8.4.4 will problably work unless
+you have a restrictive firewall.
+
+<h2>Add a vmtype</h2>
+
+<p>
+Next define the example vmtype. This is the configuration for a type of VM
+that the factory will be able to create. Enter example as the name of the
+vmtype in the form and add it to the space.
+
+<p>
+Now go to the page about the example vmtype and add these options one by
+one:
+<ul>
+<li>user_data_option_cvmfs_proxy = http://169.254.169.254:3128
+<li>root_image = https://www.gridpp.ac.uk/vac/example/cernvm3.iso
+<li>user_data = https://www.gridpp.ac.uk/vac/example/user_data
+<li>target_share = 1.0
+</ul>
+
+<p>
+You do not need to upload a .p12 file as the example vmtype doesn't use 
+one.
+
+<h2>Doing a first install</h2>
+
+<p>
+Go back to the page about the space you defined and click on Publish. The
+date and time of last publication should update to now. The webserver is
+now ready to respond to requests from factories for the configuration
+details you have set. 
+
+<p>
+To install the first factory machines, download the USB .iso image file and
+read the page about <a href="usb_and_pxe">USB and PXE installation</a>. 
