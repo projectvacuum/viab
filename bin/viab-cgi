@@ -306,9 +306,9 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
   print '<h2>Clone vmtype</h2>'
 
   print '<form method="post" action="' + requestURI + '">'
-  print '<input type="text" name="optname"> = <input type="text" name="value">'
+  print 'New vmtype name: <input type="text" name="clonename">'
   htmlFormCookie(userDN)
-  print '<input type="submit" value="Add option"> <input type="hidden" name="action" value="addoption">'  
+  print '<input type="submit" value="Clone vmtype"><input type="hidden" name="action" value="clonevmtype">'
   print '</form>'
 
   print '<h2>Certificate/key .p12 file</h2>'
