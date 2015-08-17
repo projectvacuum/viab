@@ -709,15 +709,24 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '<h1>Space&nbsp;' + spaceName + '</h1>'
 
   print '<form method="post" action="' + requestURI + '">'
-  print '<p>Configuration RPM for space ' + spaceName + ' was published on ' + str(published) + '. ' 
+
+  if published:
+    print '<p>The configuration RPM for space ' + spaceName + ' was published on ' + str(published) + '. ' 
+  else:
+    print '<p>The configuration RPM for space ' + spaceName + ' has not been published yet. '
+
   print '<input type="hidden" name="action" value="publish">'
 
   htmlFormCookie(userDN)
   print '<p><input type="submit" value="Publish configuration RPM">'
   print '</form>'
 
-  print '<p>If you need to (re)install this space from scratch, boot the first factory using the '
-  print '<a href="/iso/' + siteName + '/' + spaceName + '/viab-usb.iso">USB .iso image</a>.'
+  if published:
+    print '<p>If you need to (re)install this space from scratch, boot the first factory using the '
+    print '<a href="/iso/' + siteName + '/' + spaceName + '/viab-usb.iso">USB .iso image</a>.'
+  else:
+    print '<p>Once the RPM has been publihsed, you will be able to downlaod the USB .iso boot image.'
+  
 
   print '<h2>Hosts in this space</h2>'
 
@@ -974,8 +983,14 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
   n=0    
   for row in rows:
     print '<tr><td class="' + oddEven(n) + '"><a href="/admin/' + siteName + '/' + row['spacename'] + '/">' + row['spacename'] + '</a></td>'
-    print '<td class="' + oddEven(n) + '"><a href="/iso/' + siteName + '/' + row['spacename'] + '/viab-usb.iso">Download</a></td>' 
-    print '<td class="' + oddEven(n) + '">' + str(row['published']) + '</td></tr>\n'
+
+    if row['published'] is None:
+      print '<td class="' + oddEven(n) + '" style="text-align: center"> - </td>' 
+      print '<td class="' + oddEven(n) + '" style="text-align: center">Never</td></tr>\n'
+    else:
+      print '<td class="' + oddEven(n) + '"><a href="/iso/' + siteName + '/' + row['spacename'] + '/viab-usb.iso">Download</a></td>' 
+      print '<td class="' + oddEven(n) + '">' + str(row['published']) + '</td></tr>\n'
+    
     n += 1 
                 
   print '</table>'
@@ -1012,7 +1027,7 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
   print '<input type="submit" value="Delete selected keys">'
   print '</form>'
 
-  print '<h3>Add an ssh key</h3>'
+  print '<h3>Add an RSA ssh key</h3>'
   print '<p>The ssh keys will be installed on Vac factory machines to allow ssh access as root'
   print '<form method="post" action="' + requestURI + '">'
   print 'Key: <input type="text" name="keyvalue"> '
@@ -1251,7 +1266,7 @@ if spaceName:
     cur.execute('SELECT spaceid,published FROM spaces WHERE siteid=%s AND spacename=%s', (siteID, spaceName))
     rows = cur.fetchall() 
     spaceID = int(rows[0]['spaceid'])
-    published = str(rows[0]['published'])
+    published = rows[0]['published']
   except:
     print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
     print 'Location: https://viab.gridpp.ac.uk/admin/' + siteName + '/'
