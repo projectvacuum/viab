@@ -82,14 +82,57 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
 
   global cur
   
+  # All values here must be presented as strings!
   vmtypePresets = {
 
-   'example' : { url        : 'sdfs',
-                 root_image : 'sdfsdfs' },
+   'example' : { 'vm_model'              : 'cernvm3',
+                 'user_data'             : 'https://www.gridpp.ac.uk/vac/example/user_data',
+                 'root_image'            : 'https://www.gridpp.ac.uk/vac/example/cernvm3.iso',
+                 'log_machineoutputs'    : 'True',
+                 'backoff_seconds'	 : '600',
+                 'fizzle_seconds'	 : '600',
+                 'max_wallclock_seconds' : '900', 
+                 'target_share'          : '1.0',
+                 'root_public_key'       : '/root/.ssh/id_rsa.pub',
+                 'user_data_option_cvmfs_proxy' : 'http://169.254.169.254:3128/'
+               },
 
-   'GridPP'  : { url        : 'sdfs',
-                 root_image : 'sdfsdfs' }   
+   'GridPP' :  { 'vm_model'              : 'cernvm3',
+                 'user_data'             : 'https://www.gridpp.ac.uk/vac/gridpp/user_data',
+                 'root_image'            : 'https://www.gridpp.ac.uk/vac/gridpp/cernvm3.iso',
+                 'log_machineoutputs'    : 'True',
+                 'backoff_seconds'	 : '3600',
+                 'fizzle_seconds'	 : '600',
+                 'max_wallclock_seconds' : '100000',
+                 'target_share'          : '1.0',
+                 'root_public_key'       : '/root/.ssh/id_rsa.pub',
+                 'heartbeat_file'        : 'vm-heartbeat',
+                 'heartbeat_seconds'     : '600',
+                 'accounting_fqan'	 : '/gridpp/Role=NULL/Capability=NULL',
+                 'user_data_option_dirac_site'  : 'CHANGEME',
+                 'user_data_option_submit_pool' : 'gridppPool',
+                 'user_data_file_hostcert'      : 'hostcert.pem',
+                 'user_data_file_hostkey'       : 'hostkey.pem',
+                 'user_data_option_cvmfs_proxy' : 'http://169.254.169.254:3128/'
+               },
 
+   'LHCb'   :  { 'vm_model'              : 'cernvm3',
+                 'user_data'             : 'https://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/user_data',
+                 'root_image'            : 'https://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/cernvm3.iso',
+                 'log_machineoutputs'    : 'True',
+                 'backoff_seconds'	 : '3600',
+                 'fizzle_seconds'	 : '600',
+                 'max_wallclock_seconds' : '172800',
+                 'target_share'          : '1.0',
+                 'root_public_key'       : '/root/.ssh/id_rsa.pub',
+                 'heartbeat_file'        : 'vm-heartbeat',
+                 'heartbeat_seconds'     : '600',
+                 'accounting_fqan'	 : '/lhcb/Role=NULL/Capability=NULL',
+                 'user_data_option_dirac_site'  : 'CHANGEME',
+                 'user_data_file_hostcert'      : 'hostcert.pem',
+                 'user_data_file_hostkey'       : 'hostkey.pem',
+                 'user_data_option_cvmfs_proxy' : 'http://169.254.169.254:3128/'
+               }
                   }
 
   try:
@@ -140,9 +183,9 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
       presetVmtypeName = cgiForm['submit'].value.strip()
 
       if presetVmtypeName in vmtypePresets:
-        for presetOptname in vmtypePresets[presetVmtypeName]:                
-          cur.execute('INSERT INTO vmtypeopts SET vmtypeid=%s,optname=%s,value=%ss', 
-                      (vmtypeID, 
+        for presetOptName in vmtypePresets[presetVmtypeName]:                
+          cur.execute('INSERT INTO vmtypeopts SET vmtypeid=%s,optname=%s,value=%s',
+                      (vmtypeID,
                        presetOptName, 
                        vmtypePresets[presetVmtypeName][presetOptName]))      
       else:
@@ -152,7 +195,7 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
         return
 
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
-      print 'Location: https://viab.gridpp.ac.uk/admin/' + siteName + '/' + spaceName + '/vmtypes/' + cloneName + '/'
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
       print
       return
   except:
@@ -226,7 +269,7 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
     print '<form method="post" action="' + requestURI + '">' 
     print '<input type="hidden" name="action" value="updateoption">'
     print '<input type="hidden" name="optname" value="' + row['optname'] + '">'
-    print '<input type="text" name="value" value="' + row['value'] + '">'
+    print '<input type="text" name="value" value="' + row['value'] + '" size="40">'
     htmlFormCookie(userDN)
     print '<input type="submit" value="Update option">'
     print '</form>'    
@@ -245,12 +288,13 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
 
   print '<h3>Pre-set options</h3>'
 
-  print '<p>You can use the buttons below to add preset options to this '
+  print '<p>You can use the buttons below to add a group of preset options to this '
   print 'vmtype if they do not already exist. Some options will still need '
-  print "to be edited in line with the vmtype's own instructions and they "
-  print 'have the default value PLACEHOLDER .'
+  print "to be edited in line with the vmtype's own instructions and these "
+  print 'have the default value CHANGEME.'
 
   print '<form method="post" action="' + requestURI + '">'
+  print '<p style="text-align: center">vmtype name: '
   htmlFormCookie(userDN)
   print '<input type="hidden" name="action" value="addpresets">'
 
