@@ -16,7 +16,7 @@ convenient to do so. You may even find that some Grid services reject
 requests from VMs on factories without matching DNS A and PTR records, as
 the requests appear to come from the factory itself due to Vac's internal NAT
 networking. Even then, it is not a requirement that the registered host
-names match those used internally by the ViaB site.
+names match those used when defining the ViaB site.
 
 <h2>DHCP and DNS during installation</h2>
 
@@ -57,9 +57,9 @@ be able to successfully install from their remaining neighbours.
 <p>
 Alongside the question of what to register with the site's DNS service, the
 factories need access to nameservers to look up other addresses outside the
-Vac space. These are set using the Subnets section of the form to
+Vac space. These are set within the Subnets section of the form to
 configure the space in question. If the site's nameservers are not suitable,
-then the Google nameservers 8.8.8.8 and 8.8.4.4 are a viable substitute.
+then the Google nameservers 8.8.8.8,8.8.4.4 are a viable substitute.
 However, if the site has a restrictive firewall, there may be no option but
 to use the officially permitted nameservers.
 
