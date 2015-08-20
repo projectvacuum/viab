@@ -68,29 +68,55 @@ mkdir -p $DOCUMENT_ROOT/SRPMS/$VIAB_SITENAME/$VIAB_SPACENAME/$VIAB_VERSION \
          $DOCUMENT_ROOT/ks/$VIAB_SITENAME/$VIAB_SPACENAME \
          $DOCUMENT_ROOT/iso/$VIAB_SITENAME/$VIAB_SPACENAME
 
-# Update access control
+# Update HTTPS access control
 echo -n '#### Make access control ' ; date
 
+(
+echo 'SSLRequire \'
+
+cat $TEMPDIR/viab-conf/viab/hosts-network | (
+  while read mac host ip
+  do
+    echo " %{REMOTE_ADDR} == \"$ip\" or \\"
+  done
+)
+
+cat $TEMPDIR/viab-conf/viab/admins-list | (
+  while read dn
+  do
+    echo " %{SSL_CLIENT_S_DN} == \"$dn\" or \\"
+  done
+)
+
+echo ' 1==2'
+) > $DOCUMENT_ROOT/repo/$VIAB_SITENAME/.https.htaccess
+
+cp -f $DOCUMENT_ROOT/repo/$VIAB_SITENAME/.https.htaccess \
+      $DOCUMENT_ROOT/ks/$VIAB_SITENAME/.https.htaccess
+
+cp -f $DOCUMENT_ROOT/repo/$VIAB_SITENAME/.https.htaccess \
+      $DOCUMENT_ROOT/SRPMS/$VIAB_SITENAME/.https.htaccess
+
+# Update HTTP access control
 cat $TEMPDIR/viab-conf/viab/hosts-network | (
 
-iplist=''
+  iplist=''
+  while read mac host ip
+  do
+    iplist="$iplist $ip"
+  done
+  
+  echo 'Order Deny,Allow'
+  echo 'Deny from all'
+  echo "Allow from $iplist"
 
-while read mac host ip
-do
-  iplist="$iplist $ip"
-done
+) > $DOCUMENT_ROOT/repo/$VIAB_SITENAME/.http.htaccess
 
-echo 'Order Deny,Allow'
-echo 'Deny from all'
-echo "Allow from$iplist"
-
-) > $DOCUMENT_ROOT/repo/$VIAB_SITENAME/.htaccess
-
-cp -f $DOCUMENT_ROOT/repo/$VIAB_SITENAME/.htaccess \
-      $DOCUMENT_ROOT/ks/$VIAB_SITENAME/.htaccess
-
-cp -f $DOCUMENT_ROOT/repo/$VIAB_SITENAME/.htaccess \
-      $DOCUMENT_ROOT/SRPMS/$VIAB_SITENAME/.htaccess
+cp -f $DOCUMENT_ROOT/repo/$VIAB_SITENAME/.http.htaccess \
+      $DOCUMENT_ROOT/ks/$VIAB_SITENAME/.http.htaccess
+      
+cp -f $DOCUMENT_ROOT/repo/$VIAB_SITENAME/.http.htaccess \
+      $DOCUMENT_ROOT/SRPMS/$VIAB_SITENAME/.http.htaccess
 
 # Make RPM in $TEMPDIR
 echo -n '#### Make RPMs and repo ' ; date

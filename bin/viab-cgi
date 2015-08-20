@@ -501,6 +501,25 @@ def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID):
   except:
     return None
 
+  # Create admins-list file
+
+  try:
+    fAdminsList  = open(tempDir + '/viab-conf/viab/admins-list', 'w')
+
+    for dn in viab_cgi_conf.adminDNs:
+      fAdminsList.write(dn + '\n')
+
+    cur.execute('SELECT dn FROM siteadmins WHERE siteid=%s', siteID)
+    rows = cur.fetchall()
+
+    for row in rows:
+      fAdminsList.write(row['dn'] + '\n')
+
+    fAdminsList.close()
+
+  except:
+    return None
+
   # Create the vmtypes directories, p12 files, and .conf files for this space
 
   try:
