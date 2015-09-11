@@ -382,7 +382,7 @@ def oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, h
   except:
     pass
 
-  htmlHeader('Host ' + hostName)
+  htmlHeader('Factory ' + hostName)
     
   cur.execute('SELECT ip,mac,mb_per_machine,udp_timeout_seconds,total_machines,cpu_total,cpu_per_machine,hs06_per_cpu FROM hosts WHERE hostID=%s', hostID)
   
@@ -393,7 +393,7 @@ def oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, h
          '/ <a href="/admin/' + siteName + '/' + spaceName + '/">' + spaceName + '</a> ' +
          '/ ' + hostName + '</div>')
 
-  print '<h1>Host ' + hostName + '</h1>'
+  print '<h1>Factory ' + hostName + '</h1>'
     
   print '<form method="post" action="' + requestURI + '">'
  
@@ -408,7 +408,7 @@ def oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, h
   print '<tr><td>cpu_per_machine:</td><td><input type="text" name="cpu_per_machine" value="' + str(rows[0]['cpu_per_machine']) + '"></td></tr>'
   print '<tr><td>hs06_per_cpu:</td><td><input type="text" name="hs06_per_cpu" value="' + str(rows[0]['hs06_per_cpu']) + '"></td></tr>'
 
-  print '<tr><td colspan=2 style="text-align: center"><input type="submit" value="Update host"></td></tr>'
+  print '<tr><td colspan=2 style="text-align: center"><input type="submit" value="Update factory"></td></tr>'
   htmlFormCookie(userDN)
   print '<input type="hidden" name="action" value="updatehost">'
   print '</table>'
@@ -747,7 +747,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     print '<p>Once the RPM has been publihsed, you will be able to downlaod the USB .iso boot image.'
   
 
-  print '<h2>Hosts in this space</h2>'
+  print '<h2>Factories in this space</h2>'
 
   print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletehosts">'
     
@@ -765,7 +765,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
            '</tr>\n') 
     n += 1
                 
-  print '<tr><td colspan="6" style="text-align: center"><input type="submit" value="Delete selected hosts"></td></tr>'
+  print '<tr><td colspan="6" style="text-align: center"><input type="submit" value="Delete selected factories"></td></tr>'
   print '</table>'
 
   htmlFormCookie(userDN)
@@ -773,7 +773,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
 
   # Add a host, possibly with defaults from last host updated
 
-  print '<h3>Add a host</h3>'
+  print '<h3>Add a factory</h3>'
   
   print '<form method="post" action="' + requestURI + '">'
   print '<table>'
@@ -801,7 +801,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '<tr><td>cpu_per_machine:</td><td><input type="text" name="cpu_per_machine" value="' + str(row['cpu_per_machine']) + '"></td></tr>'
   print '<tr><td>hs06_per_cpu:</td><td><input type="text" name="hs06_per_cpu" value="' + str(row['hs06_per_cpu']) + '"></td></tr>'
 
-  print '<tr><td colspan=2><input type="submit" value="Add host"></td><tr>'
+  print '<tr><td colspan=2><input type="submit" value="Add factory"></td><tr>'
   htmlFormCookie(userDN)
   print '<input type="hidden" name="action" value="addhost">'
   print '</table>'
