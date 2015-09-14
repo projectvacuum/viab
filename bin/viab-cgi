@@ -73,10 +73,16 @@ def htmlFormCookie(userDN):
 def htmlHeader(title):
   print 'Content-Type: text/html'
   print
-  print open('/var/lib/viab/www/header.html', 'r').read().replace('##TITLE##',title)
+  print '<html><head><title>' + title + '</title>'
+  print open('/var/lib/viab/www/header.html', 'r').read()
 
-def htmlFooter():
-  print open('/var/lib/viab/www/footer.html', 'r').read()
+def htmlFooter(userDN):
+  if userDN:
+    print open('/var/lib/viab/www/footer.html', 'r').read().replace('<!--##YOUARE##-->','You are ' + userDN)
+  else:
+    print open('/var/lib/viab/www/footer.html', 'r').read()
+    
+  print '</html>'
 
 def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, vmtypeName, vmtypeID):
 
@@ -325,7 +331,7 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
   print '<br><input type="submit" value="Upload .p12 file"> <input type="hidden" name="action" value="uploadp12">'  
   print '</form>'
 
-  htmlFooter()
+  htmlFooter(userDN)
 
 def oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, hostName, hostID):
 
@@ -414,7 +420,7 @@ def oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, h
   print '</table>'
   print '</form>'
  
-  htmlFooter()
+  htmlFooter(userDN)
   
 def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID):
 
@@ -882,7 +888,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '<input type="hidden" name="action" value="addsubnet">'
   print '</form>'
 
-  htmlFooter()
+  htmlFooter(userDN)
 
 def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
 
@@ -1120,7 +1126,7 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
     print '<input type="hidden" name="action" value="addx509dn">'
     print '</form>'
 
-  htmlFooter()
+  htmlFooter(userDN)
 
 def allSites(requestURI, userDN, cgiForm):
 
@@ -1177,7 +1183,7 @@ def allSites(requestURI, userDN, cgiForm):
     print '<input type="hidden" name="action" value="addsite">'
     print '</form>'
 
-  htmlFooter()
+  htmlFooter(userDN)
   
 #
 # PROGRAM MAIN
@@ -1185,6 +1191,11 @@ def allSites(requestURI, userDN, cgiForm):
 
 requestURI   = os.environ['REQUEST_URI']
 documentRoot = os.environ['DOCUMENT_ROOT']
+
+try:
+  userDN = os.environ['SSL_CLIENT_S_DN']
+except:  
+  userDN = None
 
 if requestURI == '/':
   htmlHeader('Vac-in-a-Box')
@@ -1194,7 +1205,7 @@ if requestURI == '/':
   except:
     pass  
 
-  htmlFooter()
+  htmlFooter(userDN)
   sys.exit(0)
     
 elif requestURI[:6] == '/docs/':
@@ -1213,17 +1224,15 @@ elif requestURI[:6] == '/docs/':
   except:
     pass  
 
-  htmlFooter()
+  htmlFooter(userDN)
   sys.exit(0)
 
 # From now on, a client certificate is required
 
-try:
-  userDN = os.environ['SSL_CLIENT_S_DN']
-except:  
+if not userDN:
   htmlHeader('Certificate required')
   print '<p>You cannot access this page without a client certificate!'
-  htmlFooter()
+  htmlFooter(userDN)
   sys.exit(0)
   
 db  = MySQLdb.connect(host="localhost", user=viab_cgi_conf.mysqlUser, passwd=viab_cgi_conf.mysqlPassword, db='viab')
@@ -1339,13 +1348,13 @@ if action:
   except:
       htmlHeader('Page expired')
       print '<p>Page expired'
-      htmlFooter()
+      htmlFooter(userDN)
       sys.exit(0)
   
   if formHash != calculatedHash:
       htmlHeader('Page has expired')
       print '<p>Page has expired'
-      htmlFooter()
+      htmlFooter(userDN)
       sys.exit(0)
 
 if hostName:

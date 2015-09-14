@@ -1,9 +1,6 @@
-<html>
-<head>
-<title>##TITLE##</title>
 <style>
 html,body { font-family: "Helvetica Neue", Helvetica, Roboto, Arial, sans-serif; margin:0; padding:0; color: #000000; 
- background: #E8E8E8; }
+ background: #D8D8D8; }
 body,td { font-size: medium;   line-height: 1.45em; text-align: left;}
 small   { font-size: x-small; line-height: 1.45em; }
 pre     { font-size: medium;   line-height: 1.45em; font-family: monospace; }
@@ -39,49 +36,166 @@ div.breadcrumbs { float: right; background-color: EEEEFF; padding-left: 5px; pad
  	    
 #topstrip a {	color: #FFFFFF; text-decoration: none; }
 
-#mainbox { 
-                color: #505050;
-                width: 800px;
+#tablebox {     display: table; 
  	      	margin: 0 auto;
-                margin-top: 10px; 
+                margin-top: 10px; }
+
+.rowbox {       display: table-row; }
+
+#navbox {       display: table-cell; 
+                color: #505050;
 	      	padding-top: 10px;
 	      	padding-left: 10px;
 	      	padding-right: 10px;
 	      	padding-bottom: 10px;
               	border-top-left-radius: 7px;
+              	border-top: 2px solid #196FA6;
+              	border-left: 2px solid #196FA6;
+              	border-bottom: 2px solid #196FA6;
+	      	background-color: #FFFFFF; }
+
+#mainbox {   
+                display: table-cell; 
+                color: #505050;
+                width: 800px;
+	      	padding-top: 10px;
+	      	padding-left: 10px;
+	      	padding-right: 10px;
+	      	padding-bottom: 10px;
               	border-top-right-radius: 7px;
               	border: 2px solid #196FA6;
 	      	background-color: #FFFFFF;
  	       }
  	  	    
-#bottombox { 
+#navbottombox { 
+                display: table-cell; 
                 color: #505050;
  	      	vertical-align: middle;
  	      	text-align: center;
-                width: 800px;
- 	      	margin: 0 auto;
-                margin-top: 0px; 
 	      	padding-top: 10px;
 	      	padding-left: 10px;
 	      	padding-right: 10px;
 	      	padding-bottom: 10px;
               	border-bottom-left-radius: 7px;
-              	border-bottom-right-radius: 7px;
               	border-left: 2px solid #196FA6;
+              	border-bottom: 2px solid #196FA6;
+	      	background-color: #F0F0F0;
+ 	       }
+
+#mainbottombox { 
+                display: table-cell; 
+                color: #505050;
+ 	      	vertical-align: middle;
+ 	      	text-align: center;
+                width: 800px;
+	      	padding-top: 10px;
+	      	padding-left: 10px;
+	      	padding-right: 10px;
+	      	padding-bottom: 10px;
+              	border-bottom-right-radius: 7px;
               	border-right: 2px solid #196FA6;
               	border-bottom: 2px solid #196FA6;
-	      	background-color: #F8F8F8;
+	      	background-color: #F0F0F0;
  	       }
+
+ul.lhlevel1 {
+   list-style: none;
+   margin: 0px;
+   padding: 0;
+}
+
+ul.lhlevel2 {
+   line-height: 1.4em;
+   list-style: none;
+   margin: 0px;
+   padding: 0.3em;
+}
+
+li.lhlevel1 {
+   text-decoration: none;
+   font-size: 1em;
+   list-style: none;
+   line-height: 1.5em;
+   padding: 0.3em;
+}
+
+li.lhlevel2 {
+   text-decoration: none;
+   font-size: 1em;
+   line-height: 1.3em;
+   list-style: none;
+   background: url( /block.gif ) no-repeat 0px 5px;
+   margin: 0;
+   padding-left: 15px; 
+            }
+
+a.lhlevel1:link    { color: #505050; text-decoration: none; }
+a.lhlevel1:visited { color: #505050; text-decoration: none; }
+a.lhlevel1:hover   { color: #FF0000; text-decoration: underline; }
+a.lhlevel1:active  { color: #FF0000; text-decoration: underline; }
+
+a.lhlevel2:link    { color: #505050; text-decoration: none; }
+a.lhlevel2:visited { color: #505050; text-decoration: none; }
+a.lhlevel2:hover   { color: #FF0000; text-decoration: underline; }
+a.lhlevel2:active  { color: #FF0000; text-decoration: underline; }
+
 </style>
 </head>
 <body>
 <div id="topstrip">
 <a href="http://www.gridpp.ac.uk/vac/"><img src="/vaclogowhite.png"
   align="absmiddle" border="0"></a> &nbsp; &nbsp; &nbsp;
-<a href="/">Vac-in-a-Box</a> &nbsp; &nbsp; &nbsp;
-<a href="https://viab.gridpp.ac.uk/admin/">Sites&nbsp;admin</a> &nbsp; &nbsp; &nbsp;
-<a href="/docs/">Docs</a>
+<a href="https://viab.gridpp.ac.uk/">Vac-in-a-Box</a> &nbsp; &nbsp; &nbsp;
+<a href="/admin/">Sites'&nbsp;admin</a> &nbsp; &nbsp; &nbsp;
+<a href="/docs/">Docs</a> &nbsp; &nbsp; &nbsp;
+<a href="http://www.gridpp.ac.uk/vac/">Vac</a> &nbsp; &nbsp; &nbsp;
+<a href="http://www.gridpp.ac.uk/">GridPP</a> &nbsp; &nbsp; &nbsp;
 </div>
 
+<div id="tablebox">
+<div class="rowbox">
+<div id="navbox">
+
+<ul class="lhlevel1">
+ <li class="lhlevel1"><a href="/" class="lhlevel1">Vac-in-a-Box</a>
+    <ul class="lhlevel2">
+    <li class="lhlevel2"><a href="/admin/" class="lhlevel2">Sites'&nbsp;admin</a></li>
+    <li class="lhlevel2"><a href="/docs/" class="lhlevel2">Docs</a></li>
+    </ul>
+ </li>         
+</ul>
+
+<ul class="lhlevel1">
+ <li class="lhlevel1"><a href="http://www.gridpp.ac.uk/vac/" class="lhlevel1">Vac home</a></li>
+</ul>
+
+<ul class="lhlevel1">
+ <li class="lhlevel1"><a href="/vcycle/" class="lhlevel1">Vcycle home</a></li>
+</ul>
+
+<ul class="lhlevel1">
+ <li class="lhlevel1"><a href="/vac/versionpolicy.html" class="lhlevel1">Developers</a>
+    <ul class="lhlevel2">
+    <li class="lhlevel2"><a href="/vac/versionpolicy.html" class="lhlevel2">Version policy</a></li>
+    <li class="lhlevel2"><a href="https://github.com/vacproject" class="lhlevel2">GitHub repository</a></li>
+    <li class="lhlevel2"><a href="http://svnweb.cern.ch/world/wsvn/vacproject/" class="lhlevel2">Old SVN repository</a></li>
+    </ul>
+ </li>         
+</ul>
+
+<ul class="lhlevel1">
+ <li class="lhlevel1"><a href="/vac/" class="lhlevel1">VO Docs</a>
+    <ul class="lhlevel2">
+    <li class="lhlevel2"><a href="http://svnweb.cern.ch/world/wsvn/vacproject/atlas/README" class="lhlevel2">ATLAS</a></li>
+    <li class="lhlevel2"><a href="https://www.gridpp.ac.uk/wiki/Vac_configuration_for_GridPP_DIRAC" class="lhlevel2">GridPP</a></li>
+    <li class="lhlevel2"><a href="https://twiki.cern.ch/twiki/bin/view/LHCb/VacConfiguration" class="lhlevel2">LHCb</a></li>
+    <li class="lhlevel2"><a href="/vac/cms.html" class="lhlevel2">CMS</a></li>
+    </ul>
+ </li>
+</ul>
+
+
+</div endof="navbox">
 <div id="mainbox">
 <!-- end of header -->
+
