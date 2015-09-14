@@ -8,6 +8,11 @@
 export VIAB_SITENAME=`cat /etc/viab/sitename`
 export VIAB_SPACENAME=`cat /etc/viab/spacename`
 
+# Make sure hostname matches ViaB expectation (site DHCP might be different)
+HOSTIP=`ifconfig eth0 | grep 'inet addr' | cut -d: -f2- | cut -d' ' -f1`
+export HOSTNAME=`grep "$HOSTIP\$" /etc/viab/hosts-network | cut -d' ' -f2`
+hostname $HOSTNAME
+
 cp -f /etc/cron.daily/yum-autoupdate /etc/cron.hourly/yum-autoupdate
 sed -i -e 's/^ENABLED=.*/ENABLED=true/' -e 's/^SENDEMAIL=.*/SENDEMAIL=false/' -e 's/^MAXWAITTIME=.*/MAXWAITTIME=50/' /etc/sysconfig/yum-autoupdate
 
