@@ -1267,10 +1267,10 @@ if siteName:
   else:
     if userDN not in viab_cgi_conf.adminDNs:  
       try:
-        cur.execute('SELECT siteid FROM sites LEFT JOIN siteadmins ON sites.siteid=siteadmins.siteid WHERE dn=%s AND sites.siteid=%s', (userDN, siteID))
+        cur.execute('SELECT sites.siteid FROM sites LEFT JOIN siteadmins ON sites.siteid=siteadmins.siteid WHERE dn=%s AND sites.siteid=%s', (userDN, siteID))
 
         rows = cur.fetchall()
-        if rows.len == 0:
+        if len(rows) == 0:
           print 'Status: 403 Forbidden'
           print 'Content-Type: text/html'
           print
