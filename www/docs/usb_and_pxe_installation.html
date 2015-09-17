@@ -18,9 +18,9 @@ You should also configure the BIOS to boot from USB (or CD/DVD) if available,
 then try PXE or network, then try the first hard drive.
 
 <p>
-Boot the first factory from the USB stick but make sure you remove the stick
+Boot the first factory from the USB stick but make sure you <b>remove the stick
 as soon as initrd.img has finished loading and before the hardware
-initialization message. If you don't do this, the USB device is likely to be
+initialization message.</b> If you don't do this, the USB device is likely to be
 treated as /dev/sda, preventing the real disk(s) from being configured and
 probably resulting in the corruption of the USB stick. If this happens, you
 will need to rewrite the image to the stick.
