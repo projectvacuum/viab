@@ -909,7 +909,13 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
   try:
     if cgiForm['action'].value == 'addsshkey' and cgiForm['keyvalue'].value:
          
-      keyValue = cgiForm['keyvalue'].value.strip()
+      keyValueSplit = cgiForm['keyvalue'].value.split()
+
+      if keyValueSplit[0] == 'ssh-rsa' or keyValueSplit[0] == 'ssh-dss':
+        keyValue = keyValueSplit[1]
+      else:
+        keyValue = keyValueSplit[0]
+      
       try:
         comment = cgiForm['comment'].value.strip()
       except:
