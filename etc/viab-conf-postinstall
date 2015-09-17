@@ -47,7 +47,7 @@ done
 ) > /etc/hosts     
 
 # Put our dnsmasq wrapper in place
-if [ -f /usr/sbin/dnsmasq ] ; then
+if [ ! -L /usr/sbin/dnsmasq ] ; then
  mv -f /usr/sbin/dnsmasq /usr/sbin/dnsmasq-real
  ln -s /usr/sbin/dnsmasq-wrapper /usr/sbin/dnsmasq
 fi
