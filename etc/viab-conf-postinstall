@@ -9,7 +9,7 @@ export VIAB_SITENAME=`cat /etc/viab/sitename`
 export VIAB_SPACENAME=`cat /etc/viab/spacename`
 
 # Make sure hostname matches ViaB expectation (site DHCP might be different)
-HOSTIP=`ifconfig eth0 | grep 'inet addr' | cut -d: -f2- | cut -d' ' -f1`
+HOSTIP=`hostname -I | tr ' ' '\n'| egrep -v '^169\.|^127\.' | head -1`
 if [ "$HOSTIP" ] ; then
  export HOSTNAME=`grep " $HOSTIP\$" /etc/viab/hosts-network | cut -d' ' -f2`
  hostname $HOSTNAME
