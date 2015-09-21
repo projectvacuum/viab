@@ -1,0 +1,41 @@
+<h1>Adding vmtypes</h1>
+
+<p>
+You can add production vmtypes to use instead of the example vmtype on the
+page for each space at your site. There is a list of vmtypes already defined
+and then a form for adding new ones. Create a new vmtype and then go to the
+vmtype's own page to edit its options. The vmtype consists of a set of
+option/value pairs. Options can be added one by one, and changed using the
+Update button that appears beside each one.
+
+<p>
+To make it easier to get started, there are preset buttons for ATLAS, CMS,
+GridPP DIRAC, and LHCb experiment VMs. Use these to populate the
+option/value pairs after creating a suitable vmtype. Values that you must
+change are filled with the placeholder &quot;CHANGEME&quot;. The list of 
+VO&nbsp;Docs links on the left hand side of any page on the Vac-in-a-Box
+website has detailed guidance about configuring these site-specific options.
+
+<p>
+Vmtypes can also have one .p12 file uploaded to them, containing a private
+key and certificate that Vac will give to the VM to allow it to authenticate
+itself to the experiments' central services. The .p12 file must be
+passphrase-encrypted, and the passphrase must match the text contained in
+the file /etc/viabkeys/viab-conf-passphrase on each Vac factory. 
+
+<p>
+The directory /etc/viabkeys is on a persistent partition which Vac-in-a-Box
+creates and which is not altered when the factory is renstalled by
+Vac-in-a-Box. Consequently you only need to write the viab-conf-passphrase
+file once, and may be able to do this to a large number of factories in a
+one go (eg with a script which does scp multiple times).
+
+<p>
+The passphrase encrypted .p12 file can be created from PEM files with the 
+following OpenSSL command:
+<pre>
+openssl pkcs12 -export -out hostkeycert.p12 -inkey hostkey.pem -in hostcert.pem 
+</pre>
+OpenSSL will prompt you for the export passphrase which must match your
+/etc/viabkeys/viab-conf-passphrase
+
