@@ -122,6 +122,25 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
                  'user_data_option_cvmfs_proxy' : 'http://169.254.169.254:3128/'
                },
 
+   'ATLAS' :   { 'vm_model'              : 'cernvm3',
+                 'user_data'             : 'https://www.gridpp.ac.uk/vac/atlas/user_data',
+                 'root_image'            : 'https://www.gridpp.ac.uk/vac/atlas/cernvm3.iso',
+                 'log_machineoutputs'    : 'True',
+                 'backoff_seconds'	 : '3600',
+                 'fizzle_seconds'	 : '600',
+                 'max_wallclock_seconds' : '172800',
+                 'target_share'          : '1.0',
+                 'root_public_key'       : '/root/.ssh/id_rsa.pub',
+                 'heartbeat_file'        : 'vm-heartbeat',
+                 'heartbeat_seconds'     : '600',
+                 'accounting_fqan'	 : '/atlas/Role=NULL/Capability=NULL',
+                 'user_data_option_queue'       : 'CHANGEME',
+                 'user_data_option_default_se'  : 'CHANGEME',
+                 'user_data_file_hostcert'      : 'hostcert.pem',
+                 'user_data_file_hostkey'       : 'hostkey.pem',
+                 'user_data_option_cvmfs_proxy' : 'http://169.254.169.254:3128/'
+               },
+
    'LHCb'   :  { 'vm_model'              : 'cernvm3',
                  'user_data'             : 'https://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/user_data',
                  'root_image'            : 'https://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/cernvm3.iso',
@@ -304,7 +323,7 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
   htmlFormCookie(userDN)
   print '<input type="hidden" name="action" value="addpresets">'
 
-  for presetName in vmtypePresets:
+  for presetName in sorted(vmtypePresets):
     print '<input type="submit" name="submit" value="' + presetName + '">'
 
   print '</form>'
@@ -813,7 +832,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '</table>'
   print '</form>'
 
-  cur.execute('SELECT vmtypename,vmtypeid FROM vmtypes WHERE spaceid=%s ORDER BY vmtypename', spaceID)
+  cur.execute('SELECT vmtypename,vmtypes.vmtypeid,value AS target_share FROM vmtypes LEFT JOIN vmtypeopts ON vmtypes.vmtypeid=vmtypeopts.vmtypeid AND optname="target_share" WHERE spaceid=%s ORDER BY vmtypename', spaceID)
   
   rows = cur.fetchall()
 
@@ -822,11 +841,18 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletevmtypes">'
 
   print '<table class="center">'
-  print '<tr><th class="oddeven">Vmtype name</th><th class="oddeven">&nbsp;</th></tr>'
+  print '<tr><th class="oddeven">Vmtype name</th><th class="oddeven">Target&nbsp;share</th><th class="oddeven">&nbsp;</th></tr>'
 
   n=0    
   for row in rows:
+    try:
+      targetShare = float(row['target_share'])
+    except:
+      targetShare = 0.0
+      
+  
     print ('<tr><td class="' + oddEven(n) + '"><a href="/admin/' + siteName + '/' + spaceName + '/vmtypes/' + row['vmtypename'] + '/">' + row['vmtypename'] + '</a></td>' +
+           '<td class="' + oddEven(n) + '">' + str(targetShare) + '</td>' +
            '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['vmtypeid']) + '"></td>' +
            '</tr>\n') 
     n += 1
