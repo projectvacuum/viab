@@ -10,8 +10,15 @@ chmod go-r /etc/viabkeys/viab-conf-passphrase
 for i in /var/lib/vac/vmtypes/*
 do
  cd $i
- openssl pkcs12 -in hostcertkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out hostkey.pem  -nodes -nocerts
- openssl pkcs12 -in hostcertkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out hostcert.pem -nokeys -clcerts
+ if [ -z hostcertkey.p12 ] ; then
+  echo "Empty $i/hostcertkey.p12"
+  echo > hostcert.pem
+  echo > hostkey.pem
+ else
+  echo "Create hostcert.pem/hostkey.pem from $i/hostcertkey.p12"
+  openssl pkcs12 -in hostcertkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out hostkey.pem  -nodes -nocerts
+  openssl pkcs12 -in hostcertkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out hostcert.pem -nokeys -clcerts
+ fi
  chmod ugo-w,go-r hostkey.pem 
 done
 
