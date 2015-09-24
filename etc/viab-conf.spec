@@ -42,6 +42,9 @@ cp vmlinuz initrd.img $RPM_BUILD_ROOT/var/lib/tftpboot
 cp -a vmtypes/* $RPM_BUILD_ROOT/var/lib/vac/vmtypes
 cp -p authorized_keys $RPM_BUILD_ROOT/root/.ssh
 
+%pre
+rm -f /etc/vac.d/*
+
 %post
 /usr/sbin/viab-conf-postinstall
 
