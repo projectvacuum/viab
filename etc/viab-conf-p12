@@ -23,6 +23,7 @@ do
 done
 
 if [ -r /etc/viab/vac-apel-certkey.p12 ] ; then
+ echo "Create /etc/grid-security/vac-apel-key.pem"
  chmod u+w /etc/grid-security/vac-apel-key.pem
  openssl pkcs12 -in /etc/viab/vac-apel-certkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out /etc/grid-security/vac-apel-key.pem  -nodes -nocerts
  openssl pkcs12 -in /etc/viab/vac-apel-certkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out /etc/grid-security/vac-apel-cert.pem -nokeys -clcerts
