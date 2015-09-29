@@ -391,16 +391,6 @@ def oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, h
         udpTimeoutSeconds = 0.0
 
       try:
-        totalMachines = int(cgiForm['total_machines'].value)
-      except:
-        totalMachines = 0
-
-      try:
-        cpuTotal = int(cgiForm['cpu_total'].value)
-      except:
-        cpuTotal = 0
-
-      try:
         cpuPerMachine = int(cgiForm['cpu_per_machine'].value)
       except:
         cpuPerMachine = 0
@@ -411,12 +401,10 @@ def oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, h
         hs06PerCpu = 0.0
 
       cur.execute('UPDATE hosts SET ip=%s,mac=%s,mb_per_machine=%s,udp_timeout_seconds=%s,' +
-                  'total_machines=%s,' +
-                  'cpu_total=%s,cpu_per_machine=%s,hs06_per_cpu=%s,updated=NOW() ' +
+                  'cpu_per_machine=%s,hs06_per_cpu=%s,updated=NOW() ' +
                   'WHERE hostid=%s AND spaceid=%s',
                   ( cgiForm['ip'].value, cgiForm['mac'].value, mbPerMachine, udpTimeoutSeconds,
-                    totalMachines, 
-                    cpuTotal, cpuPerMachine, hs06PerCpu,
+                    cpuPerMachine, hs06PerCpu,
                     hostID, spaceID) )
 
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
@@ -429,7 +417,7 @@ def oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, h
 
   htmlHeader('Factory ' + hostName)
     
-  cur.execute('SELECT ip,mac,mb_per_machine,udp_timeout_seconds,total_machines,cpu_total,cpu_per_machine,hs06_per_cpu FROM hosts WHERE hostID=%s', hostID)
+  cur.execute('SELECT ip,mac,mb_per_machine,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu FROM hosts WHERE hostID=%s', hostID)
   
   rows = cur.fetchall()
 
@@ -448,8 +436,6 @@ def oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, h
   print '<tr><td>MAC:</td><td><input type="text" name="mac" value="' + rows[0]['mac'] + '"></td></tr>'
   print '<tr><td>mb_per_machine:</td><td><input type="text" name="mb_per_machine" value="' + str(rows[0]['mb_per_machine']) + '"></td></tr>'
   print '<tr><td>udp_timeout_seconds:</td><td><input type="text" name="udp_timeout_seconds" value="' + str(rows[0]['udp_timeout_seconds']) + '"></td></tr>'
-  print '<tr><td>total_machines:</td><td><input type="text" name="total_machines" value="' + str(rows[0]['total_machines']) + '"></td></tr>'
-  print '<tr><td>cpu_total:</td><td><input type="text" name="cpu_total" value="' + str(rows[0]['cpu_total']) + '"></td></tr>'
   print '<tr><td>cpu_per_machine:</td><td><input type="text" name="cpu_per_machine" value="' + str(rows[0]['cpu_per_machine']) + '"></td></tr>'
   print '<tr><td>hs06_per_cpu:</td><td><input type="text" name="hs06_per_cpu" value="' + str(rows[0]['hs06_per_cpu']) + '"></td></tr>'
 
@@ -529,13 +515,11 @@ def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID):
 
     for row in rows:
       fHostsNetwork.write(row['mac'] + ' ' + row['hostname'] + ' ' + row['ip'] + '\n')
-      fHostsSettings.write(row['hostname'] +          
+      fHostsSettings.write(row['hostname'] +
                            ';vac_space = '           + spaceName +        
                            ';gocdb_sitename = '      + siteName +
                            ';mb_per_machine = '      + str(row['mb_per_machine']) +
                            ';udp_timeout_seconds = ' + str(row['udp_timeout_seconds']) +
-                           ';total_machines = '      + str(row['total_machines']) +
-                           ';cpu_total = '           + str(row['cpu_total']) +
                            ';cpu_per_machine = '     + str(row['cpu_per_machine']) +
                            ';hs06_per_cpu = '        + str(row['hs06_per_cpu']) +
                           '\n')
@@ -687,11 +671,9 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
       
       cur.execute('INSERT INTO hosts SET siteid=%s,spaceid=%s,hostname=%s,ip=%s,mac=%s,' + 
                   'mb_per_machine=%s,udp_timeout_seconds=%s,' +
-                  'total_machines=%s,' +
-                  'cpu_total=%s,cpu_per_machine=%s,hs06_per_cpu=%s,updated=NOW()',
+                  'cpu_per_machine=%s,hs06_per_cpu=%s,updated=NOW()',
                   ( siteID, spaceID, hostName, ip, mac,
                     int(cgiForm['mb_per_machine'].value), float(cgiForm['udp_timeout_seconds'].value),
-                    int(cgiForm['total_machines'].value), int(cgiForm['cpu_total'].value),
                     int(cgiForm['cpu_per_machine'].value), float(cgiForm['hs06_per_cpu'].value)) )
 
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
@@ -762,7 +744,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     pass
          
   htmlHeader('Space ' + spaceName)
-  cur.execute('SELECT hostid,hostname,ip,mac,total_machines,hs06_per_cpu FROM hosts WHERE spaceid=%s ORDER BY hostname', spaceID)
+  cur.execute('SELECT hostid,hostname,ip,mac,cpu_per_machine,hs06_per_cpu FROM hosts WHERE spaceid=%s ORDER BY hostname', spaceID)
   
   rows = cur.fetchall()
 
@@ -797,14 +779,14 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletehosts">'
     
   print '<table class="center">'
-  print '<tr><th class="oddeven">Hostname</th><th class="oddeven">IP</th><th class="oddeven">MAC</th><th class="oddeven">VMs</th><th class="oddeven">HS06/cpu</th><th class="oddeven">&nbsp;</th></tr>'
+  print '<tr><th class="oddeven">Hostname</th><th class="oddeven">IP</th><th class="oddeven">MAC</th><th class="oddeven">cpu/machine</th><th class="oddeven">HS06/cpu</th><th class="oddeven">&nbsp;</th></tr>'
 
   n=0    
   for row in rows:
     print ('<tr><td class="' + oddEven(n) + '"><a href="/admin/' + siteName + '/' + spaceName + '/hosts/' + row['hostname'] + '/">' + row['hostname'] + '</a></td>' +
            '<td class="' + oddEven(n) + '">' + row['ip'] + '</td>' +
            '<td class="' + oddEven(n) + '">' + row['mac'] + '</td>' +
-           '<td class="' + oddEven(n) + '">' + str(row['total_machines']) + '</td>' +
+           '<td class="' + oddEven(n) + '">' + str(row['cpu_per_machine']) + '</td>' +
            '<td class="' + oddEven(n) + '">' + str(row['hs06_per_cpu']) + '</td>' +
            '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['hostid']) + '"></td>' +
            '</tr>\n') 
@@ -826,7 +808,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '<tr><td>IP:</td><td><input type="text" name="ip"></td></tr>'
   print '<tr><td>MAC:</td><td><input type="text" name="mac"></td></tr>'
 
-  cur.execute('SELECT mb_per_machine,udp_timeout_seconds,total_machines,cpu_total,cpu_per_machine,hs06_per_cpu FROM hosts WHERE spaceID=%s ORDER BY updated DESC LIMIT 1', 
+  cur.execute('SELECT mb_per_machine,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu FROM hosts WHERE spaceID=%s ORDER BY updated DESC LIMIT 1', 
               spaceID)
   
   try:
@@ -834,15 +816,11 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   except:
     row = { 'mb_per_machine'      : 2048,
             'udp_timeout_seconds' : 5.0,
-            'total_machines'      : 1,
-            'cpu_total'		  : 1,
             'cpu_per_machine'     : 1,
             'hs06_per_cpu'	  : 10.0 }
 
   print '<tr><td>mb_per_machine:</td><td><input type="text" name="mb_per_machine" value="' + str(row['mb_per_machine']) + '"></td></tr>'
   print '<tr><td>udp_timeout_seconds:</td><td><input type="text" name="udp_timeout_seconds" value="' + str(row['udp_timeout_seconds']) + '"></td></tr>'
-  print '<tr><td>total_machines:</td><td><input type="text" name="total_machines" value="' + str(row['total_machines']) + '"></td></tr>'
-  print '<tr><td>cpu_total:</td><td><input type="text" name="cpu_total" value="' + str(row['cpu_total']) + '"></td></tr>'
   print '<tr><td>cpu_per_machine:</td><td><input type="text" name="cpu_per_machine" value="' + str(row['cpu_per_machine']) + '"></td></tr>'
   print '<tr><td>hs06_per_cpu:</td><td><input type="text" name="hs06_per_cpu" value="' + str(row['hs06_per_cpu']) + '"></td></tr>'
 
