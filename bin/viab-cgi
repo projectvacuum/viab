@@ -400,11 +400,16 @@ def oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, h
       except:
         hs06PerCpu = 0.0
 
+      try:
+        scratchGb = int(cgiForm['scratch_gb'].value)
+      except:
+        scratchGb = 40
+
       cur.execute('UPDATE hosts SET ip=%s,mac=%s,mb_per_machine=%s,udp_timeout_seconds=%s,' +
-                  'cpu_per_machine=%s,hs06_per_cpu=%s,updated=NOW() ' +
+                  'cpu_per_machine=%s,hs06_per_cpu=%s,scratch_gb=%s,updated=NOW() ' +
                   'WHERE hostid=%s AND spaceid=%s',
                   ( cgiForm['ip'].value, cgiForm['mac'].value, mbPerMachine, udpTimeoutSeconds,
-                    cpuPerMachine, hs06PerCpu,
+                    cpuPerMachine, hs06PerCpu, scratchGb,
                     hostID, spaceID) )
 
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
@@ -417,7 +422,7 @@ def oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, h
 
   htmlHeader('Factory ' + hostName)
     
-  cur.execute('SELECT ip,mac,mb_per_machine,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu FROM hosts WHERE hostID=%s', hostID)
+  cur.execute('SELECT ip,mac,mb_per_machine,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu,scratch_gb FROM hosts WHERE hostID=%s', hostID)
   
   rows = cur.fetchall()
 
@@ -438,6 +443,7 @@ def oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, h
   print '<tr><td>udp_timeout_seconds:</td><td><input type="text" name="udp_timeout_seconds" value="' + str(rows[0]['udp_timeout_seconds']) + '"></td></tr>'
   print '<tr><td>cpu_per_machine:</td><td><input type="text" name="cpu_per_machine" value="' + str(rows[0]['cpu_per_machine']) + '"></td></tr>'
   print '<tr><td>hs06_per_cpu:</td><td><input type="text" name="hs06_per_cpu" value="' + str(rows[0]['hs06_per_cpu']) + '"></td></tr>'
+  print '<tr><td>scratch_gb:</td><td><input type="text" name="scratch_gb" value="' + str(rows[0]['scratch_gb']) + '"></td></tr>'
 
   print '<tr><td colspan=2 style="text-align: center"><input type="submit" value="Update factory"></td></tr>'
   htmlFormCookie(userDN)
@@ -522,6 +528,7 @@ def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID):
                            ';udp_timeout_seconds = ' + str(row['udp_timeout_seconds']) +
                            ';cpu_per_machine = '     + str(row['cpu_per_machine']) +
                            ';hs06_per_cpu = '        + str(row['hs06_per_cpu']) +
+                           ';scratch_gb = '          + str(row['scratch_gb']) +
                           '\n')
 
     fHostsNetwork.close()
@@ -671,10 +678,14 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
       
       cur.execute('INSERT INTO hosts SET siteid=%s,spaceid=%s,hostname=%s,ip=%s,mac=%s,' + 
                   'mb_per_machine=%s,udp_timeout_seconds=%s,' +
-                  'cpu_per_machine=%s,hs06_per_cpu=%s,updated=NOW()',
+                  'cpu_per_machine=%s,hs06_per_cpu=%s,' +
+                  'scratch_gb=%s,updated=NOW()',
                   ( siteID, spaceID, hostName, ip, mac,
                     int(cgiForm['mb_per_machine'].value), float(cgiForm['udp_timeout_seconds'].value),
-                    int(cgiForm['cpu_per_machine'].value), float(cgiForm['hs06_per_cpu'].value)) )
+                    int(cgiForm['cpu_per_machine'].value), float(cgiForm['hs06_per_cpu'].value),
+                    int(cgiForm['scratch_gb'].value) 
+                  ) 
+                 )
 
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
       print 'Location: https://viab.gridpp.ac.uk' + requestURI
@@ -744,7 +755,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     pass
          
   htmlHeader('Space ' + spaceName)
-  cur.execute('SELECT hostid,hostname,ip,mac,cpu_per_machine,hs06_per_cpu FROM hosts WHERE spaceid=%s ORDER BY hostname', spaceID)
+  cur.execute('SELECT hostid,hostname,ip,mac,cpu_per_machine,hs06_per_cpu,scratch_gb FROM hosts WHERE spaceid=%s ORDER BY hostname', spaceID)
   
   rows = cur.fetchall()
 
@@ -808,7 +819,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '<tr><td>IP:</td><td><input type="text" name="ip"></td></tr>'
   print '<tr><td>MAC:</td><td><input type="text" name="mac"></td></tr>'
 
-  cur.execute('SELECT mb_per_machine,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu FROM hosts WHERE spaceID=%s ORDER BY updated DESC LIMIT 1', 
+  cur.execute('SELECT mb_per_machine,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu,scratch_gb FROM hosts WHERE spaceID=%s ORDER BY updated DESC LIMIT 1', 
               spaceID)
   
   try:
@@ -817,12 +828,14 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     row = { 'mb_per_machine'      : 2048,
             'udp_timeout_seconds' : 5.0,
             'cpu_per_machine'     : 1,
-            'hs06_per_cpu'	  : 10.0 }
+            'hs06_per_cpu'	  : 10.0,
+            'scratch_gb'	  : 40 }
 
   print '<tr><td>mb_per_machine:</td><td><input type="text" name="mb_per_machine" value="' + str(row['mb_per_machine']) + '"></td></tr>'
   print '<tr><td>udp_timeout_seconds:</td><td><input type="text" name="udp_timeout_seconds" value="' + str(row['udp_timeout_seconds']) + '"></td></tr>'
   print '<tr><td>cpu_per_machine:</td><td><input type="text" name="cpu_per_machine" value="' + str(row['cpu_per_machine']) + '"></td></tr>'
   print '<tr><td>hs06_per_cpu:</td><td><input type="text" name="hs06_per_cpu" value="' + str(row['hs06_per_cpu']) + '"></td></tr>'
+  print '<tr><td>scratch_gb:</td><td><input type="text" name="scratch_gb" value="' + str(row['scratch_gb']) + '"></td></tr>'
 
   print '<tr><td colspan=2><input type="submit" value="Add factory"></td><tr>'
   htmlFormCookie(userDN)
