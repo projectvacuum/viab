@@ -38,7 +38,7 @@ echo -n '#### Starting viab-publish ' ; date
 
 source /var/lib/viab/VERSION
 export VIAB_VERSION=$VERSION
-export DOCUMENT_ROOT=/var/www/viab.gridpp.ac.uk
+export DOCUMENT_ROOT=/var/lib/viab/www
 
 # Defaults for testing
 
