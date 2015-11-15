@@ -25,7 +25,6 @@ mkdir -p $RPM_BUILD_ROOT/usr/sbin \
          $RPM_BUILD_ROOT/etc/viab \
          $RPM_BUILD_ROOT/etc/vac.d \
          $RPM_BUILD_ROOT/etc/cron.d \
-         $RPM_BUILD_ROOT/etc/apel \
          $RPM_BUILD_ROOT/root/.ssh \
          $RPM_BUILD_ROOT/etc/squid \
          $RPM_BUILD_ROOT/var/lib/tftpboot \
@@ -36,7 +35,6 @@ cp -p viab-conf-postinstall viab-conf-p12 lazyssh dnsmasq-wrapper \
 cp vac.d/*.conf $RPM_BUILD_ROOT/etc/vac.d
 cp viab/* $RPM_BUILD_ROOT/etc/viab
 cp vac-ssmsend-cron $RPM_BUILD_ROOT/etc/cron.d
-cp vac-ssmsend-prod.cfg $RPM_BUILD_ROOT/etc/apel
 cp squid.conf.template $RPM_BUILD_ROOT/etc/squid/squid.conf.template
 cp vmlinuz initrd.img $RPM_BUILD_ROOT/var/lib/tftpboot
 cp -a vmtypes/* $RPM_BUILD_ROOT/var/lib/vac/vmtypes
@@ -52,7 +50,6 @@ rm -f /etc/vac.d/*
 /etc/vac.d/*
 /etc/viab/*
 /etc/cron.d/*
-/etc/apel/*
 /etc/squid/*
 /var/lib/vac/vmtypes/*
 /var/lib/tftpboot/*
