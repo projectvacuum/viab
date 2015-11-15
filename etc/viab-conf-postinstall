@@ -147,4 +147,4 @@ service xinetd reload
 
 # This will not be needed once everyone is using Vac 0.19 or later!
 # Copy vac-ssmsend-prod.cfg to /etc/apel in case not included in vac RPM
-cp -f /etc/viab/vac-ssmsend-prod.cfg /etc/apel
+#cp -f /etc/viab/vac-ssmsend-prod.cfg /etc/apel

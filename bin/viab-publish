@@ -129,8 +129,8 @@ cp -p /var/lib/viab/etc/viab-conf-postinstall \
       /var/lib/viab/etc/squid.conf.template \
       /var/lib/viab/etc/vac-ssmsend-cron \
       viab-conf
-cp -p /var/lib/viab/etc/vac-ssmsend-prod.cfg \
-      viab-conf/viab
+#cp -p /var/lib/viab/etc/vac-ssmsend-prod.cfg \
+#      viab-conf/viab
 cp /var/lib/viab/isolinux/vmlinuz /var/lib/viab/isolinux/initrd.img viab-conf
 tar zcvf SOURCES/viab-conf.tgz --owner=root --group=root --exclude-backups viab-conf
 cp /var/lib/viab/etc/viab-conf.spec .
