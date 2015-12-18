@@ -84,12 +84,12 @@ def htmlFooter(userDN):
     
   print '</html>'
 
-def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, vmtypeName, vmtypeID):
+def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, machinetypeName, machinetypeID):
 
   global cur
   
   # All values here must be presented as strings!
-  vmtypePresets = {
+  machinetypePresets = {
 
    'example' : { 'vm_model'              : 'cernvm3',
                  'user_data'             : 'https://repo.gridpp.ac.uk/vacproject/example/user_data',
@@ -183,7 +183,7 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
   try:
     if cgiForm.getfirst('action') == 'uploadp12':
 
-      cur.execute('UPDATE vmtypes SET p12=%s,p12updated=NOW() WHERE vmtypeid=%s', (cgiForm.getfirst('p12file'), vmtypeID) )
+      cur.execute('UPDATE machinetypes SET p12=%s,p12updated=NOW() WHERE machinetypeid=%s', (cgiForm.getfirst('p12file'), machinetypeID) )
 
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
       print 'Location: https://viab.gridpp.ac.uk' + requestURI
@@ -193,30 +193,30 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
     pass
 
   try:
-    if cgiForm['action'].value == 'clonevmtype' and cgiForm['clonename']:
+    if cgiForm['action'].value == 'clonemachinetype' and cgiForm['clonename']:
 
       cloneName = cgiForm['clonename'].value.strip()
 
       if cloneName.translate(None, 'abcdefghijklmnopqrstuvwxyz01234567890.-') != '':
         print 'Content-Type: text/html'
         print
-        print 'vmtype names are limited to lowercase letters numbers -'
+        print 'machinetype names are limited to lowercase letters numbers -'
         return
 
       # Exclude any reserved /etc/vac.d/*.conf filenames here
       if cloneName == 'settings':
         print 'Content-Type: text/html'
         print
-        print 'vmtypes cannot be called settings'
+        print 'machinetypes cannot be called settings'
         return
 
-      cur.execute('INSERT INTO vmtypes SET spaceid=%s,vmtypename=%s', (spaceID, cloneName))
+      cur.execute('INSERT INTO machinetypes SET spaceid=%s,machinetypename=%s', (spaceID, cloneName))
 
-      cur.execute('INSERT INTO vmtypeopts (vmtypeid,optname,value) SELECT %s,optname,value FROM vmtypeopts WHERE vmtypeid=%s',
-                  (cur.lastrowid, vmtypeID) )
+      cur.execute('INSERT INTO machinetypeopts (machinetypeid,optname,value) SELECT %s,optname,value FROM machinetypeopts WHERE machinetypeid=%s',
+                  (cur.lastrowid, machinetypeID) )
 
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
-      print 'Location: https://viab.gridpp.ac.uk/admin/' + siteName + '/' + spaceName + '/vmtypes/' + cloneName + '/'
+      print 'Location: https://viab.gridpp.ac.uk/admin/' + siteName + '/' + spaceName + '/machinetypes/' + cloneName + '/'
       print
       return
   except:
@@ -225,18 +225,18 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
   try:
     if cgiForm['action'].value == 'addpresets' and cgiForm['submit']:
 
-      presetVmtypeName = cgiForm['submit'].value.strip()
+      presetmachinetypeName = cgiForm['submit'].value.strip()
 
-      if presetVmtypeName in vmtypePresets:
-        for presetOptName in vmtypePresets[presetVmtypeName]:                
-          cur.execute('INSERT INTO vmtypeopts SET vmtypeid=%s,optname=%s,value=%s',
-                      (vmtypeID,
+      if presetmachinetypeName in machinetypePresets:
+        for presetOptName in machinetypePresets[presetmachinetypeName]:                
+          cur.execute('INSERT INTO machinetypeopts SET machinetypeid=%s,optname=%s,value=%s',
+                      (machinetypeID,
                        presetOptName, 
-                       vmtypePresets[presetVmtypeName][presetOptName]))      
+                       machinetypePresets[presetmachinetypeName][presetOptName]))      
       else:
         print 'Content-Type: text/html'
         print
-        print 'vmtype presets not found!'
+        print 'machinetype presets not found!'
         return
 
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
@@ -248,8 +248,8 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
 
   try:
     if cgiForm['action'].value == 'addoption' and cgiForm['optname'] and cgiForm['value']:
-      cur.execute('INSERT INTO vmtypeopts SET vmtypeid=%s,optname=%s,value=%s',
-                  (vmtypeID, cgiForm['optname'].value, cgiForm['value'].value.strip()))
+      cur.execute('INSERT INTO machinetypeopts SET machinetypeid=%s,optname=%s,value=%s',
+                  (machinetypeID, cgiForm['optname'].value, cgiForm['value'].value.strip()))
 
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
       print 'Location: https://viab.gridpp.ac.uk' + requestURI
@@ -270,12 +270,12 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
           value = None
           
       if value is None:
-        cur.execute('DELETE FROM vmtypeopts WHERE vmtypeid=%s AND optname=%s', 
-                    (vmtypeID, cgiForm['optname'].value))
+        cur.execute('DELETE FROM machinetypeopts WHERE machinetypeid=%s AND optname=%s', 
+                    (machinetypeID, cgiForm['optname'].value))
       else:
         try:
-          cur.execute('UPDATE vmtypeopts SET value=%s WHERE vmtypeid=%s AND optname=%s', 
-                      (value, vmtypeID, cgiForm['optname'].value))
+          cur.execute('UPDATE machinetypeopts SET value=%s WHERE machinetypeid=%s AND optname=%s', 
+                      (value, machinetypeID, cgiForm['optname'].value))
         except:
           pass
 
@@ -286,20 +286,20 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
   except:
     pass
 
-  htmlHeader('Vmtype ' + vmtypeName)
+  htmlHeader('machinetype ' + machinetypeName)
   
   print ('<div class="breadcrumbs"><a href="/admin/">All Sites</a> ' + 
          '/ <a href="/admin/' + siteName + '/">' + siteName + '</a> ' +
          '/ <a href="/admin/' + siteName + '/' + spaceName + '/">' + spaceName + '</a> ' +
-         '/ ' + vmtypeName + '</div>')
+         '/ ' + machinetypeName + '</div>')
 
-  print '<h1>Vmtype&nbsp;' + vmtypeName + '</h1>'
+  print '<h1>machinetype&nbsp;' + machinetypeName + '</h1>'
 
   print '<h2>Options</h2>'
   
   print '<p>To remove an option, set its value blank and update it'
   
-  cur.execute('SELECT vmtypeoptid,optname,value FROM vmtypeopts WHERE vmtypeid=%s', vmtypeID)
+  cur.execute('SELECT machinetypeoptid,optname,value FROM machinetypeopts WHERE machinetypeid=%s', machinetypeID)
   rows = cur.fetchall()
 
   print '<p><table class="center">'
@@ -334,31 +334,31 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
   print '<h3>Pre-set options</h3>'
 
   print '<p>You can use the buttons below to add a group of preset options to this '
-  print 'vmtype if they do not already exist. Some options will still need '
-  print "to be edited in line with the vmtype's own instructions and these "
+  print 'machinetype if they do not already exist. Some options will still need '
+  print "to be edited in line with the machinetype's own instructions and these "
   print 'have the default value CHANGEME.'
 
   print '<form method="post" action="' + requestURI + '">'
-  print '<p style="text-align: center">vmtype name: '
+  print '<p style="text-align: center">machinetype name: '
   htmlFormCookie(userDN)
   print '<input type="hidden" name="action" value="addpresets">'
 
-  for presetName in sorted(vmtypePresets):
+  for presetName in sorted(machinetypePresets):
     print '<input type="submit" name="submit" value="' + presetName + '">'
 
   print '</form>'
 
-  print '<h2>Clone vmtype</h2>'
+  print '<h2>Clone machinetype</h2>'
 
   print '<form method="post" action="' + requestURI + '">'
-  print 'New vmtype name: <input type="text" name="clonename">'
+  print 'New machinetype name: <input type="text" name="clonename">'
   htmlFormCookie(userDN)
-  print '<input type="submit" value="Clone vmtype"><input type="hidden" name="action" value="clonevmtype">'
+  print '<input type="submit" value="Clone machinetype"><input type="hidden" name="action" value="clonemachinetype">'
   print '</form>'
 
   print '<h2>Certificate/key .p12 file</h2>'
 
-  cur.execute('SELECT LENGTH(p12) AS p12len,p12,p12updated FROM vmtypes WHERE vmtypeid=%s', vmtypeID)
+  cur.execute('SELECT LENGTH(p12) AS p12len,p12,p12updated FROM machinetypes WHERE machinetypeid=%s', machinetypeID)
   rows = cur.fetchall()
   print '<p>.p12 file ' + str(rows[0]['p12len']) + ' bytes, updated ' + str(rows[0]['p12updated'])
 
@@ -372,13 +372,13 @@ def oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID,
 
   htmlFooter(userDN)
 
-def oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, hostName, hostID):
+def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, factoryName, factoryID):
 
   global cur
             
   try:
 
-    if cgiForm['action'].value == 'updatehost' and cgiForm['ip'] and cgiForm['mac']:
+    if cgiForm['action'].value == 'updatefactory' and cgiForm['ip'] and cgiForm['mac']:
 
       try:
         mbPerMachine = int(cgiForm['mb_per_machine'].value)
@@ -405,12 +405,12 @@ def oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, h
       except:
         scratchGb = 40
 
-      cur.execute('UPDATE hosts SET ip=%s,mac=%s,mb_per_machine=%s,udp_timeout_seconds=%s,' +
+      cur.execute('UPDATE factories SET ip=%s,mac=%s,mb_per_machine=%s,udp_timeout_seconds=%s,' +
                   'cpu_per_machine=%s,hs06_per_cpu=%s,scratch_gb=%s,updated=NOW() ' +
-                  'WHERE hostid=%s AND spaceid=%s',
+                  'WHERE factoryid=%s AND spaceid=%s',
                   ( cgiForm['ip'].value, cgiForm['mac'].value, mbPerMachine, udpTimeoutSeconds,
                     cpuPerMachine, hs06PerCpu, scratchGb,
-                    hostID, spaceID) )
+                    factoryID, spaceID) )
 
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
       print 'Location: https://viab.gridpp.ac.uk' + requestURI
@@ -420,18 +420,18 @@ def oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, h
   except:
     pass
 
-  htmlHeader('Factory ' + hostName)
+  htmlHeader('Factory ' + factoryName)
     
-  cur.execute('SELECT ip,mac,mb_per_machine,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu,scratch_gb FROM hosts WHERE hostID=%s', hostID)
+  cur.execute('SELECT ip,mac,mb_per_machine,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu,scratch_gb FROM factories WHERE factoryID=%s', factoryID)
   
   rows = cur.fetchall()
 
   print ('<div class="breadcrumbs"><a href="/admin/">All Sites</a> ' + 
          '/ <a href="/admin/' + siteName + '/">' + siteName + '</a> ' +
          '/ <a href="/admin/' + siteName + '/' + spaceName + '/">' + spaceName + '</a> ' +
-         '/ ' + hostName + '</div>')
+         '/ ' + factoryName + '</div>')
 
-  print '<h1>Factory ' + hostName + '</h1>'
+  print '<h1>Factory ' + factoryName + '</h1>'
     
   print '<form method="post" action="' + requestURI + '">'
  
@@ -447,7 +447,7 @@ def oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, h
 
   print '<tr><td colspan=2 style="text-align: center"><input type="submit" value="Update factory"></td></tr>'
   htmlFormCookie(userDN)
-  print '<input type="hidden" name="action" value="updatehost">'
+  print '<input type="hidden" name="action" value="updatefactory">'
   print '</table>'
   print '</form>'
  
@@ -461,7 +461,7 @@ def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID):
     os.mkdir(tempDir + '/viab-conf')
     os.mkdir(tempDir + '/viab-conf/vac.d')
     os.mkdir(tempDir + '/viab-conf/viab')
-    os.mkdir(tempDir + '/viab-conf/vmtypes')
+    os.mkdir(tempDir + '/viab-conf/machinetypes')
     open(tempDir + '/viab-conf/viab/sitename', 'w').write(siteName)
     open(tempDir + '/viab-conf/viab/spacename', 'w').write(spaceName)
   except:
@@ -510,18 +510,18 @@ def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID):
   except:
     return None
 
-  # Create hosts-network and hosts-settings files
+  # Create factories-network and factories-settings files
 
   try:
-    cur.execute('SELECT * FROM hosts WHERE spaceid=%s', spaceID)
+    cur.execute('SELECT * FROM factories WHERE spaceid=%s', spaceID)
     rows = cur.fetchall()
 
-    fHostsNetwork  = open(tempDir + '/viab-conf/viab/hosts-network', 'w')
-    fHostsSettings = open(tempDir + '/viab-conf/viab/hosts-settings', 'w')
+    fFactoriesNetwork  = open(tempDir + '/viab-conf/viab/factories-network', 'w')
+    fFactoriesSettings = open(tempDir + '/viab-conf/viab/factories-settings', 'w')
 
     for row in rows:
-      fHostsNetwork.write(row['mac'] + ' ' + row['hostname'] + ' ' + row['ip'] + '\n')
-      fHostsSettings.write(row['hostname'] +
+      fFactoriesNetwork.write(row['mac'] + ' ' + row['factoryname'] + ' ' + row['ip'] + '\n')
+      fFactoriesSettings.write(row['factoryname'] +
                            ';vac_space = '           + spaceName +        
                            ';gocdb_sitename = '      + siteName +
                            ';mb_per_machine = '      + str(row['mb_per_machine']) +
@@ -531,8 +531,8 @@ def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID):
                            ';scratch_gb = '          + str(row['scratch_gb']) +
                           '\n')
 
-    fHostsNetwork.close()
-    fHostsSettings.close()
+    fFactoriesNetwork.close()
+    fFactoriesSettings.close()
 
   except:
     return None
@@ -556,27 +556,27 @@ def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID):
   except:
     return None
 
-  # Create the vmtypes directories, p12 files, and .conf files for this space
+  # Create the machinetypes directories, p12 files, and .conf files for this space
 
   try:
-    cur.execute('SELECT vmtypename,vmtypeid,p12 FROM vmtypes WHERE spaceid=%s', spaceID)
-    vmtypeRows = cur.fetchall()
+    cur.execute('SELECT machinetypename,machinetypeid,p12 FROM machinetypes WHERE spaceid=%s', spaceID)
+    machinetypeRows = cur.fetchall()
 
-    for vmtypeRow in vmtypeRows:
-      os.mkdir(tempDir + '/viab-conf/vmtypes/' + vmtypeRow['vmtypename'])
+    for machinetypeRow in machinetypeRows:
+      os.mkdir(tempDir + '/viab-conf/machinetypes/' + machinetypeRow['machinetypename'])
 
-      if 'p12' in vmtypeRow:
-        f = open(tempDir + '/viab-conf/vmtypes/' + vmtypeRow['vmtypename'] + '/hostcertkey.p12', 'w')
-        f.write(vmtypeRow['p12'])
+      if 'p12' in machinetypeRow:
+        f = open(tempDir + '/viab-conf/machinetypes/' + machinetypeRow['machinetypename'] + '/hostcertkey.p12', 'w')
+        f.write(machinetypeRow['p12'])
         f.close()
-        os.chmod(tempDir + '/viab-conf/vmtypes/' + vmtypeRow['vmtypename'] + '/hostcertkey.p12', stat.S_IRUSR)
+        os.chmod(tempDir + '/viab-conf/machinetypes/' + machinetypeRow['machinetypename'] + '/hostcertkey.p12', stat.S_IRUSR)
     
-      cur.execute('SELECT optname,value FROM vmtypeopts WHERE vmtypeid=%s', vmtypeRow['vmtypeid'])
+      cur.execute('SELECT optname,value FROM machinetypeopts WHERE machinetypeid=%s', machinetypeRow['machinetypeid'])
       optRows = cur.fetchall()
 
       if optRows:
-        f = open(tempDir + '/viab-conf/vac.d/' + vmtypeRow['vmtypename'] + '.conf', 'w')
-        f.write('[vmtype ' + vmtypeRow['vmtypename'] + ']\n')
+        f = open(tempDir + '/viab-conf/vac.d/' + machinetypeRow['machinetypename'] + '.conf', 'w')
+        f.write('[machinetype ' + machinetypeRow['machinetypename'] + ']\n')
         
         for optRow in optRows:
           f.write(optRow['optname'] + ' = ' + optRow['value'] + '\n')
@@ -653,10 +653,10 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     pass
     
   try:
-    if cgiForm['action'].value == 'addhost' and cgiForm['hostname'].value and cgiForm['ip'] and cgiForm['mac']:
+    if cgiForm['action'].value == 'addfactory' and cgiForm['factoryname'].value and cgiForm['ip'] and cgiForm['mac']:
          
-      hostName = cgiForm['hostname'].value.strip()
-      if hostName.translate(None, 'abcdefghijklmnopqrstuvwxyz01234567890.-') != '':
+      factoryName = cgiForm['factoryname'].value.strip()
+      if factoryName.translate(None, 'abcdefghijklmnopqrstuvwxyz01234567890.-') != '':
         print 'Content-Type: text/html'
         print
         print 'Host names are limited to lowercase letters numbers . -'
@@ -676,11 +676,11 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
         print 'MAC addreses are limited to hexadecimal digits and :'
         return
       
-      cur.execute('INSERT INTO hosts SET siteid=%s,spaceid=%s,hostname=%s,ip=%s,mac=%s,' + 
+      cur.execute('INSERT INTO factories SET siteid=%s,spaceid=%s,factoryname=%s,ip=%s,mac=%s,' + 
                   'mb_per_machine=%s,udp_timeout_seconds=%s,' +
                   'cpu_per_machine=%s,hs06_per_cpu=%s,' +
                   'scratch_gb=%s,updated=NOW()',
-                  ( siteID, spaceID, hostName, ip, mac,
+                  ( siteID, spaceID, factoryName, ip, mac,
                     int(cgiForm['mb_per_machine'].value), float(cgiForm['udp_timeout_seconds'].value),
                     int(cgiForm['cpu_per_machine'].value), float(cgiForm['hs06_per_cpu'].value),
                     int(cgiForm['scratch_gb'].value) 
@@ -696,24 +696,24 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     pass
           
   try:
-    if cgiForm['action'].value == 'addvmtype' and cgiForm['vmtypename'].value:
+    if cgiForm['action'].value == 'addmachinetype' and cgiForm['machinetypename'].value:
          
-      vmtypeName = cgiForm['vmtypename'].value.strip()
+      machinetypeName = cgiForm['machinetypename'].value.strip()
 
-      if vmtypeName.translate(None, 'abcdefghijklmnopqrstuvwxyz01234567890.-') != '':
+      if machinetypeName.translate(None, 'abcdefghijklmnopqrstuvwxyz01234567890.-') != '':
         print 'Content-Type: text/html'
         print
-        print 'vmtype names are limited to lowercase letters numbers -'
+        print 'machinetype names are limited to lowercase letters numbers -'
         return
 
       # Exclude any reserved /etc/vac.d/*.conf filenames here
-      if vmtypeName == 'settings':
+      if machinetypeName == 'settings':
         print 'Content-Type: text/html'
         print
-        print 'vmtypes cannot be called settings'
+        print 'machinetypes cannot be called settings'
         return
       
-      cur.execute('INSERT INTO vmtypes SET spaceid=%s,vmtypename=%s', (spaceID, vmtypeName))
+      cur.execute('INSERT INTO machinetypes SET spaceid=%s,machinetypename=%s', (spaceID, machinetypeName))
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
       print 'Location: https://viab.gridpp.ac.uk' + requestURI
       print
@@ -723,12 +723,12 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     pass
           
   try:
-    if cgiForm['action'].value == 'deletehosts' and cgiForm['deletelist']:
+    if cgiForm['action'].value == 'deletefactories' and cgiForm['deletelist']:
          
       deleteList = cgiForm.getlist('deletelist')
 
       for deleteHost in deleteList:              
-        cur.execute('DELETE FROM hosts WHERE spaceid=%s AND hostid=%s', ( spaceID, deleteHost ) )
+        cur.execute('DELETE FROM factories WHERE spaceid=%s AND factoryid=%s', ( spaceID, deleteHost ) )
      
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
       print 'Location: https://viab.gridpp.ac.uk' + requestURI
@@ -739,12 +739,12 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     pass
          
   try:
-    if cgiForm['action'].value == 'deletevmtypes' and cgiForm['deletelist']:
+    if cgiForm['action'].value == 'deletemachinetypes' and cgiForm['deletelist']:
          
       deleteList = cgiForm.getlist('deletelist')
 
-      for deleteVmtype in deleteList:              
-        cur.execute('DELETE FROM vmtypes WHERE spaceid=%s AND vmtypeid=%s', ( spaceID, int(deleteVmtype) ) )
+      for deletemachinetype in deleteList:              
+        cur.execute('DELETE FROM machinetypes WHERE spaceid=%s AND machinetypeid=%s', ( spaceID, int(deletemachinetype) ) )
      
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
       print 'Location: https://viab.gridpp.ac.uk' + requestURI
@@ -755,7 +755,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     pass
          
   htmlHeader('Space ' + spaceName)
-  cur.execute('SELECT hostid,hostname,ip,mac,cpu_per_machine,hs06_per_cpu,scratch_gb FROM hosts WHERE spaceid=%s ORDER BY hostname', spaceID)
+  cur.execute('SELECT factoryid,factoryname,ip,mac,cpu_per_machine,hs06_per_cpu,scratch_gb FROM factories WHERE spaceid=%s ORDER BY factoryname', spaceID)
   
   rows = cur.fetchall()
 
@@ -787,19 +787,19 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
 
   print '<h2>Factories in this space</h2>'
 
-  print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletehosts">'
+  print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletefactories">'
     
   print '<table class="center">'
   print '<tr><th class="oddeven">Hostname</th><th class="oddeven">IP</th><th class="oddeven">MAC</th><th class="oddeven">cpu/machine</th><th class="oddeven">HS06/cpu</th><th class="oddeven">&nbsp;</th></tr>'
 
   n=0    
   for row in rows:
-    print ('<tr><td class="' + oddEven(n) + '"><a href="/admin/' + siteName + '/' + spaceName + '/hosts/' + row['hostname'] + '/">' + row['hostname'] + '</a></td>' +
+    print ('<tr><td class="' + oddEven(n) + '"><a href="/admin/' + siteName + '/' + spaceName + '/factories/' + row['factoryname'] + '/">' + row['factoryname'] + '</a></td>' +
            '<td class="' + oddEven(n) + '">' + row['ip'] + '</td>' +
            '<td class="' + oddEven(n) + '">' + row['mac'] + '</td>' +
            '<td class="' + oddEven(n) + '">' + str(row['cpu_per_machine']) + '</td>' +
            '<td class="' + oddEven(n) + '">' + str(row['hs06_per_cpu']) + '</td>' +
-           '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['hostid']) + '"></td>' +
+           '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['factoryid']) + '"></td>' +
            '</tr>\n') 
     n += 1
                 
@@ -809,17 +809,17 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   htmlFormCookie(userDN)
   print '</form>'
 
-  # Add a host, possibly with defaults from last host updated
+  # Add a factory, possibly with defaults from last factory updated
 
   print '<h3>Add a factory</h3>'
   
   print '<form method="post" action="' + requestURI + '">'
   print '<table>'
-  print '<tr><td>Hostname:</td><td><input type="text" name="hostname"></td><tr>'
+  print '<tr><td>Hostname:</td><td><input type="text" name="factoryname"></td><tr>'
   print '<tr><td>IP:</td><td><input type="text" name="ip"></td></tr>'
   print '<tr><td>MAC:</td><td><input type="text" name="mac"></td></tr>'
 
-  cur.execute('SELECT mb_per_machine,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu,scratch_gb FROM hosts WHERE spaceID=%s ORDER BY updated DESC LIMIT 1', 
+  cur.execute('SELECT mb_per_machine,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu,scratch_gb FROM factories WHERE spaceID=%s ORDER BY updated DESC LIMIT 1', 
               spaceID)
   
   try:
@@ -839,20 +839,20 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
 
   print '<tr><td colspan=2><input type="submit" value="Add factory"></td><tr>'
   htmlFormCookie(userDN)
-  print '<input type="hidden" name="action" value="addhost">'
+  print '<input type="hidden" name="action" value="addfactory">'
   print '</table>'
   print '</form>'
 
-  cur.execute('SELECT vmtypename,vmtypes.vmtypeid,value AS target_share FROM vmtypes LEFT JOIN vmtypeopts ON vmtypes.vmtypeid=vmtypeopts.vmtypeid AND optname="target_share" WHERE spaceid=%s ORDER BY vmtypename', spaceID)
+  cur.execute('SELECT machinetypename,machinetypes.machinetypeid,value AS target_share FROM machinetypes LEFT JOIN machinetypeopts ON machinetypes.machinetypeid=machinetypeopts.machinetypeid AND optname="target_share" WHERE spaceid=%s ORDER BY machinetypename', spaceID)
   
   rows = cur.fetchall()
 
-  print '<h2>Vmtypes in this space</h2>'
+  print '<h2>machinetypes in this space</h2>'
 
-  print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletevmtypes">'
+  print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletemachinetypes">'
 
   print '<table class="center">'
-  print '<tr><th class="oddeven">Vmtype name</th><th class="oddeven">Target&nbsp;share</th><th class="oddeven">&nbsp;</th></tr>'
+  print '<tr><th class="oddeven">machinetype name</th><th class="oddeven">Target&nbsp;share</th><th class="oddeven">&nbsp;</th></tr>'
 
   n=0    
   for row in rows:
@@ -862,25 +862,25 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
       targetShare = 0.0
       
   
-    print ('<tr><td class="' + oddEven(n) + '"><a href="/admin/' + siteName + '/' + spaceName + '/vmtypes/' + row['vmtypename'] + '/">' + row['vmtypename'] + '</a></td>' +
+    print ('<tr><td class="' + oddEven(n) + '"><a href="/admin/' + siteName + '/' + spaceName + '/machinetypes/' + row['machinetypename'] + '/">' + row['machinetypename'] + '</a></td>' +
            '<td class="' + oddEven(n) + '">' + str(targetShare) + '</td>' +
-           '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['vmtypeid']) + '"></td>' +
+           '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['machinetypeid']) + '"></td>' +
            '</tr>\n') 
     n += 1
                 
-  print '<tr><td colspan="6" style="text-align: center"><input type="submit" value="Delete selected vmtypes"></td></tr>'
+  print '<tr><td colspan="6" style="text-align: center"><input type="submit" value="Delete selected machinetypes"></td></tr>'
   print '</table>'
 
   htmlFormCookie(userDN)
   print '</form>'
 
-  print '<h3>Add a vmtype</h3>'
+  print '<h3>Add a machinetype</h3>'
   
   print '<form method="post" action="' + requestURI + '">'
-  print 'New vmtype name: <input type="text" name="vmtypename">'
+  print 'New machinetype name: <input type="text" name="machinetypename">'
   htmlFormCookie(userDN)
-  print '<input type="submit" value="Add vmtype">'
-  print '<input type="hidden" name="action" value="addvmtype">'
+  print '<input type="submit" value="Add machinetype">'
+  print '<input type="hidden" name="action" value="addmachinetype">'
   print '</form>'
 
   # Subnets for this space
@@ -934,7 +934,7 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
   try:
     if cgiForm.getfirst('action') == 'uploadp12':
 
-      cur.execute('UPDATE sites SET p12=%s,p12updated=NOW() WHERE siteid=%s', (cgiForm.getfirst('p12file'), siteID) )
+      cur.execute('UPDATE sites SET apelp12=%s,apelp12updated=NOW() WHERE siteid=%s', (cgiForm.getfirst('p12file'), siteID) )
 
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
       print 'Location: https://viab.gridpp.ac.uk' + requestURI
@@ -1110,9 +1110,9 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
   print '<p>Uploading a valid cert/key will cause APEL accounting reports to be sent. '
   print 'The sitename ' + siteName + ' will be used when reporting to APEL. '
 
-  cur.execute('SELECT LENGTH(p12) AS p12len,p12,p12updated FROM sites WHERE siteid=%s', siteID)
+  cur.execute('SELECT LENGTH(p12) AS apelp12len,apelp12,apelp12updated FROM sites WHERE siteid=%s', siteID)
   rows = cur.fetchall()
-  print '<p>.p12 file ' + str(rows[0]['p12len']) + ' bytes, updated ' + str(rows[0]['p12updated'])
+  print '<p>.p12 file ' + str(rows[0]['apelp12len']) + ' bytes, updated ' + str(rows[0]['apelp12updated'])
 
   print '<h3>Upload .p12 file</h3>'
   
@@ -1285,10 +1285,10 @@ siteName   = None
 siteID     = None
 spaceName  = None
 spaceID    = None
-vmtypeName = None
-vmtypeID   = None
-hostName   = None
-hostID     = None
+machinetypeName = None
+machinetypeID   = None
+factoryName   = None
+factoryID     = None
 
 uriElements = requestURI.split('/')
 
@@ -1345,29 +1345,29 @@ if spaceName:
     sys.exit(0)
     
   try:
-    if uriElements[4] == 'vmtypes':
-      vmtypeName = uriElements[5]
-    elif  uriElements[4] == 'hosts':
-      hostName   = uriElements[5]
+    if   uriElements[4] == 'machinetypes':
+      machinetypeName = uriElements[5]
+    elif uriElements[4] == 'factories':
+      factoryName   = uriElements[5]
   except:
     pass
 
-if hostName:
+if factoryName:
   try:
-    cur.execute('SELECT hostid FROM hosts WHERE spaceid=%s AND hostname=%s', (spaceID, hostName))
+    cur.execute('SELECT factoryid FROM factories WHERE spaceid=%s AND factoryname=%s', (spaceID, factoryName))
     rows = cur.fetchall() 
-    hostID = int(rows[0]['hostid'])
+    factoryID = int(rows[0]['factoryid'])
   except:
     print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
     print 'Location: https://viab.gridpp.ac.uk/admin/' + siteName + '/' + spaceName + '/'
     print
     sys.exit(0)
 
-if vmtypeName:
+if machinetypeName:
   try:
-    cur.execute('SELECT vmtypeid FROM vmtypes WHERE spaceid=%s AND vmtypename=%s', (spaceID, vmtypeName))
+    cur.execute('SELECT machinetypeid FROM machinetypes WHERE spaceid=%s AND machinetypename=%s', (spaceID, machinetypeName))
     rows = cur.fetchall() 
-    vmtypeID = int(rows[0]['vmtypeid'])
+    machinetypeID = int(rows[0]['machinetypeid'])
   except:
     print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
     print 'Location: https://viab.gridpp.ac.uk/admin/' + siteName + '/' + spaceName + '/'
@@ -1400,10 +1400,10 @@ if action:
       htmlFooter(userDN)
       sys.exit(0)
 
-if hostName:
-  oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, hostName, hostID)
-elif vmtypeName:
-  oneVmtype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, vmtypeName, vmtypeID)
+if factoryName:
+  oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, factoryName, factoryID)
+elif machinetypeName:
+  oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, machinetypeName, machinetypeID)
 elif spaceName:
   oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, published)
 elif siteName:

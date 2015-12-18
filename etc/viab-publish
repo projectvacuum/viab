@@ -74,7 +74,7 @@ echo -n '#### Make access control ' ; date
 (
 echo 'SSLRequire \'
 
-cat $TEMPDIR/viab-conf/viab/hosts-network | (
+cat $TEMPDIR/viab-conf/viab/factories-network | (
   while read mac host ip
   do
     echo " %{REMOTE_ADDR} == \"$ip\" or \\"
@@ -98,7 +98,7 @@ cp -f $DOCUMENT_ROOT/repo/$VIAB_SITENAME/.https.htaccess \
       $DOCUMENT_ROOT/SRPMS/$VIAB_SITENAME/.https.htaccess
 
 # Update HTTP access control
-cat $TEMPDIR/viab-conf/viab/hosts-network | (
+cat $TEMPDIR/viab-conf/viab/factories-network | (
 
   iplist=''
   while read mac host ip
@@ -154,7 +154,7 @@ sed -e "s/##VIAB_SITENAME##/$VIAB_SITENAME/g"		\
     /var/lib/viab/etc/ks.cfg       	  	\
     > $DOCUMENT_ROOT/ks/$VIAB_SITENAME/$VIAB_SPACENAME/ks-usb.cfg
 
-cat $TEMPDIR/viab-conf/viab/hosts-network | (
+cat $TEMPDIR/viab-conf/viab/factories-network | (
 
 while read mac host ip
 do
