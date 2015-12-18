@@ -216,7 +216,7 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
                   (cur.lastrowid, machinetypeID) )
 
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
-      print 'Location: https://viab.gridpp.ac.uk/admin/' + siteName + '/' + spaceName + '/machinetypes/' + cloneName + '/'
+      print 'Location: https://viab.gridpp.ac.uk/dashboard/' + siteName + '/' + spaceName + '/machinetypes/' + cloneName + '/'
       print
       return
   except:
@@ -288,9 +288,9 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
 
   htmlHeader('machinetype ' + machinetypeName)
   
-  print ('<div class="breadcrumbs"><a href="/admin/">All Sites</a> ' + 
-         '/ <a href="/admin/' + siteName + '/">' + siteName + '</a> ' +
-         '/ <a href="/admin/' + siteName + '/' + spaceName + '/">' + spaceName + '</a> ' +
+  print ('<div class="breadcrumbs"><a href="/dashboard/">All Sites</a> ' + 
+         '/ <a href="/dashboard/' + siteName + '/">' + siteName + '</a> ' +
+         '/ <a href="/dashboard/' + siteName + '/' + spaceName + '/">' + spaceName + '</a> ' +
          '/ ' + machinetypeName + '</div>')
 
   print '<h1>machinetype&nbsp;' + machinetypeName + '</h1>'
@@ -426,9 +426,9 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
   
   rows = cur.fetchall()
 
-  print ('<div class="breadcrumbs"><a href="/admin/">All Sites</a> ' + 
-         '/ <a href="/admin/' + siteName + '/">' + siteName + '</a> ' +
-         '/ <a href="/admin/' + siteName + '/' + spaceName + '/">' + spaceName + '</a> ' +
+  print ('<div class="breadcrumbs"><a href="/dashboard/">All Sites</a> ' + 
+         '/ <a href="/dashboard/' + siteName + '/">' + siteName + '</a> ' +
+         '/ <a href="/dashboard/' + siteName + '/' + spaceName + '/">' + spaceName + '</a> ' +
          '/ ' + factoryName + '</div>')
 
   print '<h1>Factory ' + factoryName + '</h1>'
@@ -759,8 +759,8 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   
   rows = cur.fetchall()
 
-  print ('<div class="breadcrumbs"><a href="/admin/">All Sites</a> / ' + 
-         '<a href="/admin/' + siteName + '/">' + siteName + '</a> ' +
+  print ('<div class="breadcrumbs"><a href="/dashboard/">All Sites</a> / ' + 
+         '<a href="/dashboard/' + siteName + '/">' + siteName + '</a> ' +
          '/ ' + spaceName + '</div>')
 
   print '<h1>Space&nbsp;' + spaceName + '</h1>'
@@ -794,7 +794,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
 
   n=0    
   for row in rows:
-    print ('<tr><td class="' + oddEven(n) + '"><a href="/admin/' + siteName + '/' + spaceName + '/factories/' + row['factoryname'] + '/">' + row['factoryname'] + '</a></td>' +
+    print ('<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + siteName + '/' + spaceName + '/factories/' + row['factoryname'] + '/">' + row['factoryname'] + '</a></td>' +
            '<td class="' + oddEven(n) + '">' + row['ip'] + '</td>' +
            '<td class="' + oddEven(n) + '">' + row['mac'] + '</td>' +
            '<td class="' + oddEven(n) + '">' + str(row['cpu_per_machine']) + '</td>' +
@@ -862,7 +862,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
       targetShare = 0.0
       
   
-    print ('<tr><td class="' + oddEven(n) + '"><a href="/admin/' + siteName + '/' + spaceName + '/machinetypes/' + row['machinetypename'] + '/">' + row['machinetypename'] + '</a></td>' +
+    print ('<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + siteName + '/' + spaceName + '/machinetypes/' + row['machinetypename'] + '/">' + row['machinetypename'] + '</a></td>' +
            '<td class="' + oddEven(n) + '">' + str(targetShare) + '</td>' +
            '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['machinetypeid']) + '"></td>' +
            '</tr>\n') 
@@ -1039,7 +1039,7 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
   
   rows = cur.fetchall()
 
-  print ('<div class="breadcrumbs"><a href="/admin/">All Sites</a> / ' + siteName + '</div>')
+  print ('<div class="breadcrumbs"><a href="/dashboard/">All Sites</a> / ' + siteName + '</div>')
 
   print '<h1>Site ' + siteName
 
@@ -1050,7 +1050,7 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
 
   n=0    
   for row in rows:
-    print '<tr><td class="' + oddEven(n) + '"><a href="/admin/' + siteName + '/' + row['spacename'] + '/">' + row['spacename'] + '</a></td>'
+    print '<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + siteName + '/' + row['spacename'] + '/">' + row['spacename'] + '</a></td>'
 
     if row['published'] is None:
       print '<td class="' + oddEven(n) + '" style="text-align: center"> - </td>' 
@@ -1210,7 +1210,7 @@ def allSites(requestURI, userDN, cgiForm):
     
   n = 0
   for row in rows:
-    print '<tr><td class="' + oddEven(n) + '"><a href="/admin/' + row['sitename'] + '/">' + row['sitename'] + '</a></td></tr>\n'
+    print '<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + row['sitename'] + '/">' + row['sitename'] + '</a></td></tr>\n'
     n += 1
                 
   print '</table>'
@@ -1304,7 +1304,7 @@ if siteName:
     siteID = int(rows[0]['siteid'])
   except:
     print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
-    print 'Location: https://viab.gridpp.ac.uk/admin/'
+    print 'Location: https://viab.gridpp.ac.uk/dashboard/'
     print 
     sys.exit(0)
   else:
@@ -1340,7 +1340,7 @@ if spaceName:
     published = rows[0]['published']
   except:
     print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
-    print 'Location: https://viab.gridpp.ac.uk/admin/' + siteName + '/'
+    print 'Location: https://viab.gridpp.ac.uk/dashboard/' + siteName + '/'
     print
     sys.exit(0)
     
@@ -1359,7 +1359,7 @@ if factoryName:
     factoryID = int(rows[0]['factoryid'])
   except:
     print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
-    print 'Location: https://viab.gridpp.ac.uk/admin/' + siteName + '/' + spaceName + '/'
+    print 'Location: https://viab.gridpp.ac.uk/dashboard/' + siteName + '/' + spaceName + '/'
     print
     sys.exit(0)
 
@@ -1370,7 +1370,7 @@ if machinetypeName:
     machinetypeID = int(rows[0]['machinetypeid'])
   except:
     print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
-    print 'Location: https://viab.gridpp.ac.uk/admin/' + siteName + '/' + spaceName + '/'
+    print 'Location: https://viab.gridpp.ac.uk/dashboard/' + siteName + '/' + spaceName + '/'
     print
     sys.exit(0)
 

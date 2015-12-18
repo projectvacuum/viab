@@ -73,9 +73,9 @@ ExpiresActive on
 ExpiresDefault A0
 </Location>
 
-Redirect       /admin/ https://viab.gridpp.ac.uk/admin/
-Redirect       /docs/  https://viab.gridpp.ac.uk/docs/
-RedirectMatch  ^/$     https://viab.gridpp.ac.uk/
+Redirect       /dashboard/ https://viab.gridpp.ac.uk/dashboard/
+Redirect       /docs/      https://viab.gridpp.ac.uk/docs/
+RedirectMatch  ^/$         https://viab.gridpp.ac.uk/
 </VirtualHost>
 
 <VirtualHost viab.gridpp.ac.uk:443>
@@ -103,7 +103,7 @@ ExpiresActive on
 ExpiresDefault A0
 </Location>
 
-ScriptAliasMatch ^/admin/.* /var/lib/viab/bin/viab-cgi
-ScriptAliasMatch ^/docs/.*  /var/lib/viab/bin/viab-cgi
-ScriptAliasMatch ^/$        /var/lib/viab/bin/viab-cgi
+ScriptAliasMatch ^/dashboard/.* /var/lib/viab/bin/viab-cgi
+ScriptAliasMatch ^/docs/.*      /var/lib/viab/bin/viab-cgi
+ScriptAliasMatch ^/$            /var/lib/viab/bin/viab-cgi
 </VirtualHost>
