@@ -36,35 +36,21 @@
 
 echo -n '#### Starting viab-publish ' ; date
 
-source /var/lib/viab/VERSION
-export VIAB_VERSION=$VERSION
 export DOCUMENT_ROOT=/var/lib/viab/www
 
-# Defaults for testing
+# Get values saved by viab-cgi
 
-if [ "$1" = "" ] ; then
- export VIAB_SITENAME=UKI-NORTHGRID-MAN-HEP
- export VIAB_SPACENAME=vac04.tier2.hep.manchester.ac.uk
- export VIAB_PASSWORD_HASH='sjsdkfjskdFJKSDJFKSAJDKFJ293JF2N3F23NI28394239FJ239FH2'
-
- TEMPDIR=`mktemp -d`
- cd $TEMPDIR
- mkdir -p viab-conf
- cp -a /var/lib/viab/db/$VIAB_SITENAME/$VIAB_SPACENAME/* viab-conf
- echo $VIAB_SITENAME > viab-conf/viab/sitename
- echo $VIAB_SPACENAME > viab-conf/viab/spacename
-else
- TEMPDIR="$1"
- cd $TEMPDIR
- export VIAB_SITENAME=`cat viab-conf/viab/sitename`
- export VIAB_SPACENAME=`cat viab-conf/viab/spacename`
- export VIAB_PASSWORD_HASH='sjsdkfjskdFJKSDJFKSAJDKFJ293JF2N3F23NI28394239FJ239FH2'
-fi
+TEMPDIR="$1"
+cd $TEMPDIR
+# VIAB_VERSION here and on factory is PROD_VERSION in viab-cgi!
+export VIAB_VERSION=`cat viab-conf/viab/version`
+export VIAB_SITENAME=`cat viab-conf/viab/sitename`
+export VIAB_SPACENAME=`cat viab-conf/viab/spacename`
+export VIAB_PASSWORD_HASH='sjsdkfjskdFJKSDJFKSAJDKFJ293JF2N3F23NI28394239FJ239FH2'
 
 # Ensure web directories exist
 
-mkdir -p $DOCUMENT_ROOT/SRPMS/$VIAB_SITENAME/$VIAB_SPACENAME/$VIAB_VERSION \
-         $DOCUMENT_ROOT/repo/$VIAB_SITENAME/$VIAB_SPACENAME/$VIAB_VERSION  \
+mkdir -p $DOCUMENT_ROOT/repo/$VIAB_SITENAME/$VIAB_SPACENAME/$VIAB_VERSION  \
          $DOCUMENT_ROOT/ks/$VIAB_SITENAME/$VIAB_SPACENAME \
          $DOCUMENT_ROOT/iso/$VIAB_SITENAME/$VIAB_SPACENAME
 
@@ -94,8 +80,6 @@ echo ' 1==2'
 cp -f $DOCUMENT_ROOT/repo/$VIAB_SITENAME/.https.htaccess \
       $DOCUMENT_ROOT/ks/$VIAB_SITENAME/.https.htaccess
 
-cp -f $DOCUMENT_ROOT/repo/$VIAB_SITENAME/.https.htaccess \
-      $DOCUMENT_ROOT/SRPMS/$VIAB_SITENAME/.https.htaccess
 
 # Update HTTP access control
 cat $TEMPDIR/viab-conf/viab/factories-network | (
@@ -115,31 +99,23 @@ cat $TEMPDIR/viab-conf/viab/factories-network | (
 cp -f $DOCUMENT_ROOT/repo/$VIAB_SITENAME/.http.htaccess \
       $DOCUMENT_ROOT/ks/$VIAB_SITENAME/.http.htaccess
       
-cp -f $DOCUMENT_ROOT/repo/$VIAB_SITENAME/.http.htaccess \
-      $DOCUMENT_ROOT/SRPMS/$VIAB_SITENAME/.http.htaccess
 
 # Make RPM in $TEMPDIR
 echo -n '#### Make RPMs and repo ' ; date
 
-mkdir -p SOURCES SPECS BUILD SRPMS RPMS/noarch BUILDROOT
-cp -p /var/lib/viab/etc/viab-conf-postinstall \
-      /var/lib/viab/etc/viab-conf-p12 \
-      /var/lib/viab/etc/lazyssh \
-      /var/lib/viab/etc/dnsmasq-wrapper \
-      /var/lib/viab/etc/squid.conf.template \
-      /var/lib/viab/etc/vac-ssmsend-cron \
+mkdir -p SOURCES SPECS BUILD RPMS/noarch BUILDROOT
+cp -p /var/lib/viab/etc/$VIAB_VERSION/viab-conf-postinstall \
+      /var/lib/viab/etc/$VIAB_VERSION/viab-conf-p12 \
+      /var/lib/viab/etc/$VIAB_VERSION/lazyssh \
+      /var/lib/viab/etc/$VIAB_VERSION/dnsmasq-wrapper \
+      /var/lib/viab/etc/$VIAB_VERSION/squid.conf.template \
+      /var/lib/viab/etc/$VIAB_VERSION/vac-ssmsend-cron \
       viab-conf
-#cp -p /var/lib/viab/etc/vac-ssmsend-prod.cfg \
-#      viab-conf/viab
 cp /var/lib/viab/isolinux/vmlinuz /var/lib/viab/isolinux/initrd.img viab-conf
 tar zcvf SOURCES/viab-conf.tgz --owner=root --group=root --exclude-backups viab-conf
-cp /var/lib/viab/etc/viab-conf.spec .
+cp /var/lib/viab/etc/$VIAB_VERSION/viab-conf.spec .
 rpmbuild -ba --define "_topdir $TEMPDIR" --buildroot $TEMPDIR/BUILDROOT viab-conf.spec
 
-cp SRPMS/viab-conf-*-1.src.rpm $DOCUMENT_ROOT/SRPMS/$VIAB_SITENAME/$VIAB_SPACENAME/$VIAB_VERSION
-find $DOCUMENT_ROOT/SRPMS/$VIAB_SITENAME/$VIAB_SPACENAME/$VIAB_VERSION -name '*.rpm' -ctime +1 -exec rm -f {} \;
-
-#rm -Rf $DOCUMENT_ROOT/repo/$VIAB_SITENAME/$VIAB_SPACENAME/$VIAB_VERSION/*
 cp RPMS/noarch/viab-conf-*-1.noarch.rpm $DOCUMENT_ROOT/repo/$VIAB_SITENAME/$VIAB_SPACENAME/$VIAB_VERSION
 find $DOCUMENT_ROOT/repo/$VIAB_SITENAME/$VIAB_SPACENAME/$VIAB_VERSION -name '*.rpm' -ctime +1 -exec rm -f {} \;
 createrepo $DOCUMENT_ROOT/repo/$VIAB_SITENAME/$VIAB_SPACENAME/$VIAB_VERSION
@@ -151,7 +127,7 @@ sed -e "s/##VIAB_SITENAME##/$VIAB_SITENAME/g"		\
     -e "s/##VIAB_SPACENAME##/$VIAB_SPACENAME/g"		\
     -e "s/##VIAB_VERSION##/$VIAB_VERSION/g"     	\
     -e "s/##VIAB_PASSWORD_HASH##/$VIAB_PASSWORD_HASH/g"	\
-    /var/lib/viab/etc/ks.cfg       	  	\
+    /var/lib/viab/etc/$VIAB_VERSION/ks.cfg       	  	\
     > $DOCUMENT_ROOT/ks/$VIAB_SITENAME/$VIAB_SPACENAME/ks-usb.cfg
 
 cat $TEMPDIR/viab-conf/viab/factories-network | (
@@ -163,7 +139,7 @@ do
       -e "s/##VIAB_VERSION##/$VIAB_VERSION/g"     		\
       -e "s/##VIAB_PASSWORD_HASH##/$VIAB_PASSWORD_HASH/g"	\
       -e "s/^url.*/& --proxy=http:\/\/$ip:3128\//"		\
-      /var/lib/viab/etc/ks.cfg         				\
+      /var/lib/viab/etc/$VIAB_VERSION/ks.cfg         				\
       > $DOCUMENT_ROOT/ks/$VIAB_SITENAME/$VIAB_SPACENAME/ks-$host.cfg
 done
 
@@ -180,8 +156,8 @@ echo -n '#### Make viab-usb.iso ' ; date
 ISOTEMPDIR=`mktemp -d`
 
 cp /var/lib/viab/isolinux/* $ISOTEMPDIR
-cp /var/lib/viab/etc/splash.jpg \
-   /var/lib/viab/etc/isolinux.cfg $ISOTEMPDIR
+cp /var/lib/viab/etc/$VIAB_VERSION/splash.jpg \
+   /var/lib/viab/etc/$VIAB_VERSION/isolinux.cfg $ISOTEMPDIR
 sed -i "s/##VIAB_SITENAME##/$VIAB_SITENAME/g" $ISOTEMPDIR/isolinux.cfg
 sed -i "s/##VIAB_SPACENAME##/$VIAB_SPACENAME/g" $ISOTEMPDIR/isolinux.cfg
 
@@ -197,7 +173,7 @@ sed -i "s/##VIAB_SPACENAME##/$VIAB_SPACENAME/g" $ISOTEMPDIR/isolinux.cfg
  -volset 'Vac-in-a-Box' \
  -R -J -v -T $ISOTEMPDIR
 
-/var/lib/viab/bin/isohybrid-SL66 $DOCUMENT_ROOT/iso/$VIAB_SITENAME/$VIAB_SPACENAME/viab-usb.iso
+/usr/bin/isohybrid $DOCUMENT_ROOT/iso/$VIAB_SITENAME/$VIAB_SPACENAME/viab-usb.iso
 
 rm -Rf $ISOTEMPDIR/*
 rmdir $ISOTEMPDIR

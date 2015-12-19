@@ -74,7 +74,7 @@ def htmlHeader(title):
   print 'Content-Type: text/html'
   print
   print '<html><head><title>' + title + '</title>'
-  print open('/var/lib/viab/www/header.html', 'r').read()
+  print open('/var/lib/viab/www/header.html', 'r').read().replace('/docs/VERSION/','/docs/' + prodVersion + '/')
 
 def htmlFooter(userDN):
   if userDN:
@@ -453,7 +453,7 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
  
   htmlFooter(userDN)
   
-def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID):
+def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID, spaceVersion):
 
   # Set up the temporary directory tree
   try:
@@ -462,8 +462,9 @@ def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID):
     os.mkdir(tempDir + '/viab-conf/vac.d')
     os.mkdir(tempDir + '/viab-conf/viab')
     os.mkdir(tempDir + '/viab-conf/machinetypes')
-    open(tempDir + '/viab-conf/viab/sitename', 'w').write(siteName)
+    open(tempDir + '/viab-conf/viab/sitename',  'w').write(siteName)
     open(tempDir + '/viab-conf/viab/spacename', 'w').write(spaceName)
+    open(tempDir + '/viab-conf/viab/version',   'w').write(spaceVersion)
   except:
     return None
 
@@ -483,12 +484,12 @@ def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID):
   # Create the APEL .p12 file for the site (or empty file if none)
 
   try:
-    cur.execute('SELECT p12 FROM sites WHERE siteid=%s', siteID)
+    cur.execute('SELECT apelp12 FROM sites WHERE siteid=%s', siteID)
     rows = cur.fetchall()
     f = open(tempDir + '/viab-conf/viab/vac-apel-certkey.p12', 'w')
     
     try:
-      f.write(rows[0]['p12'])
+      f.write(rows[0]['apelp12'])
     except:
       pass
       
@@ -588,7 +589,7 @@ def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID):
   # Run the viab-publish script on our temporary directory
   
   try:
-    f = os.popen('/var/lib/viab/bin/viab-publish ' + tempDir + ' 2>&1', 'r')    
+    f = os.popen('/var/lib/viab/etc/' + spaceVersion + '/viab-publish ' + tempDir + ' 2>&1', 'r')    
     commandOutput = f.read()
     retCode = f.close()    
   except:
@@ -597,21 +598,40 @@ def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID):
   # Clean up our temporary directory tree
   shutil.rmtree(tempDir)
       
-  cur.execute('UPDATE spaces SET published=NOW(),publishlog=%s WHERE spaceID=%s', (str(commandOutput), str(spaceID)) )
+  cur.execute('UPDATE spaces SET published=NOW(),publishlog=%s WHERE spaceID=%s', (str(commandOutput), str(spaceID)))
 
   print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
   print 'Location: https://viab.gridpp.ac.uk' + requestURI
   print
   return
 
-def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, published):
+def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, published, spaceVersion):
 
   global cur
   
   try:
     if cgiForm['action'].value == 'publish':
+      publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID, spaceVersion)
+      return
+
+  except:
+    pass
+          
+  try:
+    if cgiForm['action'].value == 'changeversion' and cgiForm['version'].value:
+      newSpaceVersion = cgiForm['version'].value.strip()
+
+      if '/' in newSpaceVersion or not os.path.isdir('/var/lib/viab/etc/' + newSpaceVersion):
+        print 'Content-Type: text/html'
+        print
+        print 'Version ' + newSpaceVersion + ' does not exist!'
+        return
                
-      publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID)
+      cur.execute('UPDATE spaces SET version=%s WHERE spaceid=%s', (newSpaceVersion, spaceID))
+
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
       return
 
   except:
@@ -775,7 +795,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '<input type="hidden" name="action" value="publish">'
 
   htmlFormCookie(userDN)
-  print '<p><input type="submit" value="Publish configuration RPM">'
+  print '<input type="submit" value="Publish configuration RPM">'
   print '</form>'
 
   if published:
@@ -784,6 +804,31 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   else:
     print '<p>Once the RPM has been publihsed, you will be able to downlaod the USB .iso boot image.'
   
+  # Change version paragraph
+
+  print '<form method="post" action="' + requestURI + '">'
+
+  print '<input type="hidden" name="action" value="changeversion">'
+
+  print '<p>This space is at Vac-in-a-Box version ' + spaceVersion
+  if prodVersion == spaceVersion:
+    print ' which is the recommended production version. '
+  else:
+    print ' <b>but the recommended production version is now ' + prodVersion + '.</b> '
+
+  print '<br><select name="version">\n'
+  
+  versionsList = os.listdir('/var/lib/viab/etc')
+  versionsList.sort()
+
+  for v in versionsList:
+    print '<option value="' + v + '" ' + ('selected' if v == spaceVersion else '') + '>Version ' + v + '</option>\n'
+      
+  print '</select>\n'
+
+  htmlFormCookie(userDN)
+  print '<input type="submit" value="Change Vac-in-a-Box version">'
+  print '</form>'
 
   print '<h2>Factories in this space</h2>'
 
@@ -847,7 +892,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   
   rows = cur.fetchall()
 
-  print '<h2>machinetypes in this space</h2>'
+  print '<h2>Machinetypes in this space</h2>'
 
   print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletemachinetypes">'
 
@@ -1024,7 +1069,7 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
         print 'Space names are limited to lowercase letters numbers . -'
         return
       
-      cur.execute('INSERT INTO spaces SET siteid=%s,spacename=%s', (siteID, spaceName))
+      cur.execute('INSERT INTO spaces SET siteid=%s,spacename=%s,version=%s', (siteID, spaceName, prodVersion))
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
       print 'Location: https://viab.gridpp.ac.uk' + requestURI
       print
@@ -1035,7 +1080,7 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
 
   htmlHeader('Site ' + siteName)
   
-  cur.execute('SELECT spacename,published FROM spaces WHERE siteid=%s ORDER BY spacename', siteID)
+  cur.execute('SELECT spacename,published,version FROM spaces WHERE siteid=%s ORDER BY spacename', siteID)
   
   rows = cur.fetchall()
 
@@ -1046,11 +1091,12 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
   print '<h2>Spaces</h2>'
 
   print '<table class="center">'
-  print '<tr><th class="oddeven">Space</th><th class="oddeven">USB .iso</th><th class="oddeven">RPM published</th></tr>'
+  print '<tr><th class="oddeven">Space</th><th class="oddeven">Version</th><th class="oddeven">USB .iso</th><th class="oddeven">RPM published</th></tr>'
 
   n=0    
   for row in rows:
     print '<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + siteName + '/' + row['spacename'] + '/">' + row['spacename'] + '</a></td>'
+    print '<td class="' + oddEven(n) + '" style="text-align: center">' + row['version'] + '</td>'
 
     if row['published'] is None:
       print '<td class="' + oddEven(n) + '" style="text-align: center"> - </td>' 
@@ -1232,8 +1278,13 @@ def allSites(requestURI, userDN, cgiForm):
 # PROGRAM MAIN
 #
 
-requestURI   = os.environ['REQUEST_URI']
-documentRoot = os.environ['DOCUMENT_ROOT']
+requestURI  = os.environ['REQUEST_URI']
+viabVersion = open('/var/lib/viab/VERSION','r').readline().split('=',1)[1].strip()
+
+try:
+  prodVersion = open('/var/lib/viab/PROD_VERSION','r').readline().split('=',1)[1].strip()
+except:
+  prodVersion = viabVersion
 
 try:
   userDN = os.environ['SSL_CLIENT_S_DN']
@@ -1244,7 +1295,7 @@ if requestURI == '/':
   htmlHeader('Vac-in-a-Box')
 
   try:
-    print open(documentRoot + '/index.html', 'r').read()
+    print open('/var/lib/viab/www/index.html', 'r').read()
   except:
     pass  
 
@@ -1253,17 +1304,18 @@ if requestURI == '/':
     
 elif requestURI[:6] == '/docs/':
 
-  if requestURI == '/docs/':
+  pageVersion, pageName  = requestURI.split('/')[2:4]
+
+  if pageName == '':
     pageName  = 'index'
     pageTitle = 'Vac-in-a-Box docs'
   else:
-    pageName  = requestURI.split('/')[2]
     pageTitle = pageName.replace('_',' ').title()
 
   htmlHeader(pageTitle)
 
   try:
-    print open(documentRoot + '/docs/' + pageName + '.html', 'r').read()
+    print open('/var/lib/viab/www/docs/' + pageVersion + '/' + pageName + '.html', 'r').read()
   except:
     pass  
 
@@ -1334,10 +1386,11 @@ if siteName:
 
 if spaceName:
   try:
-    cur.execute('SELECT spaceid,published FROM spaces WHERE siteid=%s AND spacename=%s', (siteID, spaceName))
-    rows = cur.fetchall() 
-    spaceID = int(rows[0]['spaceid'])
-    published = rows[0]['published']
+    cur.execute('SELECT spaceid,published,version FROM spaces WHERE siteid=%s AND spacename=%s', (siteID, spaceName))
+    rows         = cur.fetchall() 
+    spaceID      = int(rows[0]['spaceid'])
+    published    = rows[0]['published']
+    spaceVersion = rows[0]['version']
   except:
     print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
     print 'Location: https://viab.gridpp.ac.uk/dashboard/' + siteName + '/'
@@ -1401,11 +1454,11 @@ if action:
       sys.exit(0)
 
 if factoryName:
-  oneHost(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, factoryName, factoryID)
+  oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, factoryName, factoryID)
 elif machinetypeName:
   oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, machinetypeName, machinetypeID)
 elif spaceName:
-  oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, published)
+  oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, published, spaceVersion)
 elif siteName:
   oneSite(requestURI, userDN, cgiForm, siteName, siteID)
 else :
