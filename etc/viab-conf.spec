@@ -1,6 +1,6 @@
 Name: viab-conf
-Version: %( date +'%%Y%%m%%d%%H%%M%%S' )
-Release: 1
+Release: ##RPM_RELEASE##
+Version: ##RPM_VERSION##
 BuildArch: noarch
 Summary: Vac-in-a-Box configuration
 License: BSD
@@ -37,13 +37,17 @@ cp viab/* $RPM_BUILD_ROOT/etc/viab
 cp vac-ssmsend-cron $RPM_BUILD_ROOT/etc/cron.d
 cp squid.conf.template $RPM_BUILD_ROOT/etc/squid/squid.conf.template
 cp vmlinuz initrd.img $RPM_BUILD_ROOT/var/lib/tftpboot
-cp -a machinetypes/* $RPM_BUILD_ROOT/var/lib/vac/machinetypes
 cp -p authorized_keys $RPM_BUILD_ROOT/root/.ssh
+cp -a machinetypes/* $RPM_BUILD_ROOT/var/lib/vac/machinetypes
 
 %pre
 rm -f /etc/vac.d/*
 
 %post
+# Temporary measure until Vac 0.20
+rm -Rf /var/lib/vac/vmtypes
+ln -sf /var/lib/vac/machinetypes /var/lib/vac/vmtypes
+
 /usr/sbin/viab-conf-postinstall
 
 %files

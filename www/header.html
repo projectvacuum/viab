@@ -10,10 +10,12 @@ a:visited { color: #303030; }
 a:active  { color: #ff0000; }
 a:hover   { color: #ff0000; }
 
-h1, h2 { line-height: 1.45em; color: #196FA6; border-bottom: 2px solid #196FA6; width: 98%;}
-h3 { line-height: 1.45em; color: #505050E; border-bottom: 2px solid #505050; width: 33%;}
+h1, h2 { clear: both; line-height: 1.45em; color: #196FA6; border-bottom: 2px solid #196FA6; width: 98%;}
+h3 { clear: both; line-height: 1.45em; color: #505050E; border-bottom: 2px solid #505050; width: 33%;}
 
-h1.dashboard, h2.dashboard, h3.dashboard { line-height: 1.45em; color: #0F9E57; border-bottom: 1px solid #0F9E57; width: 98%;}
+div.breadcrumbs { float: right; background-color: EEEEFF; padding-left: 5px; padding-right: 5px; margin-bottom: 20px; text-align: right; }
+
+h1.dashboard, h2.dashboard, h3.dashboard { clear: both; line-height: 1.45em; color: #0F9E57; border-bottom: 1px solid #0F9E57; width: 98%;}
 
 form {margin: 0px 0px 0px 0px; display: inline; }
 
@@ -22,8 +24,6 @@ table.center { margin-left:auto; margin-right:auto; }
 th.oddeven   { background-color: EEEEFF; padding: 5px; }
 td.even      { background-color: F4F4FF; padding: 5px; }
 td.odd       { background-color: EEEEFF; padding: 5px; }
-
-div.breadcrumbs { float: right; background-color: EEEEFF; padding-left: 5px; padding-right: 5px; margin-bottom: 20px; text-align: right; }
 
 #topstrip { 
 		color: #FFFFFF;	
@@ -108,7 +108,8 @@ ul.lhlevel2 {
    line-height: 1.4em;
    list-style: none;
    margin: 0px;
-   padding: 0.3em;
+   X-padding: 0.3em;
+   padding-left: 1.5em;
 }
 
 li.lhlevel1 {
@@ -123,10 +124,11 @@ li.lhlevel2 {
    text-decoration: none;
    font-size: 1em;
    line-height: 1.3em;
-   list-style: none;
-   background: url( /block.gif ) no-repeat 0px 5px;
+   list-style-type: square;
+   X-background: url( /block.gif ) no-repeat 0px 5px;
    margin: 0;
-   padding-left: 15px; 
+   X-padding: 0.2em;
+   X-padding-left: 0.3em; 
             }
 
 a.lhlevel1:link    { color: #505050; text-decoration: none; }

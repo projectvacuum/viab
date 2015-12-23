@@ -61,21 +61,7 @@
 ServerName viab.gridpp.ac.uk
 DocumentRoot /var/lib/viab/www
 CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/http--viab.gridpp.ac.uk-%Y%m%d 86400" combined
-
-AccessFileName .http.htaccess
-
-<Directory /var/lib/viab/www>
-AllowOverride AuthConfig Limit
-</Directory>
-
-<Location /repo/>
-ExpiresActive on
-ExpiresDefault A0
-</Location>
-
-Redirect       /dashboard/ https://viab.gridpp.ac.uk/dashboard/
-Redirect       /docs/      https://viab.gridpp.ac.uk/docs/
-RedirectMatch  ^/$         https://viab.gridpp.ac.uk/
+Redirect / https://viab.gridpp.ac.uk/
 </VirtualHost>
 
 <VirtualHost viab.gridpp.ac.uk:443>
@@ -85,6 +71,7 @@ DocumentRoot /var/lib/viab/www
 
 SSLEngine               on
 SSLCertificateFile      /etc/grid-security/viab.cert.pem
+SSLCertificateChainFile /etc/grid-security/viab.chain.pem
 SSLCertificateKeyFile   /etc/grid-security/viab.key.pem
 SSLCACertificatePath    /etc/grid-security/certificates
 #SSLCARevocationPath    YOUR CRL DIRECTORY WOULD GO HERE
@@ -92,7 +79,7 @@ SSLVerifyClient         optional
 SSLVerifyDepth          10
 SSLOptions              +ExportCertData +StdEnvVars
 
-AccessFileName .https.htaccess
+AccessFileName .htaccess
 
 <Directory /var/lib/viab/www>
 AllowOverride AuthConfig
