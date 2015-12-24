@@ -134,7 +134,7 @@ label install
 EOF
 
 # Using our kickstart file means hosts installing from this host use its Squid cache
-echo "  append ks=http://viab.gridpp.ac.uk/ks/$VIAB_SITENAME/$VIAB_SPACENAME/ks-$HOSTNAME.cfg ksdevice=bootif initrd=initrd.img text"
+echo "  append ks=https://viab.gridpp.ac.uk/ks/$VIAB_SITENAME/$VIAB_SPACENAME/ks-$HOSTNAME.cfg ksdevice=bootif initrd=initrd.img text"
     
 ) > /var/lib/tftpboot/pxelinux.cfg/default.tmp
 

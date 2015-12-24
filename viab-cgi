@@ -405,11 +405,16 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
       except:
         scratchGb = 40
 
+      try:
+        draining = int(cgiForm['draining'].value)
+      except:
+        draining = 0
+
       cur.execute('UPDATE factories SET ip=%s,mac=%s,mb_per_machine=%s,udp_timeout_seconds=%s,' +
-                  'cpu_per_machine=%s,hs06_per_cpu=%s,scratch_gb=%s,updated=NOW() ' +
+                  'cpu_per_machine=%s,hs06_per_cpu=%s,scratch_gb=%s,draining=%s,updated=NOW() ' +
                   'WHERE factoryid=%s AND spaceid=%s',
                   ( cgiForm['ip'].value, cgiForm['mac'].value, mbPerMachine, udpTimeoutSeconds,
-                    cpuPerMachine, hs06PerCpu, scratchGb,
+                    cpuPerMachine, hs06PerCpu, scratchGb, draining,
                     factoryID, spaceID) )
 
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
@@ -422,7 +427,7 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
 
   htmlHeader('Factory ' + factoryName)
     
-  cur.execute('SELECT ip,mac,mb_per_machine,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu,scratch_gb FROM factories WHERE factoryID=%s', factoryID)
+  cur.execute('SELECT ip,mac,mb_per_machine,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu,scratch_gb,draining FROM factories WHERE factoryID=%s', factoryID)
   
   rows = cur.fetchall()
 
@@ -437,6 +442,7 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
  
   print '<table class="center">'
 
+  print '<tr><td>Hostname:</td><td>' + factoryName + '</td></tr>'
   print '<tr><td>IP:</td><td><input type="text" name="ip" value="' + rows[0]['ip'] + '"></td></tr>'
   print '<tr><td>MAC:</td><td><input type="text" name="mac" value="' + rows[0]['mac'] + '"></td></tr>'
   print '<tr><td>mb_per_machine:</td><td><input type="text" name="mb_per_machine" value="' + str(rows[0]['mb_per_machine']) + '"></td></tr>'
@@ -444,12 +450,16 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
   print '<tr><td>cpu_per_machine:</td><td><input type="text" name="cpu_per_machine" value="' + str(rows[0]['cpu_per_machine']) + '"></td></tr>'
   print '<tr><td>hs06_per_cpu:</td><td><input type="text" name="hs06_per_cpu" value="' + str(rows[0]['hs06_per_cpu']) + '"></td></tr>'
   print '<tr><td>scratch_gb:</td><td><input type="text" name="scratch_gb" value="' + str(rows[0]['scratch_gb']) + '"></td></tr>'
+  print '<tr><td>Draining:</td><td> Yes<input type="radio" name="draining" value="1" ' + ('checked' if rows[0]['draining'] == 1 else '') + \
+          '> No<input type="radio" name="draining" value="0" ' + ('checked' if rows[0]['draining'] != 1 else '') + '> </td></tr>'
 
   print '<tr><td colspan=2 style="text-align: center"><input type="submit" value="Update factory"></td></tr>'
   htmlFormCookie(userDN)
   print '<input type="hidden" name="action" value="updatefactory">'
   print '</table>'
   print '</form>'
+
+  print '<p>Remember that changes will only take effect once you have republished the configuration RPM and the factory has done its hourly automatic yum update!'
  
   htmlFooter(userDN)
   
@@ -653,7 +663,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     pass
          
   htmlHeader('Space ' + spaceName)
-  cur.execute('SELECT factoryid,factoryname,ip,mac,cpu_per_machine,hs06_per_cpu,scratch_gb FROM factories WHERE spaceid=%s ORDER BY factoryname', spaceID)
+  cur.execute('SELECT factoryid,factoryname,ip,mac,cpu_per_machine,hs06_per_cpu,scratch_gb,draining FROM factories WHERE spaceid=%s ORDER BY factoryname', spaceID)
   
   rows = cur.fetchall()
 
@@ -688,7 +698,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
 
   print '<input type="hidden" name="action" value="changeversion">'
 
-  print '<p>Factories in this space will be installed with Vac-in-a-Box version ' + spaceVersion
+  print '<p>Vac-in-a-Box version ' + spaceVersion + ' will be installed on factories in this space, '
   if prodVersion == spaceVersion:
     print ' which is the recommended production version. '
   else:
@@ -713,15 +723,16 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletefactories">'
     
   print '<table class="center">'
-  print '<tr><th class="oddeven">Hostname</th><th class="oddeven">IP</th><th class="oddeven">MAC</th><th class="oddeven">cpu/machine</th><th class="oddeven">HS06/cpu</th><th class="oddeven">&nbsp;</th></tr>'
+  print '<tr><th class="oddeven">Host</th><th class="oddeven">IP</th><th class="oddeven">MAC</th><th class="oddeven">cpu&nbsp;/<br>machine</th><th class="oddeven">HS06<br>/&nbsp;cpu</th><th class="oddeven">Draining?</th><th class="oddeven">&nbsp;</th></tr>'
 
   n=0    
   for row in rows:
-    print ('<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + siteName + '/' + spaceName + '/factories/' + row['factoryname'] + '/">' + row['factoryname'] + '</a></td>' +
+    print ('<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + siteName + '/' + spaceName + '/factories/' + row['factoryname'] + '/">' + row['factoryname'].split('.')[0] + '</a></td>' +
            '<td class="' + oddEven(n) + '">' + row['ip'] + '</td>' +
            '<td class="' + oddEven(n) + '">' + row['mac'] + '</td>' +
            '<td class="' + oddEven(n) + '">' + str(row['cpu_per_machine']) + '</td>' +
            '<td class="' + oddEven(n) + '">' + str(row['hs06_per_cpu']) + '</td>' +
+           '<td class="' + oddEven(n) + '">' + ('Yes' if row['draining'] == 1 else '') + '</td>' +
            '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['factoryid']) + '"></td>' +
            '</tr>\n') 
     n += 1
