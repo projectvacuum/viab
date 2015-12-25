@@ -476,9 +476,14 @@ def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID, space
   try:
     f = os.popen('/var/lib/viab/etc/' + spaceVersion + '/viab-publish ' + tempDir + ' ' + siteName + ' ' + spaceName + ' ' + spaceVersion + ' 2>&1', 'r')
     commandOutput = f.read()
-    retCode = f.close()    
+    retCode = f.close()
   except:
     return None  
+
+  if retCode is None:
+    retCode = 0
+
+  commandOutput += '\n(Return code of viab-publish = ' + str(retCode) + ')\n'
 
   # Clean up our temporary directory tree
   shutil.rmtree(tempDir)
