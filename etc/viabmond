@@ -1,0 +1,170 @@
+#!/usr/bin/python
+#
+#  viabmond - ViaBmon daemon which runs on factory nodes
+#
+#  Andrew McNab, University of Manchester.
+#  Copyright (c) 2013-5. All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or
+#  without modification, are permitted provided that the following
+#  conditions are met:
+#
+#    o Redistributions of source code must retain the above
+#      copyright notice, this list of conditions and the following
+#      disclaimer. 
+#    o Redistributions in binary form must reproduce the above
+#      copyright notice, this list of conditions and the following
+#      disclaimer in the documentation and/or other materials
+#      provided with the distribution. 
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+#  CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+#  INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+#  BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+#  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+#  TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+#  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+#  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+#  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+#  Contacts: Andrew.McNab@cern.ch  http://www.gridpp.ac.uk/vac/
+#
+
+import os
+import sys
+import json
+import time
+import socket
+import stat
+
+db  = None
+cur = None
+
+# viab_cgi_conf.py must define these variables:
+#
+# mysqlUser     = 'username'
+# mysqlPassword = 'PAsSWoRd'
+#
+
+sys.path.append('/var/lib/viab/bin')
+import viab_cgi_conf
+
+def logLine(text):
+  print time.strftime('%b %d %H:%M:%S : ') + text
+    sys.stdout.flush()
+    
+#
+# PROGRAM MAIN !!!
+# 
+
+if (os.fork() != 0):
+  sys.exit() # first parent
+
+else:
+  os.chdir("/")
+  os.umask(0) 
+
+  if os.fork() != 0:
+    sys.exit() # second parent
+
+  else:
+   si = file('/dev/null', 'r')
+   os.dup2(si.fileno(), sys.stdin.fileno())
+
+   so = file('/var/log/vacd-responder', 'a+')
+   os.dup2(so.fileno(), sys.stdout.fileno())
+          
+   se = file('/var/log/viabmond', 'a+', 0)     
+   os.dup2(se.fileno(), sys.stderr.fileno())
+
+   open('/var/run/viabmond.pid', 'w').write(str(os.getpid()) + '\n')
+
+   sock = None
+
+   logLine('viabmond starts')
+
+   while True:
+   
+     try:
+       close(so)
+     except:
+       pass
+           
+     so = file('/var/log/viabmond', 'a+')
+     os.dup2(so.fileno(), sys.stdout.fileno())
+          
+     try:
+       close(se)
+     except:
+       pass
+
+     se = file('/var/log/viabmond', 'a+', 0)     
+     os.dup2(se.fileno(), sys.stderr.fileno())
+
+     if sock is None:
+       sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+       vac.shared.setSockBufferSize(sock)
+       sock.settimeout(60.0)
+
+       try:
+         sock.bind(('', 8884))
+       except Exception as e:
+         sock = None
+         logLine('Failed to bind to ViaBmon port 8884: ' + str(e))
+         time.sleep(60.0)
+         continue
+             
+     try:
+       pr = open('/var/run/viabmond.pid', 'r')
+       pid = int(pr.read().strip())
+       pr.close()
+       
+       if pid != os.getpid():
+         logLine('os.getpid ' + os.getpid() + ' does not match viabmond.pid ' + pid + ' - exiting')
+         break
+                
+     except:
+       logLine('no viabmond.pid - exiting')
+       break
+
+     # so log file is updated before we start waiting        
+     sys.stdout.flush()
+     sys.stderr.flush()
+
+     try:
+       data, addr = sock.recvfrom(1024)
+     except socket.error as msg:
+       continue
+
+     try:
+       monMessage = json.loads(data)
+     except:
+       continue
+
+     try:
+       db  = MySQLdb.connect(host="localhost", user=viab_cgi_conf.mysqlUser, passwd=viab_cgi_conf.mysqlPassword, db='viab')
+       cur = db.cursor(MySQLdb.cursors.DictCursor)
+     except Exception as e:
+       logLine('Failed with database problem (' + str(e) + ')')
+       continue
+       
+     try:
+       # Get space/site numbers 
+       cur.execute('SELECT factoryid FROM factories LEFT JOIN spaces ON spaces.spaceid=factories.spaceid WHERE factoryname=%s and spacename=%s and moncookie=%s', 
+                   (monMessage['factory'], monMessage['space'], monMessage['cookie']))
+       rows = cur.fetchall()
+       factoryID = int(rows[0]['factoryid'])
+     except Exception as e:
+       logLine('Failed getting factoryID (' + str(e) + ')')
+
+     try:     
+       cur.execute('UPDATE factories SET vac_version=%s,viab_version=%s,version_time=NOW() WHERE factoryid=%s', factoryID)
+     except Exception as e:
+       logine('Failed updating versions (' + str(e) + ')')
+
+   sys.exit(0) # if we break out of while loop then we exit
+
