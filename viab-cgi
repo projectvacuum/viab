@@ -427,7 +427,7 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
 
   htmlHeader('Factory ' + factoryName)
     
-  cur.execute('SELECT ip,mac,mb_per_machine,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu,scratch_gb,draining FROM factories WHERE factoryID=%s', factoryID)
+  cur.execute('SELECT ip,mac,mb_per_machine,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu,scratch_gb,draining,viab_version,vac_version,viab_heartbeat,boot_time FROM factories WHERE factoryID=%s', factoryID)
   
   rows = cur.fetchall()
 
@@ -443,6 +443,10 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
   print '<table class="center">'
 
   print '<tr><td>Hostname:</td><td>' + factoryName + '</td></tr>'
+  print '<tr><td>ViaB version:</td><td>' + rows[0]['viab_version'] + '</td></tr>'
+  print '<tr><td>Vac version:</td><td>' + rows[0]['vac_version'] + '</td></tr>'
+  print '<tr><td>ViaB heartbeat:</td><td>' + str(rows[0]['viab_heartbeat']) + '</td></tr>'
+  print '<tr><td>Boot time:</td><td>' + str(rows[0]['boot_time']) + '</td></tr>'
   print '<tr><td>IP:</td><td><input type="text" name="ip" value="' + rows[0]['ip'] + '"></td></tr>'
   print '<tr><td>MAC:</td><td><input type="text" name="mac" value="' + rows[0]['mac'] + '"></td></tr>'
   print '<tr><td>mb_per_machine:</td><td><input type="text" name="mb_per_machine" value="' + str(rows[0]['mb_per_machine']) + '"></td></tr>'
@@ -462,6 +466,22 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
   print '<p>Remember that changes will only take effect once you have republished the configuration RPM and the factory has done its hourly automatic yum update!'
  
   htmlFooter(userDN)
+
+def secondsToString(timeStamp):
+
+  if timeStamp is None or timeStamp == 0:
+    return ' - '
+  
+  seconds = int(time.time() - timeStamp)
+
+  if seconds < 120:
+    return str(seconds) + 's'
+  elif seconds < 7200:
+    return '%dm' % (seconds / 60)
+  elif seconds < 172800:
+    return '%dh' % (seconds / 3600)
+  else:
+    return '%dd' % (seconds / 86400)
   
 def publishSpace(requestURI, userDN, siteName, siteID, spaceName, spaceID, spaceVersion):
 
@@ -668,7 +688,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     pass
          
   htmlHeader('Space ' + spaceName)
-  cur.execute('SELECT factoryid,factoryname,ip,mac,cpu_per_machine,hs06_per_cpu,scratch_gb,draining FROM factories WHERE spaceid=%s ORDER BY factoryname', spaceID)
+  cur.execute('SELECT factoryid,factoryname,ip,mac,cpu_per_machine,hs06_per_cpu,scratch_gb,viab_version,UNIX_TIMESTAMP(boot_time) AS boot_time,UNIX_TIMESTAMP(viab_heartbeat) AS viab_heartbeat,draining FROM factories WHERE spaceid=%s ORDER BY factoryname', spaceID)
   
   rows = cur.fetchall()
 
@@ -728,13 +748,23 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletefactories">'
     
   print '<table class="center">'
-  print '<tr><th class="oddeven">Host</th><th class="oddeven">IP</th><th class="oddeven">MAC</th><th class="oddeven">cpu&nbsp;/<br>machine</th><th class="oddeven">HS06<br>/&nbsp;cpu</th><th class="oddeven">Draining?</th><th class="oddeven">&nbsp;</th></tr>'
+  print '<tr><th class="oddeven">Host</th><th class="oddeven">IP</th><th class="oddeven">MAC</th><th class="oddeven">Version</th><th class="oddeven">Booted</th><th class="oddeven">Heartbeat</th><th class="oddeven">cpu&nbsp;/<br>machine</th><th class="oddeven">HS06<br>/&nbsp;cpu</th><th class="oddeven">Draining?</th><th class="oddeven">&nbsp;</th></tr>'
 
   n=0    
   for row in rows:
+    if row['viab_heartbeat'] < int(time.time() - 86400):
+      heartbeatClass = 'alarm'
+    elif row['viab_heartbeat'] < int(time.time() - 3600):
+      heartbeatClass = 'warning'
+    else:
+      heartbeatClass = oddEven(n)
+  
     print ('<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + siteName + '/' + spaceName + '/factories/' + row['factoryname'] + '/">' + row['factoryname'].split('.')[0] + '</a></td>' +
            '<td class="' + oddEven(n) + '">' + row['ip'] + '</td>' +
            '<td class="' + oddEven(n) + '">' + row['mac'] + '</td>' +
+           '<td class="' + oddEven(n) + '">' + str(row['viab_version']) + '</td>' +
+           '<td class="' + oddEven(n) + '">' + secondsToString(row['boot_time']) + '</td>' +
+           '<td class="' + heartbeatClass + '">' + secondsToString(row['viab_heartbeat']) + '</td>' +           
            '<td class="' + oddEven(n) + '">' + str(row['cpu_per_machine']) + '</td>' +
            '<td class="' + oddEven(n) + '">' + str(row['hs06_per_cpu']) + '</td>' +
            '<td class="' + oddEven(n) + '">' + ('Yes' if row['draining'] == 1 else '') + '</td>' +
@@ -963,7 +993,7 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
         print 'Space names are limited to lowercase letters numbers . -'
         return
       
-      cur.execute('INSERT INTO spaces SET siteid=%s,spacename=%s,version=%s', (siteID, spaceName, prodVersion))
+      cur.execute('INSERT INTO spaces SET siteid=%s,spacename=%s,version=%s,cookie=SHA1(RAND())', (siteID, spaceName, prodVersion))
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
       print 'Location: https://viab.gridpp.ac.uk' + requestURI
       print

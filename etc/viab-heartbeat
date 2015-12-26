@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-#  viabmon-send - ViaBmon status sender
+#  viab-heartbeat - ViaB status sender
 #
 #  Andrew McNab, University of Manchester.
 #  Copyright (c) 2015. All rights reserved.
@@ -43,29 +43,43 @@ import socket
 # Get the values to send for the files on this factory
 
 try:
-  monCookie = open('/etc/viab/moncookie','r').readline().strip()
-except:
-  print 'Failed to read /etc/viab/moncookie'
+  cookie = open('/etc/viab/cookie','r').readline().strip()
+except Exception as e:
+  print 'Failed to read /etc/viab/cookie (' + str(e) + ')'
   sys.exit(1)
 
 try:
   viabVersion = open('/etc/viab/version','r').readline().strip()
-except:
-  print 'Failed to read /etc/viab/version'
+except Exception as e:
+  print 'Failed to read /etc/viab/version (' + str(e) + ')'
+  sys.exit(1)
+
+try:
+  spaceName = open('/etc/viab/spacename','r').readline().strip()
+except Exception as e:
+  print 'Failed to read /etc/viab/spacename (' + str(e) + ')'
   sys.exit(1)
 
 try:
   vacVersion = open('/var/lib/vac/VERSION','r').readline().strip().split('=')[1]
-except:
-  print 'Failed to read /var/lib/vac/VERSION'
+except Exception as e:
+  print 'Failed to read /var/lib/vac/VERSION (' + str(e) + ')'
   sys.exit(2)
+
+try:
+  bootTime = int(time.time() - float(open('/proc/uptime','r').readline().split()[0]))
+except Exception as e:
+  print 'Failed to get bootTime (' + str(e) + ')'
+  sys.exit(3)  
 
 # Construct the JSON message
 
 message = json.dumps({ 'factory'      : os.uname()[1],
-                       'cookie'       : monCookie,
+                       'space'	      : spaceName,
+                       'cookie'       : cookie,
                        'viab_version' : viabVersion,
                        'vac_version'  : vacVersion,
+                       'boot_time'    : bootTime,
                        'time_sent'    : int(time.time()) })
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -77,9 +91,9 @@ for i in [1,2,3,4,5]:
   try:
     sock.sendto(message, ('viab.gridpp.ac.uk', 8884))
   except Exception as e:
-    print 'Failed to send ViaBmon UDP message ' + str(i) + ' (' + str(e) + ')'
+    print 'Failed to send ViaB heartbeat UDP message ' + str(i) + ' (' + str(e) + ')'
   else:
-    print 'Sent ViaBmon UDP message ' + str(i)
+    print 'Sent ViaB heartbeat UDP message ' + str(i)
 
   time.sleep(1.0)
 

@@ -88,14 +88,14 @@ except Exception as e:
   sys.exit(2) 
 
 # Get space/site numbers 
-cur.execute('SELECT spaces.spaceid AS spaceid,spaces.siteid AS siteid,moncookie FROM spaces LEFT JOIN sites ON spaces.siteid=sites.siteid WHERE sitename=%s AND spacename=%s', (siteName, spaceName))
+cur.execute('SELECT spaces.spaceid AS spaceid,spaces.siteid AS siteid,cookie FROM spaces LEFT JOIN sites ON spaces.siteid=sites.siteid WHERE sitename=%s AND spacename=%s', (siteName, spaceName))
 rows = cur.fetchall()
 
 spaceID      = int(rows[0]['spaceid'])
 majorVersion = spaceVersion[:2]
 siteID       = int(rows[0]['siteid'])
 passwordHash = 'sjsdkfjskdFJKSDJFKSAJDKFJ293JF2N3F23NI28394239FJ239FH2'
-monCookie    = rows[0]['moncookie']
+cookie       = rows[0]['cookie']
 
 htaccessStr  = 'SSLRequire \n'
 
@@ -109,7 +109,7 @@ try:
     open(tempDir + '/viab-conf/viab/sitename',  'w').write(siteName)
     open(tempDir + '/viab-conf/viab/spacename', 'w').write(spaceName)
     open(tempDir + '/viab-conf/viab/version',   'w').write(spaceVersion)
-    open(tempDir + '/viab-conf/viab/moncookie', 'w').write(monCookie)
+    open(tempDir + '/viab-conf/viab/cookie', 'w').write(cookie)
 except:
     logLine('Failed after problem making directories (' + str(e) + ')')
     sys.exit(3)
@@ -286,7 +286,7 @@ os.mkdir(tempDir + '/BUILDROOT')
 
 for fileName in [ '/var/lib/viab/etc/' + spaceVersion + '/viab-conf-postinstall',
                   '/var/lib/viab/etc/' + spaceVersion + '/viab-conf-p12',
-                  '/var/lib/viab/etc/' + spaceVersion + '/viabmon-send',
+                  '/var/lib/viab/etc/' + spaceVersion + '/viab-heartbeat',
                   '/var/lib/viab/etc/' + spaceVersion + '/lazyssh',
                   '/var/lib/viab/etc/' + spaceVersion + '/dnsmasq-wrapper',
                   '/var/lib/viab/etc/' + spaceVersion + '/squid.conf.template',

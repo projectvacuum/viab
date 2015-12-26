@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-#  viabmond - ViaBmon daemon which runs on factory nodes
+#  viab-heartbeatd - ViaB heartbeat daemon which runs on ViaB website
 #
 #  Andrew McNab, University of Manchester.
 #  Copyright (c) 2013-5. All rights reserved.
@@ -40,6 +40,7 @@ import json
 import time
 import socket
 import stat
+import MySQLdb
 
 db  = None
 cur = None
@@ -55,7 +56,7 @@ import viab_cgi_conf
 
 def logLine(text):
   print time.strftime('%b %d %H:%M:%S : ') + text
-    sys.stdout.flush()
+  sys.stdout.flush()
     
 #
 # PROGRAM MAIN !!!
@@ -78,14 +79,14 @@ else:
    so = file('/var/log/vacd-responder', 'a+')
    os.dup2(so.fileno(), sys.stdout.fileno())
           
-   se = file('/var/log/viabmond', 'a+', 0)     
+   se = file('/var/log/viab-heartbeatd', 'a+', 0)     
    os.dup2(se.fileno(), sys.stderr.fileno())
 
-   open('/var/run/viabmond.pid', 'w').write(str(os.getpid()) + '\n')
+   open('/var/run/viab-heartbeatd.pid', 'w').write(str(os.getpid()) + '\n')
 
    sock = None
 
-   logLine('viabmond starts')
+   logLine('viab-heartbeatd starts')
 
    while True:
    
@@ -94,7 +95,7 @@ else:
      except:
        pass
            
-     so = file('/var/log/viabmond', 'a+')
+     so = file('/var/log/viab-heartbeatd', 'a+')
      os.dup2(so.fileno(), sys.stdout.fileno())
           
      try:
@@ -102,33 +103,33 @@ else:
      except:
        pass
 
-     se = file('/var/log/viabmond', 'a+', 0)     
+     se = file('/var/log/viab-heartbeatd', 'a+', 0)     
      os.dup2(se.fileno(), sys.stderr.fileno())
 
      if sock is None:
        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-       vac.shared.setSockBufferSize(sock)
+#       vac.shared.setSockBufferSize(sock)
        sock.settimeout(60.0)
 
        try:
          sock.bind(('', 8884))
        except Exception as e:
          sock = None
-         logLine('Failed to bind to ViaBmon port 8884: ' + str(e))
+         logLine('Failed to bind to ViaB heartbeat port 8884: ' + str(e))
          time.sleep(60.0)
          continue
              
      try:
-       pr = open('/var/run/viabmond.pid', 'r')
+       pr = open('/var/run/viab-heartbeatd.pid', 'r')
        pid = int(pr.read().strip())
        pr.close()
        
        if pid != os.getpid():
-         logLine('os.getpid ' + os.getpid() + ' does not match viabmond.pid ' + pid + ' - exiting')
+         logLine('os.getpid ' + os.getpid() + ' does not match viab-heartbeatd.pid ' + pid + ' - exiting')
          break
                 
      except:
-       logLine('no viabmond.pid - exiting')
+       logLine('no viab-heartbeatd.pid - exiting')
        break
 
      # so log file is updated before we start waiting        
@@ -141,7 +142,7 @@ else:
        continue
 
      try:
-       monMessage = json.loads(data)
+       heartbeatMessage = json.loads(data)
      except:
        continue
 
@@ -154,17 +155,20 @@ else:
        
      try:
        # Get space/site numbers 
-       cur.execute('SELECT factoryid FROM factories LEFT JOIN spaces ON spaces.spaceid=factories.spaceid WHERE factoryname=%s and spacename=%s and moncookie=%s', 
-                   (monMessage['factory'], monMessage['space'], monMessage['cookie']))
+       cur.execute('SELECT factoryid FROM factories LEFT JOIN spaces ON spaces.spaceid=factories.spaceid WHERE factoryname=%s AND spacename=%s AND cookie=%s',
+                   (heartbeatMessage['factory'], heartbeatMessage['space'], heartbeatMessage['cookie']))
        rows = cur.fetchall()
        factoryID = int(rows[0]['factoryid'])
      except Exception as e:
        logLine('Failed getting factoryID (' + str(e) + ')')
+       continue
 
      try:     
-       cur.execute('UPDATE factories SET vac_version=%s,viab_version=%s,version_time=NOW() WHERE factoryid=%s', factoryID)
+       cur.execute('UPDATE factories SET vac_version=%s,viab_version=%s,boot_time=FROM_UNIXTIME(%s),viab_heartbeat=NOW() WHERE factoryid=%s', 
+                   (heartbeatMessage['vac_version'], heartbeatMessage['viab_version'], heartbeatMessage['boot_time'], factoryID))
      except Exception as e:
-       logine('Failed updating versions (' + str(e) + ')')
+       logLine('Failed updating versions (' + str(e) + ')')
+       continue
 
    sys.exit(0) # if we break out of while loop then we exit
 
