@@ -89,6 +89,7 @@ def deleteOrphans():
   global cur
 
   cur.execute('DELETE FROM sshkeys WHERE siteid NOT IN (SELECT t.siteid FROM sites t)')
+  cur.execute('DELETE FROM sshfirewall WHERE siteid NOT IN (SELECT t.siteid FROM sites t)')
   cur.execute('DELETE FROM siteadmins WHERE siteid NOT IN (SELECT t.siteid FROM sites t)')
   cur.execute('DELETE FROM spaces WHERE siteid NOT IN (SELECT t.siteid FROM sites t)')
   cur.execute('DELETE FROM subnets WHERE spaceid NOT IN (SELECT s.spaceid FROM spaces s)')
@@ -599,9 +600,22 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
       netmask     = cgiForm['netmask'].value.strip()
       router      = cgiForm['router'].value.strip()
       nameservers = cgiForm['nameservers'].value.strip()
+      ntpservers  = cgiForm['ntpservers'].value.strip().lower()
 
-      cur.execute('INSERT INTO subnets SET spaceid=%s,subnet=%s,netmask=%s,router=%s,nameservers=%s',
-                  (spaceID, subnet, netmask, router, nameservers)) 
+      if not nameservers or nameservers.translate(None, '01234567890. ') != '':
+        print 'Content-Type: text/html'
+        print
+        print 'Name servers must be one or more IP addresses, separated by spaces!'
+        return
+
+      if not ntpservers or ntpservers.translate(None, 'abcdefghijklmnopqrstuvwxyz01234567890.- ') != '':
+        print 'Content-Type: text/html'
+        print
+        print 'NTP servers must be one or more DNS names or IP addresses, separated by spaces!'
+        return
+
+      cur.execute('INSERT INTO subnets SET spaceid=%s,subnet=%s,netmask=%s,router=%s,nameservers=%s,ntpservers=%s',
+                  (spaceID, subnet, netmask, router, nameservers, ntpservers))
 
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
       print 'Location: https://viab.gridpp.ac.uk' + requestURI
@@ -953,17 +967,17 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
 
   # Subnets for this space
 
-  cur.execute('SELECT subnetid,subnet,netmask,router,nameservers FROM subnets WHERE spaceid=%s', spaceID)
+  cur.execute('SELECT subnetid,subnet,netmask,router,nameservers,ntpservers FROM subnets WHERE spaceid=%s', spaceID)
   rows = cur.fetchall()
 
   print '<h2>Subnets</h2>'
   
-  print '<p>These subnets are used when a factory installs and boots up, and so changes will not take effect without a reboot.'
+  print '<p>These subnets are used when a factory installs and boots up, and so changes will not take effect without a reboot. '
   
   print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletesubnets">'
   print '<table>'
   print '<tr><th class="oddeven">Subnet</th><th class="oddeven">Netmask</th>'
-  print '<th class="oddeven">Router</th><th class="oddeven">Nameservers</th><th class="oddeven">&nbsp;</th></tr>'
+  print '<th class="oddeven">Router</th><th class="oddeven">Name&nbsp;servers</th><th class="oddeven">NTP&nbsp;servers</th><th class="oddeven">&nbsp;</th></tr>'
     
   n = 0
   for row in rows:
@@ -971,24 +985,26 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
            '<td class="' + oddEven(n)+ '">' + row['netmask'] + '</td>' +
            '<td class="' + oddEven(n)+ '">' + str(row['router']) + '</td>' +
            '<td class="' + oddEven(n)+ '">' + str(row['nameservers']) + '</td>' +
+           '<td class="' + oddEven(n)+ '">' + str(row['ntpservers']) + '</td>' +
            '<td class="' + oddEven(n)+ '"><input type="checkbox" name="deletelist" value="' + str(row['subnetid']) + '"></td>' +
            '</tr>')
     n += 1
                 
+  print '<tr><td colspan="6" style="text-align: center"><input type="submit" value="Delete selected subnets"></td></tr>'
   print '</table>'
 
   htmlFormCookie(userDN)
-  print '<input type="submit" value="Delete selected subnets">'
   print '</form>'
   
   print '<h3>Add a subnet</h3>'
 
   print '<form method="post" action="' + requestURI + '">'
   print '<table>'
-  print '<tr><td>Subnet:</td><td><input type="text" name="subnet"></td></tr>'
-  print '<tr><td>Netmask:</td><td><input type="text" name="netmask"></td></tr>'
-  print '<tr><td>Router:</td><td><input type="text" name="router"></td></tr>'
-  print '<tr><td>Nameservers:</td><td><input type="text" name="nameservers" value="8.8.8.8, 8.8.4.4"></td></tr>'
+  print '<tr><td>Subnet:</td><td><input type="text" name="subnet"></td><td>Four part subnet IP address, eg 192.168.1.0</td></tr>'
+  print '<tr><td>Netmask:</td><td><input type="text" name="netmask"></td><td>eg 255.255.255.0 for class C subnet</td></tr>'
+  print '<tr><td>Router:</td><td><input type="text" name="router"></td><td>IP address of router</td></tr>'
+  print '<tr><td>Name servers:</td><td><input type="text" name="nameservers" maxlen="255" value="8.8.8.8 8.8.4.4"></td><td>One or more IP addresses, separated by spaces</td></tr>'
+  print '<tr><td>NTP servers:</td><td><input type="text" name="ntpservers" maxlen="255" value="europe.pool.ntp.org"></td><td>One or more DNS names or IP addresses, separated by spaces</td></tr>'
   print '</table>' 
   print '<input type="submit" value="Add subnet">'
   htmlFormCookie(userDN)
@@ -1044,6 +1060,53 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
 
       for deleteKey in deleteList:              
         cur.execute('DELETE FROM sshkeys WHERE siteid=' + str(siteID) + ' AND keyid=' + str(deleteKey))
+     
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+
+  except:
+    pass
+    
+  try:
+    if cgiForm['action'].value == 'addsshrule' and cgiForm['ip'].value and cgiForm['netmask'].value:
+         
+      ip = cgiForm['ip'].value.strip()
+      if not ip or ip.translate(None, '01234567890.') != '':
+        print 'Content-Type: text/html'
+        print
+        print 'IP address must only be digits and periods (&quot;.&quot;)!'
+        return
+
+      netmask = cgiForm['netmask'].value.strip()
+      if not netmask or netmask.translate(None, '01234567890.') != '':
+        print 'Content-Type: text/html'
+        print
+        print 'Netmask must only be digits and periods (&quot;.&quot;)!'
+        return
+
+      try:
+        comment = cgiForm['comment'].value.strip()
+      except:
+        comment = ''
+
+      cur.execute('INSERT INTO sshrules SET siteid=%s,ip=%s,netmask=%s,comment=%s', (siteID, ip, netmask, comment))
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+
+  except:
+    pass
+          
+  try:
+    if cgiForm['action'].value == 'deletesshrules' and cgiForm['deletelist'].value:
+         
+      deleteList = cgiForm.getlist('deletelist')
+
+      for deleteRuleID in deleteList:
+        cur.execute('DELETE FROM sshrules WHERE siteid=%s AND ruleid=%s', (siteID, deleteRuleID))
      
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
       print 'Location: https://viab.gridpp.ac.uk' + requestURI
@@ -1175,14 +1238,13 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
   print '<h2>SSH keys</h2>'
   print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletekeys">'
   print '<table class="center">'
-  print '<tr><th class="oddeven">Key</th><th class="oddeven">Type</th><th class="oddeven">Comment</th><th class="oddeven" colspan="2">Added</th></tr>'
+  print '<tr><th class="oddeven">Key</th><th class="oddeven">Type</th><th class="oddeven" colspan="2">Comment</th></tr>'
 
   n = 0    
   for row in rows:
     print ('<tr><td class="' + oddEven(n) + '">' + ' '.join(textwrap.wrap(row['keyvalue'],40)) + '</td>' +
            '<td class="' + oddEven(n) + '">' + row['keytype'] + '</td>' +
            '<td class="' + oddEven(n) + '">' + row['comment'] + '</td>' +
-           '<td class="' + oddEven(n) + '">' + str(row['added']) + '</td>' +
            '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['keyid']) + '"></td>' +
            '</tr>')
                 
@@ -1200,6 +1262,40 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
   print '<input type="submit" value="Add ssh key">'
   htmlFormCookie(userDN)
   print '<input type="hidden" name="action" value="addsshkey">'
+  print '</form>'
+
+  cur.execute('SELECT ruleid,ip,netmask,siteid,comment FROM sshrules WHERE siteid=%s', siteID)
+  rows = cur.fetchall()
+   
+  print '<h2>SSH firewall rules</h2>'
+  print '<p>You can ssh to factories from the IP addresses and subnets listed here. Ssh is blocked from other addresses. If you lock yourself out, you should be able to update the rules here, republish the RPM for the spaces involved, and wait for the next autoupdate.'
+  
+  print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletesshrules">'
+  print '<table class="center">'
+  print '<tr><th class="oddeven">IP</th><th class="oddeven">Netmask</th><th class="oddeven" colspan="2">Comment</th></tr>'
+
+  n = 0    
+  for row in rows:
+    print ('<tr><td class="' + oddEven(n) + '">' + row['ip'] + '</td>' +
+           '<td class="' + oddEven(n) + '">' + row['netmask'] + '</td>' +
+           '<td class="' + oddEven(n) + '">' + row['comment'] + '</td>' +
+           '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['ruleid']) + '"></td>' +
+           '</tr>')
+                
+  print '<tr><td colspan="4" style="text-align: center"><input type="submit" value="Delete selected rules"></td></tr>'
+  print '</table>'
+
+  htmlFormCookie(userDN)
+  print '</form>'
+
+  print '<h3>Add an ssh firewall rule</h3>'
+  print '<form method="post" action="' + requestURI + '">'
+  print 'IP: <input type="text" name="ip"> '
+  print 'Netmask: <input type="text" name="netmask" value="255.255.255.255"> '
+  print 'Comment: <input type="text" name="comment"> '
+  print '<input type="submit" value="Add ssh rule">'
+  htmlFormCookie(userDN)
+  print '<input type="hidden" name="action" value="addsshrule">'
   print '</form>'
 
   print '<h2>APEL certificate/key .p12 file</h2>'

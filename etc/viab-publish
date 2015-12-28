@@ -127,6 +127,19 @@ try:
 except:
     sys.exit(2)
 
+# Create the sshrules file from site sshrules (or empty file if none)
+logLine('Creating sshrules file')
+try:
+    cur.execute('SELECT ip,netmask FROM sshrules WHERE siteid=%s', siteID)
+    rows = cur.fetchall()
+
+    f = open(tempDir + '/viab-conf/viab/sshrules', 'w')
+    for row in rows:
+      f.write(row['ip'] + ' ' + row['netmask'] + '\n')
+    f.close()
+except:
+    sys.exit(2)
+
 # Create the APEL .p12 file for the site (or empty file if none)
 logLine('Creating APEL .p12 file')
 try:
@@ -147,14 +160,28 @@ except:
 # Create the subnets file from space subnets (or empty file if none)
 logLine('Creating subnets file')
 try:
-    cur.execute('SELECT subnet,netmask,router,nameservers FROM subnets WHERE spaceid=%s', spaceID)
+    cur.execute('SELECT subnet,netmask,router,nameservers,ntpservers FROM subnets WHERE spaceid=%s', spaceID)
     rows = cur.fetchall()
 
     f = open(tempDir + '/viab-conf/viab/subnets', 'w')
     for row in rows:
-      f.write(row['subnet'] + ' ' + row['netmask'] + ' ' + row['router'] + ' ' + row['nameservers'] + '\n')
+    
+      nameserversList = row['nameservers'].split()
+      nameservers     = nameserversList[0]
+
+      for i in range(1, len(nameserversList)):
+        nameservers += ',' + nameserversList[i]
+    
+      ntpserversList = row['ntpservers'].split()
+      ntpservers     = ntpserversList[0]
+
+      for i in range(1, len(ntpserversList)):
+        ntpservers += ',' + ntpserversList[i]
+    
+      f.write(row['subnet'] + ' ' + row['netmask'] + ' ' + row['router'] + ' ' + nameservers + ' ' + ntpservers + '\n')
     f.close()
-except:
+except Exception as e: 
+    logLine('Create subnets fails with ' + str(e))
     sys.exit(3)
 
 # Find the version of Vac for this ViaB version

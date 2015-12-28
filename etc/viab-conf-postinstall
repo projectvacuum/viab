@@ -78,9 +78,22 @@ cp -f /etc/squid/squid.conf.template /etc/squid/squid.conf.tmp
 
 cat /etc/viab/subnets | (
 
-while read subnet netmask router nameservers
+while read subnet netmask router nameservers ntpservers
 do
- echo "subnet $subnet netmask $netmask { option routers $router; option domain-name-servers $nameservers; }" >>/etc/dhcp/dhcpd.conf.tmp
+ echo "subnet $subnet netmask $netmask { option routers $router; option domain-name-servers $nameservers; option ntp-servers $ntpservers; }" >>/etc/dhcp/dhcpd.conf.tmp
+done
+
+)
+
+# First remove the existing ViaB ssh iptables rules
+/sbin/iptables-save | /bin/grep -v 'ViaB ssh access' | /sbin/iptables-restore
+
+# Now (re)add the current ssh iptables rules
+cat /etc/viab/sshrules | (
+
+while read ip netmask
+do
+ /sbin/iptables -t filter -A INPUT -s $ip/$netmask -p tcp -m state --state NEW -m tcp --dport 22 -m comment --comment "ViaB ssh access" -j ACCEPT
 done
 
 )
