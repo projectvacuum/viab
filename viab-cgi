@@ -88,6 +88,8 @@ def deleteOrphans():
 
   global cur
 
+  cur.execute('DELETE FROM sshkeys WHERE siteid NOT IN (SELECT t.siteid FROM sites t)')
+  cur.execute('DELETE FROM siteadmins WHERE siteid NOT IN (SELECT t.siteid FROM sites t)')
   cur.execute('DELETE FROM spaces WHERE siteid NOT IN (SELECT t.siteid FROM sites t)')
   cur.execute('DELETE FROM subnets WHERE spaceid NOT IN (SELECT s.spaceid FROM spaces s)')
   cur.execute('DELETE FROM factories WHERE spaceid NOT IN (SELECT s.spaceid FROM spaces s)')
@@ -101,7 +103,7 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
   # All values here must be presented as strings!
   machinetypePresets = {
 
-   'example' : { 'vm_model'              : 'cernvm3',
+   'example' : { 'machine_model'         : 'cernvm3',
                  'user_data'             : 'https://repo.gridpp.ac.uk/vacproject/example/user_data',
                  'root_image'            : 'https://repo.gridpp.ac.uk/vacproject/example/cernvm3.iso',
                  'backoff_seconds'	 : '600',
@@ -112,7 +114,7 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
                  'user_data_option_cvmfs_proxy' : 'http://169.254.169.254:3128/'
                },
 
-   'GridPP' :  { 'vm_model'              : 'cernvm3',
+   'GridPP' :  { 'machine_model'         : 'cernvm3',
                  'user_data'             : 'https://repo.gridpp.ac.uk/vacproject/gridpp/user_data',
                  'root_image'            : 'https://repo.gridpp.ac.uk/vacproject/gridpp/cernvm3.iso',
                  'backoff_seconds'	 : '3600',
@@ -130,7 +132,7 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
                  'user_data_option_cvmfs_proxy' : 'http://169.254.169.254:3128/'
                },
 
-   'ATLAS' :   { 'vm_model'              : 'cernvm3',
+   'ATLAS' :   { 'machine_model'         : 'cernvm3',
                  'user_data'             : 'https://repo.gridpp.ac.uk/vacproject/atlas/user_data',
                  'root_image'            : 'https://repo.gridpp.ac.uk/vacproject/atlas/cernvm3.iso',
                  'backoff_seconds'	 : '3600',
@@ -148,7 +150,7 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
                  'user_data_option_cvmfs_proxy' : 'http://169.254.169.254:3128/'
                },
 
-   'CMS' :     { 'vm_model'              : 'cernvm3',
+   'CMS' :     { 'machine_model'         : 'cernvm3',
                  'user_data'             : 'https://repo.gridpp.ac.uk/vacproject/cms/user_data',
                  'root_image'            : 'https://repo.gridpp.ac.uk/vacproject/cms/cernvm3.iso',
                  'backoff_seconds'	 : '3600',
@@ -167,7 +169,7 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
                  'user_data_option_cvmfs_proxy' : 'http://169.254.169.254:3128/'
                },
 
-   'LHCb'   :  { 'vm_model'              : 'cernvm3',
+   'LHCb'   :  { 'machine_model'         : 'cernvm3',
                  'user_data'             : 'https://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/user_data',
                  'root_image'            : 'https://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/cernvm3.iso',
                  'backoff_seconds'	 : '3600',
@@ -222,6 +224,20 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
 
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
       print 'Location: https://viab.gridpp.ac.uk/dashboard/' + siteName + '/' + spaceName + '/machinetypes/' + cloneName + '/'
+      print
+      return
+  except:
+    pass
+
+  try:
+    if cgiForm['action'].value == 'movemachinetype' and cgiForm['newspaceid']:
+
+      newSpaceID = int(cgiForm['newspaceid'].value.strip())
+
+      cur.execute('UPDATE machinetypes SET spaceid=%s WHERE machinetypeid=%s', (newSpaceID, machinetypeID))
+
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
       print
       return
   except:
@@ -361,6 +377,28 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
   print '<input type="submit" value="Clone machinetype"><input type="hidden" name="action" value="clonemachinetype">'
   print '</form>'
 
+
+  cur.execute('SELECT spaces.spaceid,spacename FROM spaces LEFT JOIN machinetypes ON machinetypes.spaceid=spaces.spaceid AND machinetypes.machinetypename=%s WHERE siteid=%s AND spaces.spaceid<>%s AND machinetypes.machinetypeid IS NULL ORDER BY spacename',
+              (machinetypeName, siteID, spaceID) )
+  spaceRows = cur.fetchall()
+
+  print '<h2>Move machinetype to another space</h2>'
+  
+  if len(spaceRows) > 0:
+    print '<p>You can use this form to move this machinetype to another space at this site. Only spaces which do not already have a machinetype with the name &quot;' + machinetypeName + '&quot; are shown. '
+    print '<form method="post" action="' + requestURI + '">'
+    print 'New space: <select name="newspaceid">'
+
+    for spaceRow in spaceRows:
+      print '<option value="' + str(spaceRow['spaceid']) + '">' + spaceRow['spacename'] + '</option>'
+    
+    print '</select>'    
+    print '<input type="submit" value="Move machinetype"><input type="hidden" name="action" value="movemachinetype">'
+    htmlFormCookie(userDN)
+    print '</form>'
+  else:
+    print '<p>There are no spaces at this site which you can move this machinetype to, either because there are no other spaces, or because they already have a machinetype with the name &quot;' + machinetypeName + '&quot;.'
+      
   print '<h2>Certificate/key .p12 file</h2>'
 
   cur.execute('SELECT LENGTH(p12) AS p12len,p12,p12updated FROM machinetypes WHERE machinetypeid=%s', machinetypeID)
@@ -920,6 +958,8 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
 
   print '<h2>Subnets</h2>'
   
+  print '<p>These subnets are used when a factory installs and boots up, and so changes will not take effect without a reboot.'
+  
   print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletesubnets">'
   print '<table>'
   print '<tr><th class="oddeven">Subnet</th><th class="oddeven">Netmask</th>'
@@ -1044,6 +1084,24 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
     pass
     
   try:
+    if cgiForm['action'].value == 'deletespaces' and cgiForm['deletelist'].value:
+
+      deleteList = cgiForm.getlist('deletelist')
+
+      for deleteSpaceID in deleteList:
+        cur.execute('DELETE FROM spaces WHERE siteid=%s AND spaceid=%s', (siteID, deleteSpaceID))
+     
+      deleteOrphans()
+     
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+
+  except:
+    pass
+    
+  try:
     if cgiForm['action'].value == 'addspace' and cgiForm['spacename'].value:
          
       spaceName = cgiForm['spacename'].value
@@ -1065,7 +1123,7 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
 
   htmlHeader('Site ' + siteName)
   
-  cur.execute('SELECT spacename,published,version FROM spaces WHERE siteid=%s ORDER BY spacename', siteID)
+  cur.execute('SELECT spacename,published,version,spaceid FROM spaces WHERE siteid=%s ORDER BY spacename', siteID)
   
   rows = cur.fetchall()
 
@@ -1075,9 +1133,12 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
 
   print '<h2>Spaces</h2>'
 
-  print '<table class="center">'
-  print '<tr><th class="oddeven">Space</th><th class="oddeven">Version</th><th class="oddeven">USB .iso</th><th class="oddeven">RPM published</th></tr>'
+  print '<form method="post" action="' + requestURI + '">'
 
+  print '<table class="center">'
+  print '<tr><th class="oddeven">Space</th><th class="oddeven">Version</th><th class="oddeven">USB .iso</th><th class="oddeven">RPM published</th>'
+  print '<th class="oddeven"><input type="checkbox" onchange="for (var i = 0; i < this.form.length; ++i) { if (this.form[i].type == \'checkbox\') { form[i].checked = this.checked; } }"></th></tr>'
+  
   n=0    
   for row in rows:
     print '<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + siteName + '/' + row['spacename'] + '/">' + row['spacename'] + '</a></td>'
@@ -1085,13 +1146,18 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
 
     if row['published'] is None:
       print '<td class="' + oddEven(n) + '" style="text-align: center"> - </td>' 
-      print '<td class="' + oddEven(n) + '" style="text-align: center">Never</td></tr>\n'
+      print '<td class="' + oddEven(n) + '" style="text-align: center">Never</td>\n'
     else:
       print '<td class="' + oddEven(n) + '"><a href="/iso/' + siteName + '/' + row['spacename'] + '/viab-usb.iso">Download</a></td>' 
-      print '<td class="' + oddEven(n) + '">' + str(row['published']) + '</td></tr>\n'
+      print '<td class="' + oddEven(n) + '">' + str(row['published']) + '</td>\n'
     
+    print '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['spaceid']) + '"></td></tr>'
     n += 1 
-                
+
+  print '<tr><td colspan="5" style="text-align: center"><input type="submit" value="Delete selected spaces"><input type="hidden" name="action" value="deletespaces"></td></tr>'
+  htmlFormCookie(userDN)
+  print '</form>'
+
   print '</table>'
 
   print '<h3>Add a space</h3>'  
