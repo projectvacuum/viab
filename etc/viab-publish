@@ -97,7 +97,7 @@ siteID       = int(rows[0]['siteid'])
 passwordHash = 'sjsdkfjskdFJKSDJFKSAJDKFJ293JF2N3F23NI28394239FJ239FH2'
 cookie       = rows[0]['cookie']
 
-htaccessStr  = 'SSLRequire \n'
+htaccessStr  = 'SSLRequire \\\n'
 
 # Set up the temporary directory tree
 logLine('Making temporary directory tree')
@@ -157,12 +157,18 @@ try:
 except:
     sys.exit(3)
 
-
+# Find the version of Vac for this ViaB version
+try:
+  vacMajorMinor = open('/var/lib/viab/etc/' + spaceVersion + '/VAC_MAJOR_MINOR', 'r').readline().strip()
+except Exception as e:
+  logLine('Failed to read VAC_MAJOR_MINOR (' + str(e) + ')')
+  sys.exit(7)
+  
 # Make proxy-less ks-usb.cfg for USB-based installation
 logLine('Creating ks.usb.cfg')
 try:
   kickstartStr = open('/var/lib/viab/etc/' + spaceVersion + '/ks.cfg', 'r').read()
-  oneKickstart = kickstartStr.replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##MAJOR_VERSION##',majorVersion).replace('##VIAB_PASSWORD_HASH##',passwordHash)
+  oneKickstart = kickstartStr.replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##MAJOR_VERSION##',majorVersion).replace('##VIAB_PASSWORD_HASH##',passwordHash).replace('##VAC_MAJOR_MINOR##',vacMajorMinor)
   open('/var/lib/viab/www/ks/' + siteName + '/' + spaceName + '/ks-usb.cfg', 'w').write(oneKickstart)
 except Exception as e:
   logLine('Failed to read, substitute, and write kickstart file (' + str(e) + ')')
@@ -190,9 +196,9 @@ try:
                            (';cpu_total = 0' if row['draining'] == 1 else '') +
                           '\n')
  
-      htaccessStr += ' %{REMOTE_ADDR} == \"' + row['ip'] + '\" or \\"'
+      htaccessStr += ' %{REMOTE_ADDR} == \"' + row['ip'] + '\" or \\\n'
       
-      oneKickstart = kickstartStr.replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##MAJOR_VERSION##',majorVersion).replace('##VIAB_PASSWORD_HASH##',passwordHash)
+      oneKickstart = kickstartStr.replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##MAJOR_VERSION##',majorVersion).replace('##VIAB_PASSWORD_HASH##',passwordHash).replace('##VAC_MAJOR_MINOR##',vacMajorMinor)
       oneKickstart = re.sub(r'^url.*', '\g<0> --proxy=http://' + row['ip'] + ':3128/', oneKickstart)
       open('/var/lib/viab/www/ks/' + siteName + '/' + spaceName + '/ks-' + row['factoryname'] + '.cfg', 'w').write(oneKickstart)
       
@@ -210,14 +216,14 @@ try:
 
     for dn in viab_cgi_conf.adminDNs:
       fAdminsList.write(dn + '\n')
-      htaccessStr += ' %{SSL_CLIENT_S_DN} == \"' + dn + '\" or \\'
+      htaccessStr += ' %{SSL_CLIENT_S_DN} == \"' + dn + '\" or \\\n'
 
     cur.execute('SELECT dn FROM siteadmins WHERE siteid=%s', siteID)
     rows = cur.fetchall()
 
     for row in rows:
       fAdminsList.write(row['dn'] + '\n')
-      htaccessStr += ' %{SSL_CLIENT_S_DN} == \"' + row['dn'] + '\" or \\'
+      htaccessStr += ' %{SSL_CLIENT_S_DN} == \"' + row['dn'] + '\" or \\\n'
 
     fAdminsList.close()
 
@@ -272,10 +278,12 @@ except:
 
 # Update HTTPS access control
 logLine('Writing HTTPS access control .htaccess for Apache')
-htaccessStr += ' 1==2'
+htaccessStr += ' 1==2\n'
 
 open('/var/lib/viab/www/repo/' + siteName + '/' + spaceName + '/.htaccess', 'w').write(htaccessStr)
 open('/var/lib/viab/www/ks/'   + siteName + '/' + spaceName + '/.htaccess', 'w').write(htaccessStr)
+
+# Set up to build RPM
 
 os.mkdir(tempDir + '/SOURCES')
 os.mkdir(tempDir + '/SPECS')
@@ -294,7 +302,7 @@ for fileName in [ '/var/lib/viab/etc/' + spaceVersion + '/viab-conf-postinstall'
   shutil.copy2(fileName, tempDir + '/viab-conf')
 
 try:
-  viabRepo = open('/var/lib/viab/etc/' + spaceVersion + '/viab.repo', 'r').read().replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##MAJOR_VERSION##',majorVersion)
+  viabRepo = open('/var/lib/viab/etc/' + spaceVersion + '/viab.repo', 'r').read().replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##MAJOR_VERSION##',majorVersion).replace('##VAC_MAJOR_MINOR##',vacMajorMinor)
   open(tempDir + '/viab-conf/viab.repo','w').write(viabRepo)
 except Exception as e:
   logLine('Failed to create viab.repo (' + str(e) + ')')

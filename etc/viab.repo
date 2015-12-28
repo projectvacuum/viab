@@ -26,7 +26,7 @@ gpgcheck=1
 enabled=1
 [Vac]
 name=Vac
-baseurl=http://repo.gridpp.ac.uk/vacproject/vac/00.20/RPMS/
+baseurl=http://repo.gridpp.ac.uk/vacproject/vac/##VAC_MAJOR_MINOR##/RPMS/
 gpgcheck=0
 [ViaB]
 name=ViaB
