@@ -324,8 +324,7 @@ for fileName in [ '/var/lib/viab/etc/' + spaceVersion + '/viab-conf-postinstall'
                   '/var/lib/viab/etc/' + spaceVersion + '/viab-heartbeat',
                   '/var/lib/viab/etc/' + spaceVersion + '/lazyssh',
                   '/var/lib/viab/etc/' + spaceVersion + '/dnsmasq-wrapper',
-                  '/var/lib/viab/etc/' + spaceVersion + '/squid.conf.template',
-                  '/var/lib/viab/etc/' + spaceVersion + '/vac-ssmsend-cron' ]:
+                  '/var/lib/viab/etc/' + spaceVersion + '/squid.conf.template' ]:
   shutil.copy2(fileName, tempDir + '/viab-conf')
 
 try:

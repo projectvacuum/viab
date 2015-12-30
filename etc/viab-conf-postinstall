@@ -15,10 +15,7 @@ if [ "$HOSTIP" ] ; then
  hostname $HOSTNAME
 fi
 
-## Run viab-heartbeat once per hour at a random minute
-#echo `shuf -i 0-59 -n 1`' * * * * root /usr/sbin/viab-heartbeat >/var/log/viab-heartbeat.log 2>&1' > /etc/cron.d/viab-heartbeat
-
-# But also run viab-heartbeat now so ViaB knows about this update
+# Run viab-heartbeat now so ViaB knows about this update
 /usr/sbin/viab-heartbeat
 
 # Set up hourly auto updates and heartbeats at a random minute; update viab-conf first in case of viab.repo changes

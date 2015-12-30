@@ -24,7 +24,6 @@ Configuration files and idempotent scripts for Vac-in-a-Box
 mkdir -p $RPM_BUILD_ROOT/usr/sbin \
          $RPM_BUILD_ROOT/etc/viab \
          $RPM_BUILD_ROOT/etc/vac.d \
-         $RPM_BUILD_ROOT/etc/cron.d \
          $RPM_BUILD_ROOT/root/.ssh \
          $RPM_BUILD_ROOT/etc/squid \
          $RPM_BUILD_ROOT/etc/squid \
@@ -35,7 +34,6 @@ cp -p viab-conf-postinstall viab-conf-p12 lazyssh dnsmasq-wrapper \
  viab-heartbeat $RPM_BUILD_ROOT/usr/sbin
 cp vac.d/*.conf $RPM_BUILD_ROOT/etc/vac.d
 cp viab/* $RPM_BUILD_ROOT/etc/viab
-cp vac-ssmsend-cron $RPM_BUILD_ROOT/etc/cron.d
 cp squid.conf.template $RPM_BUILD_ROOT/etc/squid/squid.conf.template
 cp viab.repo $RPM_BUILD_ROOT/etc/yum.repos.d/viab.repo
 cp -p authorized_keys $RPM_BUILD_ROOT/root/.ssh
@@ -55,7 +53,6 @@ ln -sf /var/lib/vac/machinetypes /var/lib/vac/vmtypes
 %files
 /etc/vac.d/*
 /etc/viab/*
-/etc/cron.d/*
 /etc/squid/*
 /etc/yum.repos.d/*
 /var/lib/vac/machinetypes/*

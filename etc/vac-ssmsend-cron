@@ -1,1 +1,0 @@
-22 * * * * root /usr/bin/ssmsend -c /etc/apel/vac-ssmsend-prod.cfg >>/var/log/vac-ssmsend-cron.log 2>&1
