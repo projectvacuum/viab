@@ -1245,7 +1245,12 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
          
       dn = cgiForm['dn'].value.strip()
 
-      cur.execute('INSERT INTO siteadmins SET siteid=%s,dn=%s,added=NOW()', (siteID, dn))
+      # Try to add new site admin entry, created from Dashboard
+      cur.execute('INSERT IGNORE siteadmins SET siteid=%s,dn=%s,added=NOW(),source="Dashboard"', (siteID, dn))
+
+      # In case already there from GOCDB: promote to Dashboard as source
+      cur.execute('UPDATE siteadmins SET source="Dashboard" WHERE siteid=%s AND dn=%s', (siteID, dn))
+
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
       print 'Location: https://viab.gridpp.ac.uk' + requestURI
       print
@@ -1446,7 +1451,7 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
 
   # Admin DNs
 
-  cur.execute('SELECT dn,added FROM siteadmins WHERE siteid=%s', siteID)
+  cur.execute('SELECT dn,added,source FROM siteadmins WHERE siteid=%s', siteID)
   rows = cur.fetchall()
 
   print '<h2>Site Admins</h2>'
@@ -1458,7 +1463,7 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
       print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletex509dns">'
 
     print '<table>'
-    print '<tr><th class="oddeven">X.509 DN</th><th class="oddeven">Added</th>'
+    print '<tr><th class="oddeven">X.509 DN</th><th class="oddeven">Added</th><th class="oddeven">Source</th>'
 
     if userDN in viab_cgi_conf.adminDNs:
       print '<th class="oddeven">&nbsp;</th>'
@@ -1468,7 +1473,8 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
     n = 0
     for row in rows:
       print ('<tr><td class="' + oddEven(n)+ '">' + row['dn'] + '</td>' +
-             '<td class="' + oddEven(n)+ '">' + str(row['added']) + '</td>')
+             '<td class="' + oddEven(n)+ '">' + str(row['added']) + '</td>' +
+             '<td class="' + oddEven(n)+ '">' + str(row['source']) + '</td>')
 
       if userDN in viab_cgi_conf.adminDNs:
         print '<td class="' + oddEven(n)+ '"><input type="checkbox" name="deletelist" value="' + str(row['dn']) + '"></td>'
