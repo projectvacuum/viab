@@ -84,6 +84,17 @@ def htmlFooter(userDN):
     
   print '</html>'
 
+def errorPage(requestURI, userDN, title, message):
+
+  htmlHeader(title)
+
+  print '<h1>' + title + '</h1>'
+  print '<p>' + message
+  print '<p  style="text-align: center"><button type="button" onclick="location.href=\'' + requestURI + '\';">Continue</button>'
+
+  htmlFooter(userDN)
+#    errorPage(requestURI, userDN, 'Some sort of problem ...', 'There was some sort of problem with the value(s) you gave!') ; return
+
 def deleteOrphans():
 
   global cur
@@ -319,31 +330,30 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
 
   print '<h2>Options</h2>'
   
-  print '<p>To remove an option, set its value blank and update it'
-  
   cur.execute('SELECT machinetypeoptid,optname,value FROM machinetypeopts WHERE machinetypeid=%s', machinetypeID)
   rows = cur.fetchall()
 
-  print '<p><table class="center">'
+  if len(rows) > 0:
+    print '<p>To remove an option, set its value blank and update it'
+    print '<p><table class="center">'
+    print '<tr><th class="oddeven">Option</th><th class="oddeven">&nbsp;</th><th class="oddeven">Value</th></tr>'
 
-  print '<tr><th class="oddeven">Option</th><th class="oddeven">&nbsp;</th><th class="oddeven">Value</th></tr>'
-
-  n=0    
-  for row in rows:
-    print '<tr><td class="' + oddEven(n) + '">' + row['optname'] + '</td>'
-    print '<td class="' + oddEven(n) + '"> = </td><td class="' + oddEven(n) + '">'
+    n=0    
+    for row in rows:
+      print '<tr><td class="' + oddEven(n) + '">' + row['optname'] + '</td>'
+      print '<td class="' + oddEven(n) + '"> = </td><td class="' + oddEven(n) + '">'
     
-    print '<form method="post" action="' + requestURI + '">' 
-    print '<input type="hidden" name="action" value="updateoption">'
-    print '<input type="hidden" name="optname" value="' + row['optname'] + '">'
-    print '<input type="text" name="value" value="' + row['value'] + '" size="40">'
-    htmlFormCookie(userDN)
-    print '<input type="submit" value="Update option">'
-    print '</form>'    
-    print '</td></tr>\n'
-    n += 1
+      print '<form method="post" action="' + requestURI + '">' 
+      print '<input type="hidden" name="action" value="updateoption">'
+      print '<input type="hidden" name="optname" value="' + row['optname'] + '">'
+      print '<input type="text" name="value" value="' + row['value'] + '" size="40">'
+      htmlFormCookie(userDN)
+      print '<input type="submit" value="Update option">'
+      print '</form>'    
+      print '</td></tr>\n'
+      n += 1
 
-  print '</table>'
+    print '</table>'
 
   print '<h3>Add option</h3>'
 
@@ -471,8 +481,7 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
 
   htmlHeader('Factory ' + factoryName)
     
-  cur.execute('SELECT ip,mac,mb_per_machine,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu,scratch_gb,draining,viab_version,vac_version,viab_heartbeat,boot_time FROM factories WHERE factoryID=%s', factoryID)
-  
+  cur.execute('SELECT ip,mac,mb_per_machine,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu,scratch_gb,draining,viab_version,vac_version,viab_heartbeat,boot_time FROM factories WHERE factoryID=%s', factoryID)  
   rows = cur.fetchall()
 
   print ('<div class="breadcrumbs"><a href="/dashboard/">Dashboard</a> ' + 
@@ -483,7 +492,6 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
   print '<h1>Factory ' + factoryName + '</h1>'
     
   print '<form method="post" action="' + requestURI + '">'
- 
   print '<table class="center">'
 
   print '<tr><td>Hostname:</td><td>' + factoryName + '</td></tr>'
@@ -655,14 +663,14 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
         return
       
       ip  = cgiForm['ip'].value.strip()
-      if ip.translate(None, '01234567890.') != '':
+      if ip.translate(None, '01234567890.') != '' or ip.count('.') != 3:
         print 'Content-Type: text/html'
         print
         print 'IP addreses are limited to digits and .'
         return
 
       mac = cgiForm['mac'].value.strip().lower()
-      if mac.translate(None, 'abcdef01234567890:') != '':
+      if mac.translate(None, 'abcdef01234567890:') != '' or len(mac) != 17:
         print 'Content-Type: text/html'
         print
         print 'MAC addreses are limited to hexadecimal digits and :'
@@ -686,7 +694,87 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
 
   except:
     pass
-          
+
+  if 'action' in cgiForm and cgiForm['action'].value == 'addfactories':
+    try:
+      factories = cgiForm['factories'].value.split('\n')
+    except:
+      factories = None
+
+    if not factories:
+      errorPage(requestURI, userDN, 'No factories given', 'You need to list some factories in the text box!')
+      return
+
+    try:
+      mb_per_machine      = int(cgiForm['mb_per_machine'].value)
+      udp_timeout_seconds = float(cgiForm['udp_timeout_seconds'].value)
+      cpu_per_machine     = int(cgiForm['cpu_per_machine'].value)
+      hs06_per_cpu        = float(cgiForm['hs06_per_cpu'].value)
+      scratch_gb          = int(cgiForm['scratch_gb'].value)
+    except:
+      errorPage(requestURI, userDN, 'Missing value(s)', 'You need to give a value for each of the factory parameters!')
+      return
+      
+    sqlTriplets = []
+      
+    for factoryLine in factories:
+
+      if factoryLine.strip() == '':
+        continue
+        
+      try:    
+        (mac, factoryName, ip) = factoryLine.lower().strip().split()
+      except:
+        errorPage(requestURI, userDN, 'Bad factory line', 'This line is not properly formatted: &quot;' + factoryLine + '&quot;')
+        return
+        
+      if mac.translate(None, 'abcdef01234567890:') != '' or len(mac) != 17:
+          errorPage(requestURI, userDN, 'Bad factory MAC address', 'The MAC address is in the wrong format in &quot;' + factoryLine + '&quot;')
+          return
+
+      if factoryName.translate(None, 'abcdefghijklmnopqrstuvwxyz01234567890.-') != '':
+          errorPage(requestURI, userDN, 'Bad factory hostname', 'The hostname is in the wrong format in &quot;' + factoryLine + '&quot;')
+          return
+
+      if ip.translate(None, '01234567890.') != '' or ip.count('.') != 3:
+          errorPage(requestURI, userDN, 'Bad IP address', 'The IP address is in the wrong format in &quot;' + factoryLine + '&quot;')
+          return
+
+      sqlTriplets.append('mac="%s",factoryname="%s",ip="%s"' % (mac, factoryName, ip))
+      
+
+    if len(sqlTriplets) == 0:
+      errorPage(requestURI, userDN, 'No factories given', 'You need to list some factories in the text box!')
+      return
+
+    outcomes = ''
+
+    for sqlTriplet in sqlTriplets:
+      try:
+        cur.execute('INSERT INTO factories SET siteid=%s,spaceid=%s,' +
+                    sqlTriplet +
+                    ',mb_per_machine=%s,udp_timeout_seconds=%s,' +
+                    'cpu_per_machine=%s,hs06_per_cpu=%s,' +
+                    'scratch_gb=%s,updated=NOW()',
+                    ( siteID, spaceID, 
+                      mb_per_machine, udp_timeout_seconds,
+                      cpu_per_machine, hs06_per_cpu,
+                      scratch_gb 
+                    ))
+      except MySQLdb.IntegrityError:
+        outcomes += 'Failed to add ' + sqlTriplet + ' due to duplicates<br>\n'
+      except :
+        outcomes += 'Failed to add ' + sqlTriplet + ' (not a duplication problem)<br>\n'
+    
+    if outcomes:
+      errorPage(requestURI, userDN, 'Problem(s) adding new factories', 'The following problem(s) were encountered and these factories were not added:<p>' + outcomes)
+      return
+            
+    print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+    print 'Location: https://viab.gridpp.ac.uk' + requestURI
+    print
+    return
+
   try:
     if cgiForm['action'].value == 'addmachinetype' and cgiForm['machinetypename'].value:
          
@@ -783,7 +871,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     pass
          
   htmlHeader('Space ' + spaceName)
-  cur.execute('SELECT factoryid,factoryname,ip,mac,cpu_per_machine,hs06_per_cpu,scratch_gb,viab_version,UNIX_TIMESTAMP(boot_time) AS boot_time,UNIX_TIMESTAMP(viab_heartbeat) AS viab_heartbeat,draining FROM factories WHERE spaceid=%s ORDER BY factoryname', spaceID)
+  cur.execute('SELECT factoryid,factoryname,ip,mac,cpu_per_machine,hs06_per_cpu,scratch_gb,viab_version,vac_version,UNIX_TIMESTAMP(boot_time) AS boot_time,UNIX_TIMESTAMP(viab_heartbeat) AS viab_heartbeat,draining FROM factories WHERE spaceid=%s ORDER BY factoryname', spaceID)
   rows = cur.fetchall()
 
   print ('<div class="breadcrumbs"><a href="/dashboard/">Dashboard</a> / ' + 
@@ -839,61 +927,72 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
 
   print '<h2>Factories in this space</h2>'
 
-  print '<form method="post" action="' + requestURI + '">'
+  if len(rows) > 0:
+    print '<form method="post" action="' + requestURI + '">'
     
-  print '<table class="center">'
-  print '<tr><th class="oddeven">Host</th><th class="oddeven">IP</th><th class="oddeven">MAC</th><th class="oddeven">Version</th><th class="oddeven">Booted</th><th class="oddeven">Heartbeat</th><th class="oddeven">cpu&nbsp;/<br>machine</th><th class="oddeven">HS06<br>/&nbsp;cpu</th><th class="oddeven">Draining?</th>'
-  print '<th class="oddeven"><input type="checkbox" onchange="for (var i = 0; i < this.form.length; ++i) { if (this.form[i].type == \'checkbox\') { form[i].checked = this.checked; } }"></th></tr>'
+    print '<table class="center">'
+    print '<tr><th class="oddeven">Host</th><th class="oddeven">IP</th><th class="oddeven">MAC</th><th class="oddeven">ViaB/Vac</th><th class="oddeven">Booted</th><th class="oddeven">Heartbeat</th><th class="oddeven">cpu&nbsp;/<br>machine</th><th class="oddeven">HS06<br>/&nbsp;cpu</th>'
+    print '<th class="oddeven">&nbsp;</th><th class="oddeven"><input type="checkbox" onchange="for (var i = 0; i < this.form.length; ++i) { if (this.form[i].type == \'checkbox\') { form[i].checked = this.checked; } }"></th></tr>'
 
-  cur.execute('SELECT spacename,spaceid FROM spaces WHERE siteid=%s ORDER BY spacename', siteID)
-  spaceRows = cur.fetchall()
+    cur.execute('SELECT spacename,spaceid FROM spaces WHERE siteid=%s ORDER BY spacename', siteID)
+    spaceRows = cur.fetchall()
 
-  n=0    
-  for row in rows:
-    if row['viab_heartbeat'] < int(time.time() - 86400):
-      heartbeatClass = 'alarm'
-    elif row['viab_heartbeat'] < int(time.time() - 3600):
-      heartbeatClass = 'warning'
-    else:
-      heartbeatClass = oddEven(n)
+    n=0    
+    for row in rows:
+      if row['viab_heartbeat'] < int(time.time() - 86400):
+        heartbeatClass = 'alarm'
+      elif row['viab_heartbeat'] < int(time.time() - 3600):
+        heartbeatClass = 'warning'
+      else:
+        heartbeatClass = oddEven(n)
+      
+      viab_version = str(row['viab_version'])
+      if viab_version == '':
+        viab_version = '???'
+    
+      vac_version = str(row['vac_version'])
+      if vac_version == '':
+        vac_version = '???'
   
-    print ('<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + siteName + '/' + spaceName + '/factories/' + row['factoryname'] + '/">' + row['factoryname'].split('.')[0] + '</a></td>' +
+      print ('<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + siteName + '/' + spaceName + '/factories/' + row['factoryname'] + '/">' + row['factoryname'].split('.')[0] + '</a></td>' +
            '<td class="' + oddEven(n) + '">' + row['ip'] + '</td>' +
            '<td class="' + oddEven(n) + '">' + row['mac'] + '</td>' +
-           '<td class="' + oddEven(n) + '">' + str(row['viab_version']) + '</td>' +
+           '<td class="' + oddEven(n) + '">' + viab_version + ' / ' + vac_version + '</td>' +
            '<td class="' + oddEven(n) + '">' + secondsToString(row['boot_time']) + '</td>' +
            '<td class="' + heartbeatClass + '">' + secondsToString(row['viab_heartbeat']) + '</td>' +           
            '<td class="' + oddEven(n) + '">' + str(row['cpu_per_machine']) + '</td>' +
            '<td class="' + oddEven(n) + '">' + str(row['hs06_per_cpu']) + '</td>' +
-           '<td class="' + oddEven(n) + '">' + ('Yes' if row['draining'] == 1 else '') + '</td>' +
+           '<td class="' + oddEven(n) + '">' + ('Draining' if row['draining'] == 1 else '') + '</td>' +
            '<td class="' + oddEven(n) + '"><input type="checkbox" name="actionlist" value="' + str(row['factoryid']) + '"></td>' +
            '</tr>\n') 
-    n += 1
+      n += 1
                 
-  print '<tr><td colspan="10">'
-  print '<select name="actionselect" onchange="document.getElementById(\'actionsubmit\').value=this.value; document.getElementById(\'actionsubmit\').disabled=false;">'
-  print '<option selected disabled>Choose action to apply</option>'
-  print '<option value="Start draining">Start draining</option>'
-  print '<option value="Cancel draining">Cancel draining</option>'
+    print '<tr><td colspan="10">'
+    print '<select name="actionselect" onchange="document.getElementById(\'actionsubmit\').value=this.value; document.getElementById(\'actionsubmit\').disabled=false;">'
+    print '<option selected disabled>Choose action to apply</option>'
+    print '<option value="Start draining">Start draining</option>'
+    print '<option value="Cancel draining">Cancel draining</option>'
   
-  for oneSpaceRow in spaceRows:
-    if oneSpaceRow['spacename'] != spaceName:
-      print '<option value="Move to ' + oneSpaceRow['spacename'] + '">Move to ' + oneSpaceRow['spacename'] + '</option>'
+    for oneSpaceRow in spaceRows:
+      if oneSpaceRow['spacename'] != spaceName:
+        print '<option value="Move to ' + oneSpaceRow['spacename'] + '">Move to ' + oneSpaceRow['spacename'] + '</option>'
 
-  print '<option value="Delete factories">Delete factories</option>'
-  print '</select> &nbsp; '
+    print '<option value="Delete factories">Delete factories</option>'
+    print '</select> &nbsp; '
 
-  print 'Apply to selected factories: <input type="submit" disabled name="action" id="actionsubmit" value="pick action first">'
+    print 'Apply to selected factories: <input type="submit" disabled name="action" id="actionsubmit" value="pick action first">'
   
-  print '</td></tr>'
-  print '</table>'
+    print '</td></tr>'
+    print '</table>'
 
-  htmlFormCookie(userDN)
-  print '</form>'
+    htmlFormCookie(userDN)
+    print '</form>'
 
   # Add a factory, possibly with defaults from last factory updated
 
   print '<h3>Add a factory</h3>'
+
+  print '<p>This form is pre-populated with the details of the most recently updated existing factory.'
   
   print '<form method="post" action="' + requestURI + '">'
   print '<table>'
@@ -919,10 +1018,33 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '<tr><td>hs06_per_cpu:</td><td><input type="text" name="hs06_per_cpu" value="' + str(row['hs06_per_cpu']) + '"></td></tr>'
   print '<tr><td>scratch_gb:</td><td><input type="text" name="scratch_gb" value="' + str(row['scratch_gb']) + '"></td></tr>'
 
-  print '<tr><td colspan=2><input type="submit" value="Add factory"></td><tr>'
+  print '<tr><td colspan="2" style="text-align: center"><input type="submit" value="Add factory"></td><tr>'
   htmlFormCookie(userDN)
   print '<input type="hidden" name="action" value="addfactory">'
   print '</table>'
+  print '</form>'
+
+  # Bulk add factories
+
+  print '<h3>Bulk add factories</h3>'
+  print '<p>You can add multiple factories by copying and pasting their details into this box. One line per factory, each with three values separated by spaces: MAC address then fully qualified hostname then IP address.'
+  
+  print '<form method="post" action="' + requestURI + '">'
+
+  print '<table>'
+  print '<tr><td colspan=2><textarea name="factories" rows="4" cols="80"></textarea></td></tr>'
+
+  print '<tr><td>mb_per_machine:</td><td><input type="text" name="mb_per_machine" value="' + str(row['mb_per_machine']) + '"></td></tr>'
+  print '<tr><td>udp_timeout_seconds:</td><td><input type="text" name="udp_timeout_seconds" value="' + str(row['udp_timeout_seconds']) + '"></td></tr>'
+  print '<tr><td>cpu_per_machine:</td><td><input type="text" name="cpu_per_machine" value="' + str(row['cpu_per_machine']) + '"></td></tr>'
+  print '<tr><td>hs06_per_cpu:</td><td><input type="text" name="hs06_per_cpu" value="' + str(row['hs06_per_cpu']) + '"></td></tr>'
+  print '<tr><td>scratch_gb:</td><td><input type="text" name="scratch_gb" value="' + str(row['scratch_gb']) + '"></td></tr>'
+
+  print '<tr><td colspan="2" style="text-align: center"><input type="submit" value="Add factories"></td></tr>'
+  print '</table>'
+
+  htmlFormCookie(userDN)
+  print '<input type="hidden" name="action" value="addfactories">'
   print '</form>'
 
   cur.execute('SELECT machinetypename,machinetypes.machinetypeid,value AS target_share FROM machinetypes LEFT JOIN machinetypeopts ON machinetypes.machinetypeid=machinetypeopts.machinetypeid AND optname="target_share" WHERE spaceid=%s ORDER BY machinetypename', spaceID)
@@ -931,30 +1053,31 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
 
   print '<h2>Machinetypes in this space</h2>'
 
-  print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletemachinetypes">'
+  if len(rows) > 0:
+    print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletemachinetypes">'
 
-  print '<table class="center">'
-  print '<tr><th class="oddeven">machinetype name</th><th class="oddeven">Target&nbsp;share</th>'
-  print '<th class="oddeven"><input type="checkbox" onchange="for (var i = 0; i < this.form.length; ++i) { if (this.form[i].type == \'checkbox\') { form[i].checked = this.checked; } }"></th></tr>'
+    print '<table class="center">'
+    print '<tr><th class="oddeven">machinetype name</th><th class="oddeven">Target&nbsp;share</th>'
+    print '<th class="oddeven"><input type="checkbox" onchange="for (var i = 0; i < this.form.length; ++i) { if (this.form[i].type == \'checkbox\') { form[i].checked = this.checked; } }"></th></tr>'
 
-  n=0    
-  for row in rows:
-    try:
-      targetShare = float(row['target_share'])
-    except:
-      targetShare = 0.0
+    n=0    
+    for row in rows:
+      try:
+        targetShare = float(row['target_share'])
+      except:
+        targetShare = 0.0
 
-    print ('<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + siteName + '/' + spaceName + '/machinetypes/' + row['machinetypename'] + '/">' + row['machinetypename'] + '</a></td>' +
-           '<td class="' + oddEven(n) + '">' + str(targetShare) + '</td>' +
-           '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['machinetypeid']) + '"></td>' +
-           '</tr>\n') 
-    n += 1
-                
-  print '<tr><td colspan="6" style="text-align: center"><input type="submit" value="Delete selected machinetypes"></td></tr>'
-  print '</table>'
+      print ('<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + siteName + '/' + spaceName + '/machinetypes/' + row['machinetypename'] + '/">' + row['machinetypename'] + '</a></td>' +
+             '<td class="' + oddEven(n) + '">' + str(targetShare) + '</td>' +
+             '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['machinetypeid']) + '"></td>' +
+             '</tr>\n') 
+      n += 1
 
-  htmlFormCookie(userDN)
-  print '</form>'
+    print '<tr><td colspan="6" style="text-align: center"><input type="submit" value="Delete selected machinetypes"></td></tr>'
+    print '</table>'
+
+    htmlFormCookie(userDN)
+    print '</form>'
 
   print '<h3>Add a machinetype</h3>'
   
@@ -973,28 +1096,29 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '<h2>Subnets</h2>'
   
   print '<p>These subnets are used when a factory installs and boots up, and so changes will not take effect without a reboot. '
-  
-  print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletesubnets">'
-  print '<table>'
-  print '<tr><th class="oddeven">Subnet</th><th class="oddeven">Netmask</th>'
-  print '<th class="oddeven">Router</th><th class="oddeven">Name&nbsp;servers</th><th class="oddeven">NTP&nbsp;servers</th><th class="oddeven">&nbsp;</th></tr>'
+
+  if len(rows):
+    print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletesubnets">'
+    print '<table>'
+    print '<tr><th class="oddeven">Subnet</th><th class="oddeven">Netmask</th>'
+    print '<th class="oddeven">Router</th><th class="oddeven">Name&nbsp;servers</th><th class="oddeven">NTP&nbsp;servers</th><th class="oddeven">&nbsp;</th></tr>'
     
-  n = 0
-  for row in rows:
-    print ('<tr><td class="' + oddEven(n)+ '">' + row['subnet'] + '</td>' +
+    n = 0
+    for row in rows:
+      print ('<tr><td class="' + oddEven(n)+ '">' + row['subnet'] + '</td>' +
            '<td class="' + oddEven(n)+ '">' + row['netmask'] + '</td>' +
            '<td class="' + oddEven(n)+ '">' + str(row['router']) + '</td>' +
            '<td class="' + oddEven(n)+ '">' + str(row['nameservers']) + '</td>' +
            '<td class="' + oddEven(n)+ '">' + str(row['ntpservers']) + '</td>' +
            '<td class="' + oddEven(n)+ '"><input type="checkbox" name="deletelist" value="' + str(row['subnetid']) + '"></td>' +
            '</tr>')
-    n += 1
+      n += 1
                 
-  print '<tr><td colspan="6" style="text-align: center"><input type="submit" value="Delete selected subnets"></td></tr>'
-  print '</table>'
+    print '<tr><td colspan="6" style="text-align: center"><input type="submit" value="Delete selected subnets"></td></tr>'
+    print '</table>'
 
-  htmlFormCookie(userDN)
-  print '</form>'
+    htmlFormCookie(userDN)
+    print '</form>'
   
   print '<h3>Add a subnet</h3>'
 
@@ -1052,7 +1176,7 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
 
   except:
     pass
-          
+
   try:
     if cgiForm['action'].value == 'deletekeys' and cgiForm['deletelist'].value:
          
@@ -1196,32 +1320,34 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
 
   print '<h2>Spaces</h2>'
 
-  print '<form method="post" action="' + requestURI + '">'
+  if len(rows) > 0:
+    print '<form method="post" action="' + requestURI + '">'
 
-  print '<table class="center">'
-  print '<tr><th class="oddeven">Space</th><th class="oddeven">Version</th><th class="oddeven">USB .iso</th><th class="oddeven">RPM published</th>'
-  print '<th class="oddeven"><input type="checkbox" onchange="for (var i = 0; i < this.form.length; ++i) { if (this.form[i].type == \'checkbox\') { form[i].checked = this.checked; } }"></th></tr>'
+    print '<table class="center">'
+    print '<tr><th class="oddeven">Space</th><th class="oddeven">Version</th><th class="oddeven">USB .iso</th><th class="oddeven">RPM published</th>'
+    print '<th class="oddeven"><input type="checkbox" onchange="for (var i = 0; i < this.form.length; ++i) { if (this.form[i].type == \'checkbox\') { form[i].checked = this.checked; } }"></th></tr>'
   
-  n=0    
-  for row in rows:
-    print '<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + siteName + '/' + row['spacename'] + '/">' + row['spacename'] + '</a></td>'
-    print '<td class="' + oddEven(n) + '" style="text-align: center">' + row['version'] + '</td>'
+    n=0    
+    for row in rows:
+      print '<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + siteName + '/' + row['spacename'] + '/">' + row['spacename'] + '</a></td>'
+      print '<td class="' + oddEven(n) + '" style="text-align: center">' + row['version'] + '</td>'
 
-    if row['published'] is None:
-      print '<td class="' + oddEven(n) + '" style="text-align: center"> - </td>' 
-      print '<td class="' + oddEven(n) + '" style="text-align: center">Never</td>\n'
-    else:
-      print '<td class="' + oddEven(n) + '"><a href="/iso/' + siteName + '/' + row['spacename'] + '/viab-usb.iso">Download</a></td>' 
-      print '<td class="' + oddEven(n) + '">' + str(row['published']) + '</td>\n'
+      if row['published'] is None:
+        print '<td class="' + oddEven(n) + '" style="text-align: center"> - </td>' 
+        print '<td class="' + oddEven(n) + '" style="text-align: center">Never</td>\n'
+      else:
+        print '<td class="' + oddEven(n) + '"><a href="/iso/' + siteName + '/' + row['spacename'] + '/viab-usb.iso">Download</a></td>' 
+        print '<td class="' + oddEven(n) + '">' + str(row['published']) + '</td>\n'
     
-    print '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['spaceid']) + '"></td></tr>'
-    n += 1 
+      print '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['spaceid']) + '"></td></tr>'
+      n += 1 
 
-  print '<tr><td colspan="5" style="text-align: center"><input type="submit" value="Delete selected spaces"><input type="hidden" name="action" value="deletespaces"></td></tr>'
-  htmlFormCookie(userDN)
-  print '</form>'
+    print '<tr><td colspan="5" style="text-align: center"><input type="submit" value="Delete selected spaces"><input type="hidden" name="action" value="deletespaces"></td></tr>'
 
-  print '</table>'
+    htmlFormCookie(userDN)
+    print '</form>'
+
+    print '</table>'
 
   print '<h3>Add a space</h3>'  
   print '<p>Space names should be in the DNS namespace controlled by the site, but they do not need to be registered in its name servers.'
@@ -1236,23 +1362,25 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
   rows = cur.fetchall()
    
   print '<h2>SSH keys</h2>'
-  print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletekeys">'
-  print '<table class="center">'
-  print '<tr><th class="oddeven">Key</th><th class="oddeven">Type</th><th class="oddeven" colspan="2">Comment</th></tr>'
+  
+  if len(rows) > 0:
+    print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletekeys">'
+    print '<table class="center">'
+    print '<tr><th class="oddeven">Key</th><th class="oddeven">Type</th><th class="oddeven" colspan="2">Comment</th></tr>'
 
-  n = 0    
-  for row in rows:
-    print ('<tr><td class="' + oddEven(n) + '">' + ' '.join(textwrap.wrap(row['keyvalue'],40)) + '</td>' +
-           '<td class="' + oddEven(n) + '">' + row['keytype'] + '</td>' +
-           '<td class="' + oddEven(n) + '">' + row['comment'] + '</td>' +
-           '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['keyid']) + '"></td>' +
-           '</tr>')
+    n = 0    
+    for row in rows:
+      print ('<tr><td class="' + oddEven(n) + '">' + ' '.join(textwrap.wrap(row['keyvalue'],40)) + '</td>' +
+             '<td class="' + oddEven(n) + '">' + row['keytype'] + '</td>' +
+             '<td class="' + oddEven(n) + '">' + row['comment'] + '</td>' +
+             '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['keyid']) + '"></td>' +
+             '</tr>')
                 
-  print '</table>'
+    print '</table>'
 
-  htmlFormCookie(userDN)
-  print '<input type="submit" value="Delete selected keys">'
-  print '</form>'
+    htmlFormCookie(userDN)
+    print '<input type="submit" value="Delete selected keys">'
+    print '</form>'
 
   print '<h3>Add an RSA ssh key</h3>'
   print '<p>The ssh keys will be installed on Vac factory machines to allow ssh access as root'
@@ -1269,24 +1397,25 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
    
   print '<h2>SSH firewall rules</h2>'
   print '<p>You can ssh to factories from the IP addresses and subnets listed here. Ssh is blocked from other addresses. If you lock yourself out, you should be able to update the rules here, republish the RPM for the spaces involved, and wait for the next autoupdate.'
-  
-  print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletesshrules">'
-  print '<table class="center">'
-  print '<tr><th class="oddeven">IP</th><th class="oddeven">Netmask</th><th class="oddeven" colspan="2">Comment</th></tr>'
+ 
+  if len(rows) > 0:
+    print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletesshrules">'
+    print '<table class="center">'
+    print '<tr><th class="oddeven">IP</th><th class="oddeven">Netmask</th><th class="oddeven" colspan="2">Comment</th></tr>'
 
-  n = 0    
-  for row in rows:
-    print ('<tr><td class="' + oddEven(n) + '">' + row['ip'] + '</td>' +
-           '<td class="' + oddEven(n) + '">' + row['netmask'] + '</td>' +
-           '<td class="' + oddEven(n) + '">' + row['comment'] + '</td>' +
-           '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['ruleid']) + '"></td>' +
-           '</tr>')
+    n = 0    
+    for row in rows:
+      print ('<tr><td class="' + oddEven(n) + '">' + row['ip'] + '</td>' +
+             '<td class="' + oddEven(n) + '">' + row['netmask'] + '</td>' +
+             '<td class="' + oddEven(n) + '">' + row['comment'] + '</td>' +
+             '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['ruleid']) + '"></td>' +
+             '</tr>')
                 
-  print '<tr><td colspan="4" style="text-align: center"><input type="submit" value="Delete selected rules"></td></tr>'
-  print '</table>'
+    print '<tr><td colspan="4" style="text-align: center"><input type="submit" value="Delete selected rules"></td></tr>'
+    print '</table>'
 
-  htmlFormCookie(userDN)
-  print '</form>'
+    htmlFormCookie(userDN)
+    print '</form>'
 
   print '<h3>Add an ssh firewall rule</h3>'
   print '<form method="post" action="' + requestURI + '">'
@@ -1322,35 +1451,37 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
 
   print '<h2>Site Admins</h2>'
   print '<p>People with Vac-in-a-Box website admin rights are also able to update the site configuration.'
-  
-  if userDN in viab_cgi_conf.adminDNs:
-    print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletex509dns">'
 
-  print '<table>'
-  print '<tr><th class="oddeven">X.509 DN</th><th class="oddeven">Added</th>'
-
-  if userDN in viab_cgi_conf.adminDNs:
-    print '<th class="oddeven">&nbsp;</th>'
+  if len(rows) > 0:
   
-  print '</tr>'
-    
-  n = 0
-  for row in rows:
-    print ('<tr><td class="' + oddEven(n)+ '">' + row['dn'] + '</td>' +
-           '<td class="' + oddEven(n)+ '">' + str(row['added']) + '</td>')
+    if userDN in viab_cgi_conf.adminDNs:
+      print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletex509dns">'
+
+    print '<table>'
+    print '<tr><th class="oddeven">X.509 DN</th><th class="oddeven">Added</th>'
 
     if userDN in viab_cgi_conf.adminDNs:
-      print '<td class="' + oddEven(n)+ '"><input type="checkbox" name="deletelist" value="' + str(row['dn']) + '"></td>'
-
+      print '<th class="oddeven">&nbsp;</th>'
+  
     print '</tr>'
-    n += 1
-                
-  print '</table>'
+    
+    n = 0
+    for row in rows:
+      print ('<tr><td class="' + oddEven(n)+ '">' + row['dn'] + '</td>' +
+             '<td class="' + oddEven(n)+ '">' + str(row['added']) + '</td>')
 
-  if userDN in viab_cgi_conf.adminDNs:
-    htmlFormCookie(userDN)
-    print '<input type="submit" value="Delete selected DNs">'
-    print '</form>'
+      if userDN in viab_cgi_conf.adminDNs:
+        print '<td class="' + oddEven(n)+ '"><input type="checkbox" name="deletelist" value="' + str(row['dn']) + '"></td>'
+
+      print '</tr>'
+      n += 1
+                
+    print '</table>'
+
+    if userDN in viab_cgi_conf.adminDNs:
+      htmlFormCookie(userDN)
+      print '<input type="submit" value="Delete selected DNs">'
+      print '</form>'
   
   if userDN in viab_cgi_conf.adminDNs:
     print '<h3 class="admin">Add a site admin X.509 DN</h3>'
