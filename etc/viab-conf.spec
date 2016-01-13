@@ -43,11 +43,6 @@ cp -a machinetypes/* $RPM_BUILD_ROOT/var/lib/vac/machinetypes
 rm -f /etc/vac.d/*
 
 %post
-# Temporary measure until Vac 0.20
-rm -Rf /var/lib/vac/vmtypes
-ln -sf /var/lib/vac/machinetypes /var/lib/vac/vmtypes
-
-# Main postinstall functions
 /usr/sbin/viab-conf-postinstall
 
 %files

@@ -194,6 +194,11 @@ except Exception as e:
 # Make proxy-less ks-usb.cfg for USB-based installation
 logLine('Creating ks.usb.cfg')
 try:
+  os.makedirs('/var/lib/viab/www/ks/' + siteName + '/' + spaceName)
+except:
+  pass
+  
+try:
   kickstartStr = open('/var/lib/viab/etc/' + spaceVersion + '/ks.cfg', 'r').read()
   oneKickstart = kickstartStr.replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##MAJOR_VERSION##',majorVersion).replace('##VIAB_PASSWORD_HASH##',passwordHash).replace('##VAC_MAJOR_MINOR##',vacMajorMinor)
   open('/var/lib/viab/www/ks/' + siteName + '/' + spaceName + '/ks-usb.cfg', 'w').write(oneKickstart)

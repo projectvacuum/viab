@@ -954,7 +954,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
       if vac_version == '':
         vac_version = '???'
   
-      print ('<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + siteName + '/' + spaceName + '/factories/' + row['factoryname'] + '/">' + row['factoryname'].split('.')[0] + '</a></td>' +
+      print ('<tr><td class="' + oddEven(n) + '" style="white-space: nowrap"><a href="/dashboard/' + siteName + '/' + spaceName + '/factories/' + row['factoryname'] + '/">' + row['factoryname'].split('.')[0] + '</a></td>' +
            '<td class="' + oddEven(n) + '">' + row['ip'] + '</td>' +
            '<td class="' + oddEven(n) + '">' + row['mac'] + '</td>' +
            '<td class="' + oddEven(n) + '">' + viab_version + ' / ' + vac_version + '</td>' +
