@@ -21,12 +21,13 @@ gpgcheck=1
 [LCG-trustanchors]
 name=LCG-trustanchors
 baseurl=http://cern.ch/lcg-ca/distribution/current/
-gpgkey=http://cern.ch/lcg-ca/distribution/current/GPG-KEY-EUGridPMA-RPM-3
+gpgkey=https://lcg-ca.web.cern.ch/lcg-ca/distribution/current/GPG-KEY-EUGridPMA-RPM-3
 gpgcheck=1
 enabled=1
 [Vac]
 name=Vac
-baseurl=http://repo.gridpp.ac.uk/vacproject/vac/##VAC_MAJOR_MINOR##/RPMS/
+sslcacert=/etc/grid-security/certificates
+baseurl=https://repo.gridpp.ac.uk/vacproject/vac/##VAC_MAJOR_MINOR##/RPMS/
 gpgcheck=0
 [ViaB]
 name=ViaB
