@@ -1,3 +1,23 @@
+#
+# Yum repo file template for Vac-in-a-Box.
+#
+# This is re-installed every time the viab-conf RPM is updated. 
+#
+# The current ViaB and Vac versions are included via the ##...## patterns by viab-publish.
+#
+[ViaB]
+name=ViaB
+baseurl=https://viab.gridpp.ac.uk/repo/##VIAB_SITENAME##/##VIAB_SPACENAME##/##MAJOR_VERSION##/
+gpgcheck=0
+metadata_expire=5m
+proxy=_none_
+
+[Vac]
+name=Vac
+sslcacert=/etc/grid-security/certificates
+baseurl=https://repo.gridpp.ac.uk/vacproject/vac/##VAC_MAJOR_MINOR##/RPMS/
+gpgcheck=0
+
 [SL6]
 name=SL6
 baseurl=http://www.mirrorservice.org/sites/ftp.scientificlinux.org/linux/scientific/6.6/x86_64/os/
@@ -24,14 +44,3 @@ baseurl=http://cern.ch/lcg-ca/distribution/current/
 gpgkey=https://lcg-ca.web.cern.ch/lcg-ca/distribution/current/GPG-KEY-EUGridPMA-RPM-3
 gpgcheck=1
 enabled=1
-[Vac]
-name=Vac
-sslcacert=/etc/grid-security/certificates
-baseurl=https://repo.gridpp.ac.uk/vacproject/vac/##VAC_MAJOR_MINOR##/RPMS/
-gpgcheck=0
-[ViaB]
-name=ViaB
-baseurl=https://viab.gridpp.ac.uk/repo/##VIAB_SITENAME##/##VIAB_SPACENAME##/##MAJOR_VERSION##/
-gpgcheck=0
-metadata_expire=5m
-proxy=_none_

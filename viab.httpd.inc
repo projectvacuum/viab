@@ -61,7 +61,13 @@
 ServerName viab.gridpp.ac.uk
 DocumentRoot /var/lib/viab/www
 CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/http--viab.gridpp.ac.uk-%Y%m%d 86400" combined
-Redirect / https://viab.gridpp.ac.uk/
+RedirectMatch ^/$ https://viab.gridpp.ac.uk/
+Redirect /dashboard/ https://viab.gridpp.ac.uk/dashboard/
+Redirect /iso/ https://viab.gridpp.ac.uk/iso/
+Redirect /docs/ https://viab.gridpp.ac.uk/docs/
+Redirect /repo/ https://viab.gridpp.ac.uk/repo/
+
+AccessFileName .htaccess
 </VirtualHost>
 
 <VirtualHost viab.gridpp.ac.uk:443>
