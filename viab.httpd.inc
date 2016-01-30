@@ -66,8 +66,13 @@ Redirect /dashboard/ https://viab.gridpp.ac.uk/dashboard/
 Redirect /iso/ https://viab.gridpp.ac.uk/iso/
 Redirect /docs/ https://viab.gridpp.ac.uk/docs/
 Redirect /repo/ https://viab.gridpp.ac.uk/repo/
-
 AccessFileName .htaccess
+
+Alias /vacproject/ /var/www/repo.gridpp.ac.uk/vacproject/
+<Directory /var/www/repo.gridpp.ac.uk/vacproject/>
+Options Indexes
+</Directory>
+
 </VirtualHost>
 
 <VirtualHost viab.gridpp.ac.uk:443>
@@ -95,6 +100,11 @@ AllowOverride AuthConfig
 ExpiresActive on
 ExpiresDefault A0
 </Location>
+
+Alias /vacproject/ /var/www/repo.gridpp.ac.uk/vacproject/
+<Directory /var/www/repo.gridpp.ac.uk/vacproject/>
+Options Indexes
+</Directory>
 
 ScriptAliasMatch ^/dashboard/.* /var/lib/viab/bin/viab-cgi
 ScriptAliasMatch ^/docs/.*      /var/lib/viab/bin/viab-cgi

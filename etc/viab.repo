@@ -14,8 +14,7 @@ proxy=_none_
 
 [Vac]
 name=Vac
-sslcacert=/etc/grid-security/certificates
-baseurl=https://repo.gridpp.ac.uk/vacproject/vac/##VAC_MAJOR_MINOR##/RPMS/
+baseurl=https://viab.gridpp.ac.uk/vacproject/vac/##VAC_MAJOR_MINOR##/RPMS/
 gpgcheck=0
 
 [SL6]
