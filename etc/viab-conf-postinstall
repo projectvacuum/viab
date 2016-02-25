@@ -7,6 +7,10 @@
 
 export VIAB_SITENAME=`cat /etc/viab/sitename`
 export VIAB_SPACENAME=`cat /etc/viab/spacename`
+export VIAB_VERSION=`cat /etc/viab/version`
+
+# Append the ViaB version to an issue file
+echo `head -1 /etc/issue` "(ViaB $VIAB_VERSION)" >/etc/issue.vac
 
 # Make sure hostname matches ViaB expectation (site DHCP might be different)
 HOSTIP=`hostname -I | tr ' ' '\n'| egrep -v '^169\.|^127\.' | head -1`

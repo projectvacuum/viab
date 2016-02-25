@@ -46,6 +46,7 @@ rm -f /etc/vac.d/*
 /usr/sbin/viab-conf-postinstall
 
 %files
+/etc/issue.vac
 /etc/vac.d/*
 /etc/viab/*
 /etc/squid/*
