@@ -39,3 +39,9 @@ openssl pkcs12 -export -out hostkeycert.p12 -inkey hostkey.pem -in hostcert.pem
 OpenSSL will prompt you for the export passphrase which must match your
 /etc/viabkeys/viab-conf-passphrase
 
+<p>
+Host/key files are created from the encrypted .p12 file on each Vac when a
+new version of the configuration RPM is published and installed. If you 
+modify the viab-conf-passphrase file you can force an update of the host/key
+files with the command viab-conf-p12 .
+
