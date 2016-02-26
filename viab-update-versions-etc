@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#  viab-update-www-etc - Vac-in-a-Box scripts updater
+#  viab-update-versions-etc - Vac-in-a-Box etc dirs updater
 #
 #  Andrew McNab, University of Manchester.
 #  Copyright (c) 2015-6. All rights reserved.
@@ -34,14 +34,14 @@
 #  Contacts: Andrew.McNab@cern.ch  http://www.gridpp.ac.uk/vac/
 #
 
-rm -Rf /tmp/viab-update-www-etc
-mkdir -p /tmp/viab-update-www-etc
+rm -Rf /tmp/viab-update-versions-etc
+mkdir -p /tmp/viab-update-versions-etc
 
 cd /var/lib/viab/etc
 
 for version in *
 do
-  git clone --branch "$version" --depth 1 https://github.com/vacproject/viab.git "/tmp/viab-update-www-etc/$version"
+  git clone --branch "$version" --depth 1 https://github.com/vacproject/viab.git "/tmp/viab-update-versions-etc/$version"
   rm -Rf /var/lib/viab/etc/$version/*
-  cp -a /tmp/viab-update-www-etc/$version/etc/* $version
+  cp -a /tmp/viab-update-versions-etc/$version/etc/* $version
 done
