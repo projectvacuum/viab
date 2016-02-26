@@ -3,7 +3,7 @@
 #  viabcgi - Vac-in-a-Box CGI script
 #
 #  Andrew McNab, University of Manchester.
-#  Copyright (c) 2015. All rights reserved.
+#  Copyright (c) 2015-6. All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or
 #  without modification, are permitted provided that the following
@@ -435,9 +435,9 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
     if cgiForm['action'].value == 'updatefactory' and cgiForm['ip'] and cgiForm['mac']:
 
       try:
-        mbPerMachine = int(cgiForm['mb_per_machine'].value)
+        mbPerCpu = int(cgiForm['mb_per_cpu'].value)
       except:
-        mbPerMachine = 0
+        mbPerCpu = 0
 
       try:
         udpTimeoutSeconds = float(cgiForm['udp_timeout_seconds'].value)
@@ -464,10 +464,10 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
       except:
         draining = 0
 
-      cur.execute('UPDATE factories SET ip=%s,mac=%s,mb_per_machine=%s,udp_timeout_seconds=%s,' +
+      cur.execute('UPDATE factories SET ip=%s,mac=%s,mb_per_cpu=%s,udp_timeout_seconds=%s,' +
                   'cpu_per_machine=%s,hs06_per_cpu=%s,scratch_gb=%s,draining=%s,updated=NOW() ' +
                   'WHERE factoryid=%s AND spaceid=%s',
-                  ( cgiForm['ip'].value, cgiForm['mac'].value, mbPerMachine, udpTimeoutSeconds,
+                  ( cgiForm['ip'].value, cgiForm['mac'].value, mbPerCpu, udpTimeoutSeconds,
                     cpuPerMachine, hs06PerCpu, scratchGb, draining,
                     factoryID, spaceID) )
 
@@ -481,7 +481,7 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
 
   htmlHeader('Factory ' + factoryName)
     
-  cur.execute('SELECT ip,mac,mb_per_machine,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu,scratch_gb,draining,viab_version,vac_version,viab_heartbeat,boot_time FROM factories WHERE factoryID=%s', factoryID)  
+  cur.execute('SELECT ip,mac,mb_per_cpu,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu,scratch_gb,draining,viab_version,vac_version,viab_heartbeat,boot_time FROM factories WHERE factoryID=%s', factoryID)  
   rows = cur.fetchall()
 
   print ('<div class="breadcrumbs"><a href="/dashboard/">Dashboard</a> ' + 
@@ -501,7 +501,7 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
   print '<tr><td>ViaB heartbeat:</td><td>' + str(rows[0]['viab_heartbeat']) + '</td></tr>'
   print '<tr><td>IP:</td><td><input type="text" name="ip" value="' + rows[0]['ip'] + '"></td></tr>'
   print '<tr><td>MAC:</td><td><input type="text" name="mac" value="' + rows[0]['mac'] + '"></td></tr>'
-  print '<tr><td>mb_per_machine:</td><td><input type="text" name="mb_per_machine" value="' + str(rows[0]['mb_per_machine']) + '"></td></tr>'
+  print '<tr><td>mb_per_cpu:</td><td><input type="text" name="mb_per_cpu" value="' + str(rows[0]['mb_per_cpu']) + '"></td></tr>'
   print '<tr><td>udp_timeout_seconds:</td><td><input type="text" name="udp_timeout_seconds" value="' + str(rows[0]['udp_timeout_seconds']) + '"></td></tr>'
   print '<tr><td>cpu_per_machine:</td><td><input type="text" name="cpu_per_machine" value="' + str(rows[0]['cpu_per_machine']) + '"></td></tr>'
   print '<tr><td>hs06_per_cpu:</td><td><input type="text" name="hs06_per_cpu" value="' + str(rows[0]['hs06_per_cpu']) + '"></td></tr>'
@@ -677,11 +677,11 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
         return
       
       cur.execute('INSERT INTO factories SET siteid=%s,spaceid=%s,factoryname=%s,ip=%s,mac=%s,' + 
-                  'mb_per_machine=%s,udp_timeout_seconds=%s,' +
+                  'mb_per_cpu=%s,udp_timeout_seconds=%s,' +
                   'cpu_per_machine=%s,hs06_per_cpu=%s,' +
                   'scratch_gb=%s,updated=NOW()',
                   ( siteID, spaceID, factoryName, ip, mac,
-                    int(cgiForm['mb_per_machine'].value), float(cgiForm['udp_timeout_seconds'].value),
+                    int(cgiForm['mb_per_cpu'].value), float(cgiForm['udp_timeout_seconds'].value),
                     int(cgiForm['cpu_per_machine'].value), float(cgiForm['hs06_per_cpu'].value),
                     int(cgiForm['scratch_gb'].value) 
                   ) 
@@ -706,7 +706,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
       return
 
     try:
-      mb_per_machine      = int(cgiForm['mb_per_machine'].value)
+      mb_per_cpu          = int(cgiForm['mb_per_cpu'].value)
       udp_timeout_seconds = float(cgiForm['udp_timeout_seconds'].value)
       cpu_per_machine     = int(cgiForm['cpu_per_machine'].value)
       hs06_per_cpu        = float(cgiForm['hs06_per_cpu'].value)
@@ -753,11 +753,11 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
       try:
         cur.execute('INSERT INTO factories SET siteid=%s,spaceid=%s,' +
                     sqlTriplet +
-                    ',mb_per_machine=%s,udp_timeout_seconds=%s,' +
+                    ',mb_per_cpu=%s,udp_timeout_seconds=%s,' +
                     'cpu_per_machine=%s,hs06_per_cpu=%s,' +
                     'scratch_gb=%s,updated=NOW()',
                     ( siteID, spaceID, 
-                      mb_per_machine, udp_timeout_seconds,
+                      mb_per_cpu, udp_timeout_seconds,
                       cpu_per_machine, hs06_per_cpu,
                       scratch_gb 
                     ))
@@ -1000,19 +1000,19 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '<tr><td>IP:</td><td><input type="text" name="ip"></td></tr>'
   print '<tr><td>MAC:</td><td><input type="text" name="mac"></td></tr>'
 
-  cur.execute('SELECT mb_per_machine,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu,scratch_gb FROM factories WHERE spaceID=%s ORDER BY updated DESC LIMIT 1', 
+  cur.execute('SELECT mb_per_cpu,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu,scratch_gb FROM factories WHERE spaceID=%s ORDER BY updated DESC LIMIT 1', 
               spaceID)
   
   try:
     row = cur.fetchall()[0]
   except:
-    row = { 'mb_per_machine'      : 2048,
+    row = { 'mb_per_cpu'      : 2048,
             'udp_timeout_seconds' : 5.0,
             'cpu_per_machine'     : 1,
             'hs06_per_cpu'	  : 10.0,
             'scratch_gb'	  : 40 }
 
-  print '<tr><td>mb_per_machine:</td><td><input type="text" name="mb_per_machine" value="' + str(row['mb_per_machine']) + '"></td></tr>'
+  print '<tr><td>mb_per_cpu:</td><td><input type="text" name="mb_per_cpu" value="' + str(row['mb_per_cpu']) + '"></td></tr>'
   print '<tr><td>udp_timeout_seconds:</td><td><input type="text" name="udp_timeout_seconds" value="' + str(row['udp_timeout_seconds']) + '"></td></tr>'
   print '<tr><td>cpu_per_machine:</td><td><input type="text" name="cpu_per_machine" value="' + str(row['cpu_per_machine']) + '"></td></tr>'
   print '<tr><td>hs06_per_cpu:</td><td><input type="text" name="hs06_per_cpu" value="' + str(row['hs06_per_cpu']) + '"></td></tr>'
@@ -1034,7 +1034,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '<table>'
   print '<tr><td colspan=2><textarea name="factories" rows="4" cols="80"></textarea></td></tr>'
 
-  print '<tr><td>mb_per_machine:</td><td><input type="text" name="mb_per_machine" value="' + str(row['mb_per_machine']) + '"></td></tr>'
+  print '<tr><td>mb_per_cpu:</td><td><input type="text" name="mb_per_cpu" value="' + str(row['mb_per_cpu']) + '"></td></tr>'
   print '<tr><td>udp_timeout_seconds:</td><td><input type="text" name="udp_timeout_seconds" value="' + str(row['udp_timeout_seconds']) + '"></td></tr>'
   print '<tr><td>cpu_per_machine:</td><td><input type="text" name="cpu_per_machine" value="' + str(row['cpu_per_machine']) + '"></td></tr>'
   print '<tr><td>hs06_per_cpu:</td><td><input type="text" name="hs06_per_cpu" value="' + str(row['hs06_per_cpu']) + '"></td></tr>'

@@ -220,11 +220,10 @@ try:
       fFactoriesSettings.write(row['factoryname'] +
                            ';vac_space = '           + spaceName +        
                            ';gocdb_sitename = '      + siteName +
-                           ';mb_per_machine = '      + str(row['mb_per_machine']) +
+                           ';mb_per_cpu = '          + str(row['mb_per_cpu']) +
                            ';udp_timeout_seconds = ' + str(row['udp_timeout_seconds']) +
                            ';cpu_per_machine = '     + str(row['cpu_per_machine']) +
                            ';hs06_per_cpu = '        + str(row['hs06_per_cpu']) +
-                           ';scratch_gb = '          + str(row['scratch_gb']) +
                            (';cpu_total = 0' if row['draining'] == 1 else '') +
                           '\n')
  
@@ -282,8 +281,7 @@ try:
 
       if optRows:
         f = open(tempDir + '/viab-conf/vac.d/' + machinetypeRow['machinetypename'] + '.conf', 'w')
-        f.write('[vmtype ' + machinetypeRow['machinetypename'] + ']\n')
-# Vac0.20:        f.write('[machinetype ' + machinetypeRow['machinetypename'] + ']\n')
+        f.write('[machinetype ' + machinetypeRow['machinetypename'] + ']\n')
         
         for optRow in optRows:
           f.write(optRow['optname'] + ' = ' + optRow['value'] + '\n')
