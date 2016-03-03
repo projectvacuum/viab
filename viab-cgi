@@ -1158,9 +1158,14 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
          
       keyValueSplit = cgiForm['keyvalue'].value.split()
 
-      if keyValueSplit[0] == 'ssh-rsa' or keyValueSplit[0] == 'ssh-dss':
+      if keyValueSplit[0] == 'ssh-rsa':
+        keyType  = 'ssh-rsa'
+        keyValue = keyValueSplit[1]
+      elif keyValueSplit[0] == 'ssh-dss':
+        keyType  = 'ssh-dss'
         keyValue = keyValueSplit[1]
       else:
+        keyType  = 'ssh-rsa'
         keyValue = keyValueSplit[0]
       
       try:
@@ -1168,7 +1173,7 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
       except:
         comment = ''
 
-      cur.execute('INSERT INTO sshkeys SET siteid=%s,keyvalue=%s,comment=%s,added=NOW()', (siteID, keyValue, comment))
+      cur.execute('INSERT INTO sshkeys SET siteid=%s,keyvalue=%s,keytype=%s,comment=%s,added=NOW()', (siteID, keyValue, keyType, comment))
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
       print 'Location: https://viab.gridpp.ac.uk' + requestURI
       print
