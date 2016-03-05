@@ -87,8 +87,9 @@ done
 
 )
 
-# First remove the existing ViaB ssh iptables rules
-/sbin/iptables-save | /bin/grep -v 'ViaB ssh access' | /sbin/iptables-restore
+# First remove the existing ViaB ssh and catch-all REJECT iptables rules
+/sbin/iptables-save | /bin/egrep -v 'ViaB ssh access' | /sbin/iptables-restore
+/sbin/iptables -D INPUT -j REJECT --reject-with icmp-host-prohibited
 
 # Now (re)add the current ssh iptables rules
 cat /etc/viab/sshrules | (
@@ -99,6 +100,9 @@ do
 done
 
 )
+
+# Re-add the catch-all reject rule
+/sbin/iptables -A INPUT -j REJECT --reject-with icmp-host-prohibited
 
 # Host entries for other factories
 cat /etc/viab/factories-network | (
