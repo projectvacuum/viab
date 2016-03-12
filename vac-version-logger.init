@@ -1,20 +1,20 @@
 #!/bin/bash
 #
-# viab-heartbeatd		Start and stop viab-heartbeatd
+# vac-version-logger		Start and stop vac-version-logger
 #
 # chkconfig: 345 98 02
-# description: Vac-in-a-Box heartbeat recording daemon
+# description: Vac version logging daemon
 
 # Source function library.
 . /etc/init.d/functions
 
 start() {
 	[ "$EUID" != "0" ] && exit 1
-	[ -x /var/lib/viab/bin/viab-heartbeatd ] || exit 2
+	[ -x /var/lib/viab/bin/vac-version-logger ] || exit 2
 
         # Start daemon
-        echo -n $"Starting viab-heartbeatd: "
-        daemon /var/lib/viab/bin/viab-heartbeatd
+        echo -n $"Starting vac-version-logger: "
+        daemon /var/lib/viab/bin/vac-version-logger
 	RETVAL=$?
         echo
 	return $RETVAL
@@ -24,8 +24,8 @@ stop() {
 	[ "$EUID" != "0" ] && exit 3
 
         # Stop daemon
-        echo -n $"Shutting down viab-heartbeatd: "
-	killproc viab-heartbeatd
+        echo -n $"Shutting down vac-version-logger: "
+	killproc vac-version-logger
 	RETVAL=$?
         echo
 	return $RETVAL
@@ -39,7 +39,7 @@ case "$1" in
 	stop
 	;;
   status)
-	status viab-heartbeatd
+	status vac-version-logger
 	;;
   restart|force-reload|reload)
 	stop

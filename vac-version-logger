@@ -1,6 +1,7 @@
 #!/usr/bin/python
 #
-#  viab-heartbeatd - ViaB heartbeat daemon which runs on ViaB website
+#  vac-version-logger - General Vac version logging daemon 
+#                       which runs on ViaB website
 #
 #  Andrew McNab, University of Manchester.
 #  Copyright (c) 2013-6. All rights reserved.
@@ -33,6 +34,33 @@
 #
 #  Contacts: Andrew.McNab@cern.ch  http://www.gridpp.ac.uk/vac/
 #
+
+keyNames = [
+  'boot_time',
+  'factory',
+  'factory_heartbeat_time',
+  'kernel_version',
+  'load_average',
+  'mem_total_kb',
+  'mem_used_kb',
+  'metadata_heartbeat_time',
+  'mjf_heartbeat_time',
+  'os_issue',
+  'responder_heartbeat_time',
+  'root_disk_avail_kb',
+  'running_cpus',
+  'running_machines',
+  'site',
+  'space',
+  'swap_free_kb',
+  'swap_used_kb',
+  'time_sent',
+  'total_cpus',
+  'total_hs06',
+  'total_machines',
+  'vac_disk_avail_kb',
+  'vac_version'
+]
 
 import os
 import sys
@@ -76,17 +104,17 @@ else:
    si = file('/dev/null', 'r')
    os.dup2(si.fileno(), sys.stdin.fileno())
 
-   so = file('/var/log/vacd-responder', 'a+')
+   so = file('/var/log/vac-version-logger', 'a+')
    os.dup2(so.fileno(), sys.stdout.fileno())
           
-   se = file('/var/log/viab-heartbeatd', 'a+', 0)     
+   se = file('/var/log/vac-version-logger', 'a+', 0)     
    os.dup2(se.fileno(), sys.stderr.fileno())
 
-   open('/var/run/viab-heartbeatd.pid', 'w').write(str(os.getpid()) + '\n')
+   open('/var/run/vac-version-logger.pid', 'w').write(str(os.getpid()) + '\n')
 
    sock = None
 
-   logLine('viab-heartbeatd starts')
+   logLine('vac-version-logger starts')
 
    while True:
    
@@ -95,7 +123,7 @@ else:
      except:
        pass
            
-     so = file('/var/log/viab-heartbeatd', 'a+')
+     so = file('/var/log/vac-version-logger', 'a+')
      os.dup2(so.fileno(), sys.stdout.fileno())
           
      try:
@@ -103,7 +131,7 @@ else:
      except:
        pass
 
-     se = file('/var/log/viab-heartbeatd', 'a+', 0)     
+     se = file('/var/log/vac-version-logger', 'a+', 0)     
      os.dup2(se.fileno(), sys.stderr.fileno())
 
      if sock is None:
@@ -115,35 +143,42 @@ else:
          sock.bind(('', 8884))
        except Exception as e:
          sock = None
-         logLine('Failed to bind to ViaB heartbeat port 8884: ' + str(e))
+         logLine('Failed to bind to Vac version logger port 8884: ' + str(e))
          time.sleep(60.0)
          continue
              
      try:
-       pr = open('/var/run/viab-heartbeatd.pid', 'r')
+       pr = open('/var/run/vac-version-logger.pid', 'r')
        pid = int(pr.read().strip())
        pr.close()
        
        if pid != os.getpid():
-         logLine('os.getpid ' + os.getpid() + ' does not match viab-heartbeatd.pid ' + pid + ' - exiting')
+         logLine('os.getpid ' + os.getpid() + ' does not match vac-version-logger.pid ' + pid + ' - exiting')
          break
                 
      except:
-       logLine('no viab-heartbeatd.pid - exiting')
+       logLine('no vac-version-logger.pid - exiting')
        break
 
-     # so log file is updated before we start waiting        
+     # so log file is updated before we start waiting
      sys.stdout.flush()
      sys.stderr.flush()
 
      try:
-       data, addr = sock.recvfrom(1024)
+       data, addr = sock.recvfrom(2048)
      except socket.error as msg:
        continue
 
      try:
-       heartbeatMessage = json.loads(data)
+       factoryMessage = json.loads(data)
      except:
+       continue
+
+     logLine('Received: ' + str(factoryMessage))
+
+     if (('method'       not in factoryMessage) or (factoryMessage['method']       != 'factory')) and \
+        (('message_type' not in factoryMessage) or (factoryMessage['message_type'] != 'factory_status')):
+       # Not a message we handle
        continue
 
      try:
@@ -153,21 +188,23 @@ else:
        logLine('Failed with database problem (' + str(e) + ')')
        continue
        
-     try:
-       # Get space/site numbers 
-       cur.execute('SELECT factoryid FROM factories LEFT JOIN spaces ON spaces.spaceid=factories.spaceid WHERE factoryname=%s AND spacename=%s AND cookie=%s',
-                   (heartbeatMessage['factory'], heartbeatMessage['space'], heartbeatMessage['cookie']))
-       rows = cur.fetchall()
-       factoryID = int(rows[0]['factoryid'])
-     except Exception as e:
-       logLine('Failed getting factoryID (' + str(e) + ')')
-       continue
+     sqlFormat = 'REPLACE LOW_PRIORITY factoryversions SET time_received=NOW()'
+     sqlList   = []
+ 
+     for key in keyNames:
 
-     try:     
-       cur.execute('UPDATE factories SET vac_version=%s,viab_version=%s,boot_time=FROM_UNIXTIME(%s),viab_heartbeat=NOW() WHERE factoryid=%s', 
-                   (heartbeatMessage['vac_version'], heartbeatMessage['viab_version'], heartbeatMessage['boot_time'], factoryID))
+       try:
+         value = factoryMessage[key]
+       except
+         continue
+    
+       sqlFormat += (',' + key + '=%s')
+       sqlList.append(value)
+
+     try:
+       cur.execute(sqlFormat % sqlList)
      except Exception as e:
-       logLine('Failed updating versions (' + str(e) + ')')
+       logLine('Failed logging factory message to MySQL: ' + str(sqlList))
        continue
 
    sys.exit(0) # if we break out of while loop then we exit
