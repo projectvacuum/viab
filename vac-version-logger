@@ -195,16 +195,20 @@ else:
 
        try:
          value = factoryMessage[key]
-       except
+       except:
          continue
     
-       sqlFormat += (',' + key + '=%s')
+       if 'time' in key:
+         sqlFormat += (',' + key + '=FROM_UNIXTIME(%s)')       
+       else:
+         sqlFormat += (',' + key + '=%s')
+
        sqlList.append(value)
 
      try:
-       cur.execute(sqlFormat % sqlList)
+       cur.execute(sqlFormat, sqlList)
      except Exception as e:
-       logLine('Failed logging factory message to MySQL: ' + str(sqlList))
+       logLine('Failed logging factory message to MySQL: ' + str(e))
        continue
 
    sys.exit(0) # if we break out of while loop then we exit
