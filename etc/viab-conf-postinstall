@@ -35,7 +35,8 @@ fi
 
 echo '[settings]' > /etc/vac.d/settings.conf
 grep "^$HOSTNAME;" /etc/viab/factories-settings | sed 's/;/\n/g' | tail --lines=+2 >> /etc/vac.d/settings.conf
-echo 'vacmon_hostport = sv220413.tier2.hep.manchester.ac.uk:8884' >> /etc/vac.d/settings.conf
+#echo 'vacmon_hostport = sv220413.tier2.hep.manchester.ac.uk:8884' >> /etc/vac.d/settings.conf
+echo 'version_logger = 24' >> /etc/vac.d/settings.conf
 
 # Create PEM versions of encrypted p12 keys
 /usr/sbin/viab-conf-p12
@@ -87,9 +88,10 @@ done
 
 )
 
-# First remove the existing ViaB ssh and catch-all REJECT iptables rules
+# First remove the existing ViaB ssh, catch-all REJECT iptables rules, and default ssh rule
 /sbin/iptables-save | /bin/egrep -v 'ViaB ssh access' | /sbin/iptables-restore
 /sbin/iptables -D INPUT -j REJECT --reject-with icmp-host-prohibited
+/sbin/iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT
 
 # Now (re)add the current ssh iptables rules
 cat /etc/viab/sshrules | (

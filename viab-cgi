@@ -139,7 +139,7 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
                  'heartbeat_seconds'     : '600',
                  'accounting_fqan'	 : '/gridpp/Role=NULL/Capability=NULL',
                  'user_data_option_dirac_site'  : 'CHANGEME',
-                 'user_data_option_submit_pool' : 'gridppPool',
+                 'user_data_option_vo'   : 'gridpp',
                  'user_data_file_hostcert'      : 'hostcert.pem',
                  'user_data_file_hostkey'       : 'hostkey.pem',
                  'user_data_option_cvmfs_proxy' : 'http://169.254.169.254:3128/'
@@ -157,7 +157,6 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
                  'heartbeat_seconds'     : '600',
                  'accounting_fqan'	 : '/atlas/Role=NULL/Capability=NULL',
                  'user_data_option_queue'       : 'CHANGEME',
-                 'user_data_option_default_se'  : 'CHANGEME',
                  'user_data_file_hostcert'      : 'hostcert.pem',
                  'user_data_file_hostkey'       : 'hostkey.pem',
                  'user_data_option_cvmfs_proxy' : 'http://169.254.169.254:3128/'
@@ -230,7 +229,11 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
         print 'machinetypes cannot be called settings'
         return
 
-      cur.execute('INSERT INTO machinetypes SET spaceid=%s,machinetypename=%s', (spaceID, cloneName))
+      cur.execute('SELECT p12,p12updated FROM machinetypes WHERE machinetypeid=%s', machinetypeID)
+      rows = cur.fetchall()
+
+      cur.execute('INSERT INTO machinetypes SET spaceid=%s,machinetypename=%s,p12=%s,p12updated=%s',
+                  (spaceID, cloneName, rows[0]['p12'], rows[0]['p12updated']))
 
       cur.execute('INSERT INTO machinetypeopts (machinetypeid,optname,value) SELECT %s,optname,value FROM machinetypeopts WHERE machinetypeid=%s',
                   (cur.lastrowid, machinetypeID) )
@@ -482,13 +485,18 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
 
   htmlHeader('Factory ' + factoryName)
     
-  cur.execute('SELECT ip,mac,mb_per_cpu,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu,scratch_gb,draining,os_issue,factories.vac_version,time_received,factoryversions.boot_time AS boot_time FROM factories LEFT JOIN factoryversions ON factory=factoryname AND space=%s AND site=%s WHERE factoryID=%s', [spaceName, siteName, factoryID])  
+  cur.execute('SELECT ip,mac,mb_per_cpu,udp_timeout_seconds,cpu_per_machine,hs06_per_cpu,scratch_gb,draining,os_issue,factoryversions.vac_version,time_received,factoryversions.boot_time AS boot_time FROM factories LEFT JOIN factoryversions ON factory=factoryname AND space=%s AND site=%s WHERE factoryID=%s', [spaceName, siteName, factoryID])  
   rows = cur.fetchall()
 
   try:
     viab_version = re.search('\(ViaB ([^)]*)\)', rows[0]['os_issue']).group(1)
   except:
     viab_version = '???'
+    
+  try:
+    vac_version = rows[0]['vac_version'].split()[1]
+  except:
+    vac_version = '???'
 
   print ('<div class="breadcrumbs"><a href="/dashboard/">Dashboard</a> ' + 
          '/ <a href="/dashboard/' + siteName + '/">' + siteName + '</a> ' +
@@ -502,7 +510,7 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
 
   print '<tr><td>Hostname:</td><td>' + factoryName + '</td></tr>'
   print '<tr><td>ViaB version:</td><td>' + viab_version + '</td></tr>'
-  print '<tr><td>Vac version:</td><td>' + rows[0]['vac_version'] + '</td></tr>'
+  print '<tr><td>Vac version:</td><td>' + vac_version + '</td></tr>'
   print '<tr><td>Boot time:</td><td>' + str(rows[0]['boot_time']) + '</td></tr>'
   print '<tr><td>ViaB heartbeat:</td><td>' + str(rows[0]['time_received']) + '</td></tr>'
   print '<tr><td>IP:</td><td><input type="text" name="ip" value="' + rows[0]['ip'] + '"></td></tr>'
@@ -877,7 +885,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     pass
          
   htmlHeader('Space ' + spaceName)
-  cur.execute('SELECT factoryid,factoryname,ip,mac,cpu_per_machine,hs06_per_cpu,scratch_gb,os_issue,factories.vac_version,UNIX_TIMESTAMP(factories.boot_time) AS boot_time,UNIX_TIMESTAMP(time_received) AS time_received,draining FROM factories LEFT JOIN factoryversions ON factory=factoryname AND space=%s AND site=%s WHERE spaceid=%s ORDER BY factoryname', [spaceName, siteName, spaceID])
+  cur.execute('SELECT factoryid,factoryname,ip,mac,cpu_per_machine,hs06_per_cpu,scratch_gb,os_issue,factoryversions.vac_version,UNIX_TIMESTAMP(factoryversions.boot_time) AS boot_time,UNIX_TIMESTAMP(time_received) AS time_received,draining FROM factories LEFT JOIN factoryversions ON factory=factoryname AND space=%s AND site=%s WHERE spaceid=%s ORDER BY factoryname', [spaceName, siteName, spaceID])
   rows = cur.fetchall()
 
   print ('<div class="breadcrumbs"><a href="/dashboard/">Dashboard</a> / ' + 
@@ -947,7 +955,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     for row in rows:
       if row['time_received'] < int(time.time() - 86400):
         heartbeatClass = 'alarm'
-      elif row['time_received'] < int(time.time() - 3600):
+      elif row['time_received'] < int(time.time() - 3659):
         heartbeatClass = 'warning'
       else:
         heartbeatClass = oddEven(n)
@@ -957,10 +965,11 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
       except:
         viab_version = '???'
     
-      vac_version = str(row['vac_version'])
-      if vac_version == '':
+      try:
+        vac_version = row['vac_version'].split()[1]
+      except:
         vac_version = '???'
-  
+
       print ('<tr><td class="' + oddEven(n) + '" style="white-space: nowrap"><a href="/dashboard/' + siteName + '/' + spaceName + '/factories/' + row['factoryname'] + '/">' + row['factoryname'].split('.')[0] + '</a></td>' +
            '<td class="' + oddEven(n) + '">' + row['ip'] + '</td>' +
            '<td class="' + oddEven(n) + '">' + row['mac'] + '</td>' +
