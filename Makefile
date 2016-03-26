@@ -76,8 +76,10 @@ viab.tgz: $(TGZ_FILES)
 install: $(TGZ_FILES)
 	mkdir -p $(RPM_BUILD_ROOT)/var/lib/viab/bin \
                  $(RPM_BUILD_ROOT)/var/lib/viab/isolinux/$(MAJOR_VERSION) \
-                 $(RPM_BUILD_ROOT)/var/lib/viab/www \
-                 $(RPM_BUILD_ROOT)/var/lib/viab/docs/$(VERSION) \
+                 $(RPM_BUILD_ROOT)/var/lib/viab/www/docs/$(VERSION) \
+                 $(RPM_BUILD_ROOT)/var/lib/viab/www/docs/iso/ \
+                 $(RPM_BUILD_ROOT)/var/lib/viab/www/docs/ks/ \
+                 $(RPM_BUILD_ROOT)/var/lib/viab/www/docs/repo/ \
                  $(RPM_BUILD_ROOT)/var/lib/viab/etc/$(VERSION) \
 		 $(RPM_BUILD_ROOT)/etc/cron.daily \
 		 $(RPM_BUILD_ROOT)/etc/rc.d/init.d \
@@ -92,11 +94,11 @@ install: $(TGZ_FILES)
 	cp viab-gocdb-cron \
 	   $(RPM_BUILD_ROOT)/etc/cron.daily
 	cp vac-version-logger.init \
-	   $(RPM_BUILD_ROOT)/etc/rc.d/init.d
+	   $(RPM_BUILD_ROOT)/etc/rc.d/init.d/vac-version-logger
 	cp $(WWW_FILES) \
 	   $(RPM_BUILD_ROOT)/var/lib/viab/www
 	cp $(DOCS_FILES) \
-	   $(RPM_BUILD_ROOT)/var/lib/viab/docs/$(VERSION)
+	   $(RPM_BUILD_ROOT)/var/lib/viab/www/docs/$(VERSION)
 	cp $(ETC_FILES) \
 	   $(RPM_BUILD_ROOT)/var/lib/viab/etc/$(VERSION)
 	cp $(ISOLINUX_FILES) \
