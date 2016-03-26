@@ -33,7 +33,7 @@
 
 include VERSION
 
-MAJOR_VERSION=$(shell sed 's/^.*=\([0-9]*\)/\1/' VERSION)
+MAJOR_VERSION=$(shell sed 's/^.*=\([0-9]*\).*/\1/' VERSION)
 
 INSTALL_FILES=vac-version-logger vac-version-logger.init \
           viab-cgi viab-gocdb viab-gocdb-cron \
@@ -83,6 +83,8 @@ install: $(TGZ_FILES)
 		 $(RPM_BUILD_ROOT)/etc/rc.d/init.d \
 		 $(RPM_BUILD_ROOT)/etc/httpd/conf \
 		 $(RPM_BUILD_ROOT)/etc/httpd/includes
+	cp VERSION \
+           $(RPM_BUILD_ROOT)/var/lib/viab
 	cp vac-version-logger viab-cgi viab-gocdb viab-update-versions-etc \
            $(RPM_BUILD_ROOT)/var/lib/viab/bin
 	cp viab.httpd.inc \
@@ -105,6 +107,6 @@ rpm: viab.tgz
 	mkdir -p RPMTMP/SOURCES RPMTMP/SPECS RPMTMP/BUILD \
          RPMTMP/SRPMS RPMTMP/RPMS/noarch RPMTMP/BUILDROOT
 	cp -f viab.tgz RPMTMP/SOURCES
-	export VIAB_VERSION=$(VERSION) ; rpmbuild -ba \
+	export VIAB_VERSION=$(VERSION) MAJOR_VERSION=$(MAJOR_VERSION); rpmbuild -ba \
 	  --define "_topdir $(shell pwd)/RPMTMP" \
 	  --buildroot $(shell pwd)/RPMTMP/BUILDROOT viab.spec

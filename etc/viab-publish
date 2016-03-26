@@ -358,8 +358,8 @@ else:
   logLine('viab-tftpboot RPM not present in repo already, so make it')
   os.mkdir(tempDir + '/viab-tftpboot')
   shutil.copy2('/var/lib/viab/etc/' + spaceVersion + '/viab-tftpboot.spec', tempDir + '/viab-tftpboot.spec')
-  shutil.copy2('/var/lib/viab/isolinux/vmlinuz',    tempDir + '/viab-tftpboot')
-  shutil.copy2('/var/lib/viab/isolinux/initrd.img', tempDir + '/viab-tftpboot')
+  shutil.copy2('/var/lib/viab/isolinux/' + majorVersion + '/vmlinuz',    tempDir + '/viab-tftpboot')
+  shutil.copy2('/var/lib/viab/isolinux/' + majorVersion + '/initrd.img', tempDir + '/viab-tftpboot')
 
   os.system('/bin/tar zcvf SOURCES/viab-tftpboot.tgz --owner=root --group=root --exclude-backups viab-tftpboot')
   os.system('/usr/bin/rpmbuild -ba --define "_topdir ' + tempDir + '" --buildroot ' + tempDir + '/BUILDROOT viab-tftpboot.spec')
@@ -373,15 +373,15 @@ logLine('Creating viab-usb.iso')
 
 os.mkdir(tempDir + '/isolinux')
 
-for fileName in [ '/var/lib/viab/isolinux/vmlinuz',
-                  '/var/lib/viab/isolinux/boot.cat',
-                  '/var/lib/viab/isolinux/vesamenu.c32',
-                  '/var/lib/viab/isolinux/isolinux.bin',
-                  '/var/lib/viab/isolinux/memtest',
-                  '/var/lib/viab/isolinux/boot.msg',
-                  '/var/lib/viab/isolinux/grub.conf',
-                  '/var/lib/viab/isolinux/isolinux.cfg',
-                  '/var/lib/viab/isolinux/initrd.img',
+for fileName in [ '/var/lib/viab/isolinux/' + majorVersion + '/vmlinuz',
+                  '/var/lib/viab/isolinux/' + majorVersion + '/boot.cat',
+                  '/var/lib/viab/isolinux/' + majorVersion + '/vesamenu.c32',
+                  '/var/lib/viab/isolinux/' + majorVersion + '/isolinux.bin',
+                  '/var/lib/viab/isolinux/' + majorVersion + '/memtest',
+                  '/var/lib/viab/isolinux/' + majorVersion + '/boot.msg',
+                  '/var/lib/viab/isolinux/' + majorVersion + '/grub.conf',
+                  '/var/lib/viab/isolinux/' + majorVersion + '/isolinux.cfg',
+                  '/var/lib/viab/isolinux/' + majorVersion + '/initrd.img',
                   '/var/lib/viab/etc/' + spaceVersion + '/splash.jpg' ]:
   shutil.copy2(fileName, tempDir + '/isolinux')
 

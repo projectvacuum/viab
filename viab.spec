@@ -13,18 +13,18 @@ Packager: Andrew McNab <Andrew.McNab@cern.ch>
 %description
 Vac-in-a-Box webserver files
 
-%package -n viab-etc
+%package -n viab-etc-%(echo ${VIAB_VERSION:-0.0})
 Group: Applications/Internet
 Summary: Vac-in-a-Box files for one ViaB version
 
-%description -n viab-etc
+%description -n viab-etc-%(echo ${VIAB_VERSION:-0.0})
 For one version
 
-%package -n viab-isolinux
+%package -n viab-isolinux-%(echo ${MAJOR_VERSION:-0.0})
 Group: Applications/Internet
 Summary: Vac-in-a-Box files for one ViaB version
 
-%description -n viab-isolinux
+%description -n viab-isolinux-%(echo ${MAJOR_VERSION:-0.0})
 For one version
 
 %prep
@@ -42,10 +42,11 @@ make install
 /var/lib/viab/VERSION
 /etc/rc.d/init.d/*
 /etc/cron.daily/*
+/etc/httpd/includes/*
 
-%files -n viab-etc
+%files -n viab-etc-%(echo ${VIAB_VERSION:-0.0})
 /var/lib/viab/etc/*
 /var/lib/viab/docs/*
 
-%files -n viab-isolinux
+%files -n viab-isolinux-%(echo ${MAJOR_VERSION:-0.0})
 /var/lib/viab/isolinux/*
