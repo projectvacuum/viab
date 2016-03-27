@@ -77,9 +77,6 @@ install: $(TGZ_FILES)
 	mkdir -p $(RPM_BUILD_ROOT)/var/lib/viab/bin \
                  $(RPM_BUILD_ROOT)/var/lib/viab/isolinux/$(MAJOR_VERSION) \
                  $(RPM_BUILD_ROOT)/var/lib/viab/www/docs/$(VERSION) \
-                 $(RPM_BUILD_ROOT)/var/lib/viab/www/docs/iso/ \
-                 $(RPM_BUILD_ROOT)/var/lib/viab/www/docs/ks/ \
-                 $(RPM_BUILD_ROOT)/var/lib/viab/www/docs/repo/ \
                  $(RPM_BUILD_ROOT)/var/lib/viab/etc/$(VERSION) \
 		 $(RPM_BUILD_ROOT)/etc/cron.daily \
 		 $(RPM_BUILD_ROOT)/etc/rc.d/init.d \
