@@ -35,7 +35,7 @@ fi
 
 echo '[settings]' > /etc/vac.d/settings.conf
 grep "^$HOSTNAME;" /etc/viab/factories-settings | sed 's/;/\n/g' | tail --lines=+2 >> /etc/vac.d/settings.conf
-#echo 'vacmon_hostport = sv220413.tier2.hep.manchester.ac.uk:8884' >> /etc/vac.d/settings.conf
+echo 'vacmon_hostport = vacmon.gridpp.ac.uk:8884' >> /etc/vac.d/settings.conf
 echo 'version_logger = 24' >> /etc/vac.d/settings.conf
 
 # Create PEM versions of encrypted p12 keys
