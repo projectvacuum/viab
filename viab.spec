@@ -9,7 +9,7 @@ Source: viab.tgz
 URL: https://viab.gridpp.ac.uk/
 Vendor: GridPP
 Packager: Andrew McNab <Andrew.McNab@cern.ch>
-Requires: MySQL-python,mysql-server,syslinux,genisoimage
+Requires: MySQL-python,mysql-server,syslinux,genisoimage,createrepo
 
 %description
 Vac-in-a-Box webserver files
