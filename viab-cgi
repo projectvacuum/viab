@@ -527,7 +527,7 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
   print '<tr><td>Boot time:</td><td>' + str(rows[0]['boot_time']) + '</td></tr>'
   print '<tr><td>Total CPUs:</td><td>' + str(rows[0]['total_cpus']) + '</td></tr>'
   print '<tr><td>Running CPUs:</td><td>' + str(rows[0]['running_cpus']) + '</td></tr>'
-  print '<tr><td>Total machines:</td><td>' + str(rows[0]['total_machines']) + '</td></tr>'
+  print '<tr><td>Machine slots:</td><td>' + str(rows[0]['total_machines']) + '</td></tr>'
   print '<tr><td>Total HS06 in use:</td><td>' + str(rows[0]['total_hs06']) + '</td></tr>'
   print '<tr><td>Free disk (KB):</td><td>' + str(rows[0]['root_disk_avail_kb']) + '</td></tr>'
   print '<tr><td>Load average:</td><td>' + str(rows[0]['load_average']) + '</td></tr>'
