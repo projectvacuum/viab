@@ -11,7 +11,7 @@ if [ $? = 0 ] ; then
  service dhcpd restart
  logger -p daemon.info -t dnsmasq-wrapper "Run dnsmasq-wrapper instead of dnsmasq $*"
  exec /usr/sbin/dnsmasq-real --pid-file=/var/run/libvirt/network/vac_169.254.0.0.pid \
-  --conf-file= --interface=virbr1 --bind-interfaces --listen-address 169.254.169.254 \
+  --conf-file= --interface=virbr1 --bind-interfaces --listen-address 169.254.169.253 \
   --no-dhcp-interface=virbr1
 else
  exec /usr/sbin/dnsmasq-real $*

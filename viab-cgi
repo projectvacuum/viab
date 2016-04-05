@@ -124,7 +124,7 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
                  'max_wallclock_seconds' : '900', 
                  'target_share'          : '1.0',
                  'root_public_key'       : '/root/.ssh/id_rsa.pub',
-                 'user_data_option_cvmfs_proxy' : 'http://169.254.169.254:3128/'
+                 'user_data_option_cvmfs_proxy' : 'http://169.254.169.253:3128/'
                },
 
    'GridPP' :  { 'machine_model'         : 'cernvm3',
@@ -142,7 +142,7 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
                  'user_data_option_vo'   : 'gridpp',
                  'user_data_file_hostcert'      : 'hostcert.pem',
                  'user_data_file_hostkey'       : 'hostkey.pem',
-                 'user_data_option_cvmfs_proxy' : 'http://169.254.169.254:3128/'
+                 'user_data_option_cvmfs_proxy' : 'http://169.254.169.253:3128/'
                },
 
    'ATLAS' :   { 'machine_model'         : 'cernvm3',
@@ -159,7 +159,7 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
                  'user_data_option_queue'       : 'CHANGEME',
                  'user_data_file_hostcert'      : 'hostcert.pem',
                  'user_data_file_hostkey'       : 'hostkey.pem',
-                 'user_data_option_cvmfs_proxy' : 'http://169.254.169.254:3128/'
+                 'user_data_option_cvmfs_proxy' : 'http://169.254.169.253:3128/'
                },
 
    'CMS' :     { 'machine_model'         : 'cernvm3',
@@ -178,7 +178,7 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
                  'user_data_option_version'     : 'CHANGEME',
                  'user_data_file_hostcert'      : 'hostcert.pem',
                  'user_data_file_hostkey'       : 'hostkey.pem',
-                 'user_data_option_cvmfs_proxy' : 'http://169.254.169.254:3128/'
+                 'user_data_option_cvmfs_proxy' : 'http://169.254.169.253:3128/'
                },
 
    'LHCb'   :  { 'machine_model'         : 'cernvm3',
@@ -195,7 +195,7 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
                  'user_data_option_dirac_site'  : 'CHANGEME',
                  'user_data_file_hostcert'      : 'hostcert.pem',
                  'user_data_file_hostkey'       : 'hostkey.pem',
-                 'user_data_option_cvmfs_proxy' : 'http://169.254.169.254:3128/'
+                 'user_data_option_cvmfs_proxy' : 'http://169.254.169.253:3128/'
                }
                   }
 

@@ -72,7 +72,7 @@ use-host-decl-names on;
 allow bootp;
 allow booting;
 not authoritative;
-subnet 169.254.0.0 netmask 255.255.0.0 { option domain-name-servers 169.254.169.254; option routers 169.254.169.254; }
+subnet 169.254.0.0 netmask 255.255.0.0 { option domain-name-servers 169.254.169.253; option routers 169.254.169.253; }
 EOF
 
 rm -f /etc/ethers.tmp
