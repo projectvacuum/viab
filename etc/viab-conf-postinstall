@@ -109,7 +109,7 @@ done
 /sbin/iptables -A INPUT -j REJECT --reject-with icmp-host-prohibited
 
 # No emails from the VMs to the outside world
-/sbin/iptables -A FORWARD -p tcp --dport 25 -j DROP
+/sbin/iptables -I FORWARD -p tcp --dport 25 -j DROP
 
 # Host entries for other factories
 cat /etc/viab/factories-network | (
