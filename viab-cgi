@@ -988,7 +988,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
            '<td class="' + heartbeatClass + '">' + secondsToString(row['time_received']) + '</td>' +           
            '<td class="' + oddEven(n) + '">' + str(row['cpu_per_machine']) + '</td>' +
            '<td class="' + oddEven(n) + '">' + str(row['hs06_per_cpu']) + '</td>' +
-           '<td class="' + oddEven(n) + '" style="text-align: right">' + str(row['running_cpus']) + '/' + str(row['total_cpus']) + '</td>' +
+           '<td class="' + oddEven(n) + '">' + str(row['running_cpus']) + '/' + str(row['total_cpus']) + '</td>' +
            '<td class="' + oddEven(n) + '">' + ('Draining' if row['draining'] == 1 else '') + '</td>' +
            '<td class="' + oddEven(n) + '"><input type="checkbox" name="actionlist" value="' + str(row['factoryid']) + '"></td>' +
            '</tr>\n') 
