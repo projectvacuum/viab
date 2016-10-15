@@ -896,7 +896,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     pass
          
   htmlHeader('Space ' + spaceName)
-  cur.execute('SELECT factoryid,factoryname,ip,mac,cpu_per_machine,hs06_per_cpu,os_issue,factoryversions.vac_version,UNIX_TIMESTAMP(factoryversions.boot_time) AS boot_time,UNIX_TIMESTAMP(time_received) AS time_received,draining FROM factories LEFT JOIN factoryversions ON factory=factoryname AND space=%s AND site=%s WHERE spaceid=%s ORDER BY factoryname', [spaceName, siteName, spaceID])
+  cur.execute('SELECT factoryid,factoryname,ip,mac,cpu_per_machine,hs06_per_cpu,running_cpus,total_cpus,os_issue,factoryversions.vac_version,UNIX_TIMESTAMP(factoryversions.boot_time) AS boot_time,UNIX_TIMESTAMP(time_received) AS time_received,draining FROM factories LEFT JOIN factoryversions ON factory=factoryname AND space=%s AND site=%s WHERE spaceid=%s ORDER BY factoryname', [spaceName, siteName, spaceID])
   rows = cur.fetchall()
 
   print ('<div class="breadcrumbs"><a href="/dashboard/">Dashboard</a> / ' + 
@@ -956,8 +956,8 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     print '<form method="post" action="' + requestURI + '">'
     
     print '<table class="center">'
-    print '<tr><th class="oddeven">Host</th><th class="oddeven">IP</th><th class="oddeven">MAC</th><th class="oddeven">ViaB/Vac</th><th class="oddeven">Booted</th><th class="oddeven">Heartbeat</th><th class="oddeven">cpu&nbsp;/<br>machine</th><th class="oddeven">HS06<br>/&nbsp;cpu</th>'
-    print '<th class="oddeven">&nbsp;</th><th class="oddeven"><input type="checkbox" onchange="for (var i = 0; i < this.form.length; ++i) { if (this.form[i].type == \'checkbox\') { form[i].checked = this.checked; } }"></th></tr>'
+    print '<tr><th class="oddeven">Host</th><th class="oddeven">IP</th><th class="oddeven">ViaB/Vac</th><th class="oddeven">Booted</th><th class="oddeven">Heartbeat</th><th class="oddeven">cpu&nbsp;/<br>machine</th><th class="oddeven">HS06<br>/&nbsp;cpu</th>'
+    print '<th class="oddeven">Running<br>cpu</th><th class="oddeven">&nbsp;</th><th class="oddeven"><input type="checkbox" onchange="for (var i = 0; i < this.form.length; ++i) { if (this.form[i].type == \'checkbox\') { form[i].checked = this.checked; } }"></th></tr>'
 
     cur.execute('SELECT spacename,spaceid FROM spaces WHERE siteid=%s ORDER BY spacename', siteID)
     spaceRows = cur.fetchall()
@@ -983,12 +983,12 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
 
       print ('<tr><td class="' + oddEven(n) + '" style="white-space: nowrap"><a href="/dashboard/' + siteName + '/' + spaceName + '/factories/' + row['factoryname'] + '/">' + row['factoryname'].split('.')[0] + '</a></td>' +
            '<td class="' + oddEven(n) + '">' + row['ip'] + '</td>' +
-           '<td class="' + oddEven(n) + '">' + row['mac'] + '</td>' +
            '<td class="' + oddEven(n) + '">' + viab_version + ' / ' + vac_version + '</td>' +
            '<td class="' + oddEven(n) + '">' + secondsToString(row['boot_time']) + '</td>' +
            '<td class="' + heartbeatClass + '">' + secondsToString(row['time_received']) + '</td>' +           
            '<td class="' + oddEven(n) + '">' + str(row['cpu_per_machine']) + '</td>' +
            '<td class="' + oddEven(n) + '">' + str(row['hs06_per_cpu']) + '</td>' +
+           '<td class="' + oddEven(n) + '" style="text-align: right">' + str(row['running_cpus']) + '/' + str(row['total_cpus']) + '</td>' +
            '<td class="' + oddEven(n) + '">' + ('Draining' if row['draining'] == 1 else '') + '</td>' +
            '<td class="' + oddEven(n) + '"><input type="checkbox" name="actionlist" value="' + str(row['factoryid']) + '"></td>' +
            '</tr>\n') 
