@@ -182,7 +182,7 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
                },
 
    'LHCb'   :  { 'machine_model'         : 'cernvm3',
-                 'user_data'             : 'https://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/user_data',
+                 'user_data'             : 'https://lhcb-portal-dirac.cern.ch/pilot/user_data',
                  'root_image'            : 'https://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/cernvm3.iso',
                  'backoff_seconds'	 : '3600',
                  'fizzle_seconds'	 : '600',
@@ -192,7 +192,6 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
                  'heartbeat_file'        : 'vm-heartbeat',
                  'heartbeat_seconds'     : '600',
                  'accounting_fqan'	 : '/lhcb/Role=NULL/Capability=NULL',
-                 'user_data_option_dirac_site'  : 'CHANGEME',
                  'user_data_file_hostcert'      : 'hostcert.pem',
                  'user_data_file_hostkey'       : 'hostkey.pem',
                  'user_data_option_cvmfs_proxy' : 'http://169.254.169.253:3128/'
@@ -1350,7 +1349,10 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
 
   print ('<div class="breadcrumbs"><a href="/dashboard/">Dashboard</a> / ' + siteName + '</div>')
 
-  print '<h1>Site ' + siteName
+  print '<h1>Site ' + siteName + '</h1>'
+  
+  print '<form method="post" action="https://goc.egi.eu/portal/index.php?Page_Type=Search"><input type="hidden" name="SearchString" value="%s">' % siteName
+  print 'Lookup %s in <input type="submit" value="GOCDB"></form>' % siteName
 
   print '<h2>Spaces</h2>'
 
