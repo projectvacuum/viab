@@ -941,8 +941,9 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   versionsList.sort()
 
   for v in versionsList:
-    print '<option value="' + v + '" ' + ('selected' if v == spaceVersion else '') + '>Version ' + v + '</option>\n'
-      
+    if not 'pre' in v or userDN in viab_cgi_conf.adminDNs:
+      print '<option value="' + v + '" ' + ('selected' if v == spaceVersion else '') + '>Version ' + v + '</option>\n'
+
   print '</select>\n'
 
   htmlFormCookie(userDN)
