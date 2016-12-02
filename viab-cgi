@@ -524,10 +524,11 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
   print '<tr><td>Kernel version:</td><td>' + str(rows[0]['kernel_version']) + '</td></tr>'
 
   print '<tr><td>Boot time:</td><td>' + str(rows[0]['boot_time']) + '</td></tr>'
-  print '<tr><td>Total CPUs:</td><td>' + str(rows[0]['total_cpus']) + '</td></tr>'
-  print '<tr><td>Running CPUs:</td><td>' + str(rows[0]['running_cpus']) + '</td></tr>'
-  print '<tr><td>Machine slots:</td><td>' + str(rows[0]['total_machines']) + '</td></tr>'
-  print '<tr><td>Total HS06 in use:</td><td>' + str(rows[0]['total_hs06']) + '</td></tr>'
+  print '<tr><td>Running processors:</td><td>' + str(rows[0]['running_cpus']) + '</td></tr>'
+  print '<tr><td>Running machines:</td><td>' + str(rows[0]['running_machines']) + '</td></tr>'
+  print '<tr><td>Max processors:</td><td>' + str(rows[0]['total_cpus']) + '</td></tr>'
+  print '<tr><td>Max machines:</td><td>' + str(rows[0]['total_machines']) + '</td></tr>'
+  print '<tr><td>Max HS06 in use:</td><td>' + str(rows[0]['total_hs06']) + '</td></tr>'
   print '<tr><td>Free disk (KB):</td><td>' + str(rows[0]['root_disk_avail_kb']) + '</td></tr>'
   print '<tr><td>Load average:</td><td>' + str(rows[0]['load_average']) + '</td></tr>'
   print '<tr><td>OS issue:</td><td>' + str(rows[0]['os_issue']) + '</td></tr>'
@@ -935,6 +936,8 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   else:
     print ' <b>but the recommended production version is now ' + prodVersion + '.</b> '
 
+  print ' A reboot will normally be required when upgrading between Vac major versions. ' 
+
   print '<br><select name="version">\n'
   
   versionsList = os.listdir('/var/lib/viab/etc')
@@ -942,7 +945,13 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
 
   for v in versionsList:
     if not 'pre' in v or userDN in viab_cgi_conf.adminDNs:
-      print '<option value="' + v + '" ' + ('selected' if v == spaceVersion else '') + '>Version ' + v + '</option>\n'
+    
+      try:
+        vv = open('/var/lib/viab/etc/' + v + '/VAC_MAJOR_MINOR', 'r').read().strip()
+      except:
+        vv = '???'
+        
+      print '<option value="' + v + '" ' + ('selected' if v == spaceVersion else '') + '>Version ' + v + ' (Vac ' + vv + ')</option>\n'
 
   print '</select>\n'
 
