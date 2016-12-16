@@ -218,31 +218,31 @@ try:
     for row in rows:
       fFactoriesNetwork.write(row['mac'] + ' ' + row['factoryname'] + ' ' + row['ip'] + '\n')
       fFactoriesSettings.write(row['factoryname'] +
-                           ';vac_space = '           + spaceName +        
-                           ';gocdb_sitename = '      + siteName +
-                           ';mb_per_cpu = '          + str(row['mb_per_cpu']) +
-                           ';udp_timeout_seconds = ' + str(row['udp_timeout_seconds']) +
-                           ';cpu_per_machine = '     + str(row['cpu_per_machine']) +
-                           ';hs06_per_cpu = '        + str(row['hs06_per_cpu']) +
-                           (';cpu_total = 0' if row['draining'] == 1 else '') +
+                           ';vac_space = '                + spaceName +
+                           ';gocdb_sitename = '           + siteName +
+                           ';mb_per_processor = '         + str(row['mb_per_cpu']) +
+                           ';udp_timeout_seconds = '      + str(row['udp_timeout_seconds']) +
+                           ';processors_per_superslot = ' + str(row['cpu_per_machine']) +
+                           ';hs06_per_processor = '       + str(row['hs06_per_cpu']) +
+                           (';total_processors = 0' if row['draining'] == 1 else '') +
                           '\n')
- 
+
       htaccessStr += ' %{REMOTE_ADDR} == \"' + row['ip'] + '\" or \\\n'
-      
+
       oneKickstart = kickstartStr.replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##VIAB_FACTORYNAME##',row['factoryname']).replace('##VIAB_PASSWORD_HASH##',passwordHash).replace('##VAC_MAJOR_MINOR##',vacMajorMinor)
       oneKickstart = re.sub(r'^url.*', '\g<0> --proxy=http://' + row['ip'] + ':3128/', oneKickstart)
       open('/var/lib/viab/www/ks/' + siteName + '/' + spaceName + '/ks-' + row['factoryname'] + '.cfg', 'w').write(oneKickstart)
-      
+
       try:
         os.remove('/var/lib/viab/www/repo/' + siteName + '/' + row['factoryname'])
       except:
         pass
-        
+
       try:
         os.symlink('/var/lib/viab/www/repo/' + siteName + '/' + spaceName + '/00', '/var/lib/viab/www/repo/' + siteName + '/' + row['factoryname'])
       except Exception as e:
         logLine('Failed to create symbolic link /var/lib/viab/www/repo/' + siteName + '/' + row['factoryname'] + '! (' + str(e) + ')')
-      
+
     fFactoriesNetwork.close()
     fFactoriesSettings.close()
 
@@ -342,7 +342,7 @@ for fileName in [ '/var/lib/viab/etc/' + spaceVersion + '/viab-conf-postinstall'
   shutil.copy2(fileName, tempDir + '/viab-conf')
 
 try:
-  viabRepo = open('/var/lib/viab/etc/' + spaceVersion + '/viab.repo', 'r').read().replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName)
+  viabRepo = open('/var/lib/viab/etc/' + spaceVersion + '/viab.repo', 'r').read().replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##VAC_MAJOR_MINOR##',vacMajorMinor)
   open(tempDir + '/viab-conf/viab/viab.repo','w').write(viabRepo)
 except Exception as e:
   logLine('Failed to create viab.repo (' + str(e) + ')')
