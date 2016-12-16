@@ -268,6 +268,7 @@ try:
     machinetypeRows = cur.fetchall()
 
     for machinetypeRow in machinetypeRows:
+      os.mkdir(tempDir + '/viab-conf/machinetypes/' + machinetypeRow['machinetypename'])
       os.mkdir(tempDir + '/viab-conf/machinetypes/' + machinetypeRow['machinetypename'] + '/files')
 
       if 'p12' in machinetypeRow:
