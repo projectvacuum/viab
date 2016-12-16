@@ -268,13 +268,13 @@ try:
     machinetypeRows = cur.fetchall()
 
     for machinetypeRow in machinetypeRows:
-      os.mkdir(tempDir + '/viab-conf/machinetypes/' + machinetypeRow['machinetypename'])
+      os.mkdir(tempDir + '/viab-conf/machinetypes/' + machinetypeRow['machinetypename'] + '/files')
 
       if 'p12' in machinetypeRow:
-        f = open(tempDir + '/viab-conf/machinetypes/' + machinetypeRow['machinetypename'] + '/hostcertkey.p12', 'w')
+        f = open(tempDir + '/viab-conf/machinetypes/' + machinetypeRow['machinetypename'] + '/files/hostcertkey.p12', 'w')
         f.write(machinetypeRow['p12'])
         f.close()
-        os.chmod(tempDir + '/viab-conf/machinetypes/' + machinetypeRow['machinetypename'] + '/hostcertkey.p12', stat.S_IRUSR)
+        os.chmod(tempDir + '/viab-conf/machinetypes/' + machinetypeRow['machinetypename'] + '/files/hostcertkey.p12', stat.S_IRUSR)
     
       cur.execute('SELECT optname,value FROM machinetypeopts WHERE machinetypeid=%s', machinetypeRow['machinetypeid'])
       optRows = cur.fetchall()

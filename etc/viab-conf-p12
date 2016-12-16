@@ -7,7 +7,7 @@ fi
 
 chmod go-r /etc/viabkeys/viab-conf-passphrase
 
-for i in /var/lib/vac/machinetypes/*
+for i in /var/lib/vac/machinetypes/*/files
 do
  cd $i
  if [ -s hostcertkey.p12 ] ; then
