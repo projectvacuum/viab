@@ -7,7 +7,7 @@
 #
 [ViaB]
 name=ViaB
-baseurl=https://viab.gridpp.ac.uk/repo/##VIAB_SITENAME##/##VIAB_SPACENAME##/##MAJOR_VERSION##/
+baseurl=https://viab.gridpp.ac.uk/repo/##VIAB_SITENAME##/##VIAB_FACTORYNAME##/
 gpgcheck=0
 metadata_expire=5m
 proxy=_none_

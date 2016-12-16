@@ -35,7 +35,6 @@ cp -p viab-conf-postinstall viab-conf-p12 lazyssh dnsmasq-wrapper \
 cp vac.d/*.conf $RPM_BUILD_ROOT/etc/vac.d
 cp viab/* $RPM_BUILD_ROOT/etc/viab
 cp squid.conf.template $RPM_BUILD_ROOT/etc/squid/squid.conf.template
-cp viab.repo $RPM_BUILD_ROOT/etc/yum.repos.d/viab.repo
 cp -p authorized_keys $RPM_BUILD_ROOT/root/.ssh
 cp -a machinetypes/* $RPM_BUILD_ROOT/var/lib/vac/machinetypes
 
@@ -49,7 +48,6 @@ rm -f /etc/vac.d/*
 /etc/vac.d/*
 /etc/viab/*
 /etc/squid/*
-/etc/yum.repos.d/*
 /var/lib/vac/machinetypes/*
 /usr/sbin/*
 /root/.ssh/authorized_keys

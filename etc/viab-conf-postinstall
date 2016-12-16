@@ -19,6 +19,9 @@ if [ "$HOSTIP" ] ; then
  hostname $HOSTNAME
 fi
 
+# Install viab.repo for this factory
+sed "s/##VIAB_FACTORYNAME##/`hostname`/g" /etc/viab/viab.repo > /etc/yum.repos.d/viab.repo
+
 # Run viab-heartbeat now so ViaB knows about this update
 /usr/sbin/viab-heartbeat
 
