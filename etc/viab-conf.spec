@@ -41,7 +41,7 @@ cp -a machinetypes/* $RPM_BUILD_ROOT/var/lib/vac/machinetypes
 %pre
 rm -f /etc/vac.d/*
 
-%post
+%posttrans
 /usr/sbin/viab-conf-postinstall
 
 %files
