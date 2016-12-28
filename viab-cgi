@@ -109,7 +109,7 @@ def deleteOrphans():
   cur.execute('DELETE FROM machinetypes WHERE spaceid NOT IN (SELECT s.spaceid FROM spaces s)')
   cur.execute('DELETE FROM machinetypeopts WHERE machinetypeid NOT IN (SELECT m.machinetypeid FROM machinetypes m)')
 
-def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, machinetypeName, machinetypeID):
+def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, spaceVersion, machinetypeName, machinetypeID):
 
   global cur
   
@@ -214,6 +214,11 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
                }
                   }
 
+  vacuumPipePresets = { 
+                        'ATLAS': { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/atlas/vacuum.pipe", "target_share": "1.0" },
+                        'LHCb' : { "vacuum_pipe_url": "https://lhcb-portal-dirac.cern.ch/pilot/vacuum.pipe",    "target_share": "1.0" }
+                      }
+
   try:
     if cgiForm.getfirst('action') == 'uploadp12':
 
@@ -279,12 +284,17 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
 
       presetmachinetypeName = cgiForm['submit'].value.strip()
 
-      if presetmachinetypeName in machinetypePresets:
-        for presetOptName in machinetypePresets[presetmachinetypeName]:                
+      if spaceVersion >= '00.35':
+        presets = vacuumPipePresets
+      else:
+        presets = machinetypePresets
+
+      if presetmachinetypeName in presets:
+        for presetOptName in presets[presetmachinetypeName]:
           cur.execute('INSERT INTO machinetypeopts SET machinetypeid=%s,optname=%s,value=%s',
                       (machinetypeID,
                        presetOptName, 
-                       machinetypePresets[presetmachinetypeName][presetOptName]))      
+                       presets[presetmachinetypeName][presetOptName]))
       else:
         print 'Content-Type: text/html'
         print
@@ -394,7 +404,7 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
   htmlFormCookie(userDN)
   print '<input type="hidden" name="action" value="addpresets">'
 
-  for presetName in sorted(machinetypePresets):
+  for presetName in sorted(vacuumPipePresets if (spaceVersion >= '00.35') else machinetypePresets):
     print '<input type="submit" name="submit" value="' + presetName + '">'
 
   print '</form>'
@@ -1797,7 +1807,7 @@ if action:
 if factoryName:
   oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, factoryName, factoryID)
 elif machinetypeName:
-  oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, machinetypeName, machinetypeID)
+  oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, spaceVersion, machinetypeName, machinetypeID)
 elif spaceName:
   oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, published, spaceVersion)
 elif siteName:
