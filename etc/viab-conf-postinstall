@@ -38,6 +38,7 @@ fi
 
 echo '[settings]' > /etc/vac.d/settings.conf
 grep "^$HOSTNAME;" /etc/viab/factories-settings | sed 's/;/\n/g' | tail --lines=+2 >> /etc/vac.d/settings.conf
+echo 'user_data_option_cvmfs_proxy = http://169.254.169.253:3128/' >> /etc/vac.d/settings.conf
 echo 'vacmon_hostport = vacmon.gridpp.ac.uk:8884' >> /etc/vac.d/settings.conf
 echo 'version_logger = 24' >> /etc/vac.d/settings.conf
 
