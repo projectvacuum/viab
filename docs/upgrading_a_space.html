@@ -1,0 +1,47 @@
+<h1>Upgrading a space</h1>
+
+<p>
+After you have
+<a href="usb_and_pxe_installation">installed a Vac space</a> with
+Vac-in-a-Box and run it for a while, you may need to upgrade to
+a new version of Vac or Vac-in-a-Box. Each version of Vac-in-a-Box is
+tied to one minor version of Vac. For instance, installing with Vac-in-a-Box 
+00.35 will install Vac 02.00.
+
+<p>
+The basic principles are 
+<ul>
+<li>upgrades to a greater Vac-in-a-Box version can be done without a reboot/reinstall
+<li>upgrades to a greater Vac minor version (like 02.00 to 02.01) can be done without a reboot/reinstall
+<li>upgrades to a greater Vac major version (like 02.00 to 03.00) <b>require a reboot/reinstall</b>
+</ul>
+
+<p>
+As a consequence, you should drain the VM factories in a space before
+updating to a later Vac major version, and wait for all the VMs to have
+finished. (The count of running VMs is shown next to each factory on the
+space page in the <a href="/dashboard/">Dashboard</a>.)
+
+<p>
+To upgrade the Vac-in-a-Box version for a space, go to the space's page on
+the Dashboard and select the required version from the pull
+down menu near the top. Both Vac and Vac-in-a-Box versions are shown on
+the menu items. You must also use the republish button for this
+change to take effect. The versions shown next to each factory are taken
+from the heartbeat messages that the factories send back to Vac-in-a-Box, so
+wait for them all to update to the new version.
+
+<p>
+If you are upgrading to a later Vac minor version, it should be possible to
+do the upgrade on a live system without disturbing any VMs which are
+running.
+
+<p>
+If you are upgrading to a later Vac major version, you will have drained
+the factories before updating the Vac-in-a-Box version. Once the new
+versions are displayed for each factory, you can reboot/reinstall the
+factories: <b>you should reboot one factory and verify the reboot/reinstall
+process works</b>.  Then reboot the remaining factories in batches, all
+rebooted at the same time. If you reboot factories while others are in the
+process of installing, then any installs which are using the Squid service
+on the rebooted factories will fail, and will need to be redone.

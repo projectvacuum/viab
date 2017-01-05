@@ -214,9 +214,14 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
                }
                   }
 
-  vacuumPipePresets = { 
-                        'ATLAS': { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/atlas/vacuum.pipe", "target_share": "1.0" },
-                        'LHCb' : { "vacuum_pipe_url": "https://lhcb-portal-dirac.cern.ch/pilot/vacuum.pipe",    "target_share": "1.0" }
+  vacuumPipePresets = {
+                       'ALICE':   { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/alice/vacuum.pipe",   "target_share": "1.0" },
+                       'ATLAS':   { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/atlas/vacuum.pipe",   "target_share": "1.0" },
+                       'GridPP':  { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/gridpp/vacuum.pipe",
+                                    "target_share": "1.0",
+                                    "user_data_option_dirac_site": "CHANGEME" },
+                       'Example': { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/example/vacuum.pipe", "target_share": "1.0" },
+                       'LHCb' :   { "vacuum_pipe_url": "https://lhcb-portal-dirac.cern.ch/pilot/vacuum.pipe",      "target_share": "1.0" }
                       }
 
   try:
