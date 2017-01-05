@@ -17,8 +17,8 @@ The basic principles are
 </ul>
 
 <p>
-As a consequence, you should drain the VM factories in a space before
-updating to a later Vac major version, and wait for all the VMs to have
+As a consequence, you should drain the VM factories in a space <b>before
+updating to a later Vac major version</b>, and wait for all the VMs to have
 finished. (The count of running VMs is shown next to each factory on the
 space page in the <a href="/dashboard/">Dashboard</a>.)
 
@@ -45,3 +45,18 @@ process works</b>.  Then reboot the remaining factories in batches, all
 rebooted at the same time. If you reboot factories while others are in the
 process of installing, then any installs which are using the Squid service
 on the rebooted factories will fail, and will need to be redone.
+
+<p>
+Factories install using DHCP, TFTP, and Squid services provided by 
+existing neighbours within the space. This still works if you are upgrading
+from one version to another. However, if you allow all of the factories in a 
+space to become unavailable (shutdown or
+in the processor of reinstalling), then you may need to go back to the 
+<a href="usb_and_pxe_installation">initial installation step, usually with a USB
+stick.</a> However, it may be possible
+to boot one factory from the installed operating system by skipping the PXE
+boot step and booting from the hard drive. This one factory, still running
+the old version, can be used by the others to boot/install. Once
+finished, the first factory must then be rebooted to install with the new
+vesion.
+
