@@ -43,21 +43,26 @@ the factories before updating the Vac-in-a-Box version. Once the new
 versions are displayed for each factory, you can reboot/reinstall the
 factories: <b>you should reboot one factory and verify the reboot/reinstall
 process works</b>.  Then reboot the remaining factories in batches, all
-rebooted at the same time. If you reboot factories while others are in the
-process of installing, then any installs which are using the Squid service
+rebooted <b>at the same time</b>. 
+
+<p>
+Remember that factories install using DHCP, TFTP, and Squid services provided by 
+existing neighbours within the space. This peer-to-peer installation process still 
+works if you are upgrading from one version to another. 
+
+<p>
+However, if you reboot factories while others are in the
+process of installing, then any installs which are using the TFTP or Squid service
 on the rebooted factories will fail, and will need to be redone.
 
 <p>
-Factories install using DHCP, TFTP, and Squid services provided by 
-existing neighbours within the space. This still works if you are upgrading
-from one version to another. However, if you allow all of the factories in a 
-space to become unavailable (shutdown or
+And if you allow all of the factories in a space to become unavailable (shutdown or
 in the processor of reinstalling), then you may need to go back to the 
 <a href="usb_and_pxe_installation">initial installation step, usually with a USB
 stick.</a> However, it may be possible
 to boot one factory from the installed operating system by skipping the PXE
 boot step and booting from the hard drive. This one factory, still running
-the old version, can be used by the others to boot/install. Once
+the old version, can be used by the others to reinstall. Once
 finished, the first factory must then be rebooted to install with the new
-vesion.
+version.
 
