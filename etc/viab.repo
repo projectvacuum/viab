@@ -17,6 +17,11 @@ name=Vac
 baseurl=https://viab.gridpp.ac.uk/vacproject/vac/##VAC_MAJOR_MINOR##/RPMS/
 gpgcheck=0
 
+[MJF]
+name=MJF
+baseurl=https://viab.gridpp.ac.uk/machinejobfeatures/mjf-scripts/00/RPMS/
+gpgcheck=0
+
 [SL6]
 name=SL6
 baseurl=http://www.mirrorservice.org/sites/ftp.scientificlinux.org/linux/scientific/6.6/x86_64/os/

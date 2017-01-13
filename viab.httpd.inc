@@ -73,6 +73,11 @@ Alias /vacproject/ /var/www/repo.gridpp.ac.uk/vacproject/
 Options Indexes
 </Directory>
 
+Alias /machinejobfeatures/ /var/www/repo.gridpp.ac.uk/machinejobfeatures/
+<Directory /var/www/repo.gridpp.ac.uk/machinejobfeatures/>
+Options Indexes
+</Directory>
+
 </VirtualHost>
 
 <VirtualHost viab.gridpp.ac.uk:443>
@@ -103,6 +108,11 @@ ExpiresDefault A0
 
 Alias /vacproject/ /var/www/repo.gridpp.ac.uk/vacproject/
 <Directory /var/www/repo.gridpp.ac.uk/vacproject/>
+Options Indexes
+</Directory>
+
+Alias /machinejobfeatures/ /var/www/repo.gridpp.ac.uk/machinejobfeatures/
+<Directory /var/www/repo.gridpp.ac.uk/machinejobfeatures/>
 Options Indexes
 </Directory>
 
