@@ -26,7 +26,7 @@ sed "s/##VIAB_FACTORYNAME##/`hostname`/g" /etc/viab/viab.repo > /etc/yum.repos.d
 /usr/sbin/viab-heartbeat
 
 # Set up hourly auto updates and heartbeats at a random minute; update viab-conf first in case of viab.repo changes
-echo `shuf -i 0-59 -n 1`' * * * * root (yum -y update viab-conf ; /etc/cron.daily/yum-autoupdate ; /usr/sbin/viab-heartbeat) >/var/log/viab-yum-autoupdate.log 2>&1' > /etc/cron.d/viab-yum-autoupdate
+echo `shuf -i 0-59 -n 1`' * * * * root (yum -y update viab-conf kernel ; /etc/cron.daily/yum-autoupdate ; /usr/sbin/viab-heartbeat) >/var/log/viab-yum-autoupdate.log 2>&1' > /etc/cron.d/viab-yum-autoupdate
 sed -i -e 's/^ENABLED=.*/ENABLED=true/' -e 's/^SENDEMAIL=.*/SENDEMAIL=false/' -e 's/^MAXWAITTIME=.*/MAXWAITTIME=0/' /etc/sysconfig/yum-autoupdate
 sed -i -e '$aproxy=http://127.0.0.1:3128/' -e '/^#*proxy=/d' /etc/yum.conf
 
