@@ -141,7 +141,7 @@ except:
     sys.exit(2)
 
 # Create the passwordhash and APEL .p12 file for the site (or empty file if none)
-logLine('Creating APEL .p12 file')
+logLine('Creating passwordhash and APEL .p12 files')
 try:
     cur.execute('SELECT apelp12,passwordhash FROM sites WHERE sitename=%s', siteName)
     rows = cur.fetchall()

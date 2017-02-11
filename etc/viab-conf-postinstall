@@ -45,6 +45,15 @@ echo 'version_logger = 24' >> /etc/vac.d/settings.conf
 # Create PEM versions of encrypted p12 keys
 /usr/sbin/viab-conf-p12
 
+# Update root password in /etc/shadow if necessary
+if [ -s /etc/viab/passwordhash ] ; then
+  sed 's/.*/root:&/' /etc/viab/passwordhash | chpasswd --encrypted
+fi
+
+# But no ssh password logins
+sed -i 's/^PasswordAuthentication.*/PasswordAuthentication=no/' /etc/ssh/sshd_config
+service sshd reload
+
 # Create /etc/hosts listing all factories and this factory's VMs
 (
 echo '127.0.0.1 localhost localhost.localdomain localhost4 localhost4.localdomain4'
@@ -188,7 +197,8 @@ echo "  append ks=http://viab.gridpp.ac.uk/ks/$VIAB_SITENAME/$VIAB_SPACENAME/ks-
 mv -f /var/lib/tftpboot/pxelinux.cfg/default.tmp /var/lib/tftpboot/pxelinux.cfg/default
 
 # Make sure tftpd is not disabled
-
 sed -i 's/^[[:space:]]*disable.*/disable = no/' /etc/xinetd.d/tftp
 service xinetd reload
 
+# Puts CPU temperatures in /sys/devices/platform/coretemp.*/
+modprobe --quiet coretemp
