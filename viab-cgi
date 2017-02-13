@@ -1006,7 +1006,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     for row in rows:
       if row['time_received'] < int(time.time() - 86400):
         heartbeatClass = 'alarm'
-      elif row['time_received'] < int(time.time() - 3659):
+      elif row['time_received'] < int(time.time() - 3719):
         heartbeatClass = 'warning'
       else:
         heartbeatClass = oddEven(n)

@@ -88,16 +88,16 @@ except Exception as e:
   sys.exit(2) 
 
 # Get space/site numbers 
-cur.execute('SELECT spaces.spaceid AS spaceid,spaces.siteid AS siteid,cookie FROM spaces LEFT JOIN sites ON spaces.siteid=sites.siteid WHERE sitename=%s AND spacename=%s', (siteName, spaceName))
+cur.execute('SELECT spaces.spaceid AS spaceid,spaces.siteid AS siteid,cookie,cvmfsproxies FROM spaces LEFT JOIN sites ON spaces.siteid=sites.siteid WHERE sitename=%s AND spacename=%s', (siteName, spaceName))
 rows = cur.fetchall()
 
+htaccessStr  = 'SSLRequire \\\n'
 spaceID      = int(rows[0]['spaceid'])
 majorVersion = spaceVersion[:2]
 siteID       = int(rows[0]['siteid'])
 passwordHash = '!!'
 cookie       = rows[0]['cookie']
-
-htaccessStr  = 'SSLRequire \\\n'
+cvmfsProxies = rows[0]['cvmfsproxies']
 
 # Set up the temporary directory tree
 logLine('Making temporary directory tree')
@@ -110,6 +110,8 @@ try:
     open(tempDir + '/viab-conf/viab/spacename', 'w').write(spaceName)
     open(tempDir + '/viab-conf/viab/version',   'w').write(spaceVersion)
     open(tempDir + '/viab-conf/viab/cookie', 'w').write(cookie)
+    open(tempDir + '/viab-conf/viab/cvmfsproxies', 'w').write(cvmfsProxies)
+
 except:
     logLine('Failed after problem making directories (' + str(e) + ')')
     sys.exit(3)

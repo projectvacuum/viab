@@ -7,19 +7,23 @@ fi
 
 chmod go-r /etc/viabkeys/viab-conf-passphrase
 
-for i in /var/lib/vac/machinetypes/*/files
+for i in /var/lib/vac/machinetypes/*
 do
  cd $i
  if [ -s hostcertkey.p12 ] ; then
-  echo "Create hostcert.pem/hostkey.pem from $i/hostcertkey.p12"
-  openssl pkcs12 -in hostcertkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out hostkey.pem  -nodes -nocerts
-  openssl pkcs12 -in hostcertkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out hostcert.pem -nokeys -clcerts
+  echo "Create x509/host cert/key PEM files from $i/hostcertkey.p12"
+  openssl pkcs12 -in hostcertkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out x509key.pem  -nodes -nocerts
+  openssl pkcs12 -in hostcertkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out x509cert.pem -nokeys -clcerts
+  cp -f x509key.pem  files/hostkey.pem
+  cp -f x509cert.pem files/hostcert.pem
  else
   echo "Empty $i/hostcertkey.p12"
-  echo > hostcert.pem
-  echo > hostkey.pem
+  echo > x509cert.pem
+  echo > x509key.pem
+  echo > files/hostcert.pem
+  echo > files/hostkey.pem
  fi
- chmod ugo-w,go-r hostkey.pem 
+ chmod ugo-w,go-r x509key.pem files/hostkey.pem
 done
 
 if [ -r /etc/viab/vac-apel-certkey.p12 ] ; then
