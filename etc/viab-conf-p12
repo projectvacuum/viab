@@ -10,14 +10,14 @@ chmod go-r /etc/viabkeys/viab-conf-passphrase
 for i in /var/lib/vac/machinetypes/*
 do
  cd $i
- if [ -s hostcertkey.p12 ] ; then
-  echo "Create x509/host cert/key PEM files from $i/hostcertkey.p12"
-  openssl pkcs12 -in hostcertkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out x509key.pem  -nodes -nocerts
-  openssl pkcs12 -in hostcertkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out x509cert.pem -nokeys -clcerts
+ if [ -s x509certkey.p12 ] ; then
+  echo "Create x509/host cert/key PEM files from $i/x509certkey.p12"
+  openssl pkcs12 -in x509certkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out x509key.pem  -nodes -nocerts
+  openssl pkcs12 -in x509certkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out x509cert.pem -nokeys -clcerts
   cp -f x509key.pem  files/hostkey.pem
   cp -f x509cert.pem files/hostcert.pem
  else
-  echo "Empty $i/hostcertkey.p12"
+  echo "Empty $i/x509certkey.p12"
   echo > x509cert.pem
   echo > x509key.pem
   echo > files/hostcert.pem
