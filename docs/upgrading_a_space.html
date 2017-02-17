@@ -42,7 +42,8 @@ If you are upgrading to a later Vac major version, you will have drained
 the factories before updating the Vac-in-a-Box version. Once the new
 versions are displayed for each factory, you can reboot/reinstall the
 factories: <b>you should reboot one factory and verify the reboot/reinstall
-process works</b>.  Then reboot the remaining factories in batches, all
+process works</b>. Then cancel draining for that one factory and check it
+starts VMs that run jobs correctly. Then reboot the remaining factories in batches, all
 rebooted <b>at the same time</b>. 
 
 <p>
@@ -56,7 +57,7 @@ process of installing, then any installs which are using the TFTP or Squid servi
 on the rebooted factories will fail, and will need to be redone.
 
 <p>
-And if you allow all of the factories in a space to become unavailable (shutdown or
+If you allow all of the factories in a space to become unavailable (shutdown or
 in the processor of reinstalling), then you may need to go back to the 
 <a href="usb_and_pxe_installation">initial installation step, usually with a USB
 stick.</a> However, it may be possible

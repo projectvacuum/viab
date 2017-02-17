@@ -939,7 +939,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '<form method="post" action="' + requestURI + '">'
 
   if published:
-    print '<p>The configuration RPM for space ' + spaceName + ' was published on ' + str(published) + '. ' 
+    print '<p>The configuration RPM for space ' + spaceName + ' was published on ' + str(published) + ' UTC. ' 
   else:
     print '<p>The configuration RPM for space ' + spaceName + ' has not been published yet. '
 
