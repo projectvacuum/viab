@@ -204,3 +204,8 @@ service xinetd reload
 
 # Puts CPU temperatures in /sys/devices/platform/coretemp.*/
 modprobe --quiet coretemp
+
+# This isn't needed for changes to configuration, but sometimes
+# other updates to the system (eg shared libraries) mean python
+# needs to be reinitialised
+service vacd restart
