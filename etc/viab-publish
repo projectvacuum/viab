@@ -88,7 +88,7 @@ except Exception as e:
   sys.exit(2) 
 
 # Get space/site numbers 
-cur.execute('SELECT spaces.spaceid AS spaceid,spaces.siteid AS siteid,cookie,cvmfsproxies FROM spaces LEFT JOIN sites ON spaces.siteid=sites.siteid WHERE sitename=%s AND spacename=%s', (siteName, spaceName))
+cur.execute('SELECT spaces.spaceid AS spaceid,spaces.siteid AS siteid,cookie,cvmfsproxies,natips FROM spaces LEFT JOIN sites ON spaces.siteid=sites.siteid WHERE sitename=%s AND spacename=%s', (siteName, spaceName))
 rows = cur.fetchall()
 
 htaccessStr  = 'SSLRequire \\\n'
@@ -98,6 +98,7 @@ siteID       = int(rows[0]['siteid'])
 passwordHash = '!!'
 cookie       = rows[0]['cookie']
 cvmfsProxies = rows[0]['cvmfsproxies']
+natIPs       = rows[0]['natips']
 
 # Set up the temporary directory tree
 logLine('Making temporary directory tree')
@@ -286,6 +287,15 @@ try:
 
     fAdminsList.close()
 
+except:
+    sys.exit(3)
+    
+# Any NAT IPs in .htaccesss
+logLine('Adding NAT IPs to .htaccess list')
+try:
+    for natIP in natIPs.split():
+      if natIP.strip():
+        htaccessStr += ' %{REMOTE_ADDR} == \"' + natIP.strip() + '\" or \\\n'
 except:
     sys.exit(3)
 

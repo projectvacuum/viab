@@ -27,24 +27,48 @@ name=SL6
 baseurl=http://www.mirrorservice.org/sites/ftp.scientificlinux.org/linux/scientific/6.6/x86_64/os/
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-sl
+
 [SL6-security]
 name=SL6-security
 baseurl=http://www.mirrorservice.org/sites/ftp.scientificlinux.org/linux/scientific/6.6/x86_64/updates/security/
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-sl
+
 [SL6-fastbugs]
 name=SL6-fastbugs
 baseurl=http://www.mirrorservice.org/sites/ftp.scientificlinux.org/linux/scientific/6.6/x86_64/updates/fastbugs/
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-sl
+
 [Epel-6]
 name=Epel-6
 baseurl=http://www.mirrorservice.org/sites/dl.fedoraproject.org/pub/epel/6/x86_64/
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6
 gpgcheck=1
+
 [LCG-trustanchors]
 name=LCG-trustanchors
 baseurl=http://cern.ch/lcg-ca/distribution/current/
 gpgkey=https://lcg-ca.web.cern.ch/lcg-ca/distribution/current/GPG-KEY-EUGridPMA-RPM-3
 gpgcheck=1
 enabled=1
+
+[UMD-3-base]
+name=UMD 3 base (SL6)
+baseurl=http://repository.egi.eu/sw/production/umd/3/sl6/$basearch/base
+protect=1
+enabled=1
+# To use priorities you must have yum-priorities installed
+priority=1
+gpgcheck=1
+gpgkey=http://emisoft.web.cern.ch/emisoft/dist/EMI/3/RPM-GPG-KEY-emi http://repo-rpm.ige-project.eu/RPM-GPG-KEY-IGE http://repository.egi.eu/sw/production/umd/UMD-RPM-PGP-KEY http://apps.man.poznan.pl/qcg-packages/sl6/RPM-GPG-KEY-QCG http://download.nordugrid.org/RPM-GPG-KEY-nordugrid http://fedoraproject.org/static/0608B895.txt 
+
+[UMD-3-updates]
+name=UMD 3 updates (SL6)
+baseurl=http://repository.egi.eu/sw/production/umd/3/sl6/$basearch/updates
+protect=1
+enabled=1
+# To use priorities you must have yum-priorities installed
+priority=1
+gpgcheck=1
+gpgkey=http://emisoft.web.cern.ch/emisoft/dist/EMI/3/RPM-GPG-KEY-emi http://repo-rpm.ige-project.eu/RPM-GPG-KEY-IGE http://repository.egi.eu/sw/production/umd/UMD-RPM-PGP-KEY http://apps.man.poznan.pl/qcg-packages/sl6/RPM-GPG-KEY-QCG http://download.nordugrid.org/RPM-GPG-KEY-nordugrid http://fedoraproject.org/static/0608B895.txt 

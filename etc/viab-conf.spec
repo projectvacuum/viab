@@ -9,7 +9,7 @@ Source: viab-conf.tgz
 URL: https://viab.gridpp.ac.uk/
 Vendor: GridPP
 Packager: Andrew McNab <Andrew.McNab@cern.ch>
-Requires: viab-tftpboot,vac,dhcp,tftp,tftp-server,syslinux-tftpboot,squid,ca-policy-lcg,xauth,tigervnc,ntp,yum-autoupdate,apel-ssm,emi-release,epel-release,rpm-build
+Requires: viab-tftpboot,vac,dhcp,tftp,tftp-server,syslinux-tftpboot,squid,ca-policy-lcg,xauth,tigervnc,ntp,yum-autoupdate,apel-ssm,epel-release,rpm-build
 
 %description
 Configuration files and idempotent scripts for Vac-in-a-Box
@@ -24,6 +24,7 @@ Configuration files and idempotent scripts for Vac-in-a-Box
 mkdir -p $RPM_BUILD_ROOT/usr/sbin \
          $RPM_BUILD_ROOT/etc/viab \
          $RPM_BUILD_ROOT/etc/vac.d \
+         $RPM_BUILD_ROOT/etc/rc.d/init.d \
          $RPM_BUILD_ROOT/root/.ssh \
          $RPM_BUILD_ROOT/etc/squid \
          $RPM_BUILD_ROOT/etc/squid \
@@ -31,7 +32,8 @@ mkdir -p $RPM_BUILD_ROOT/usr/sbin \
          $RPM_BUILD_ROOT/var/lib/vac/machinetypes
 
 cp -p viab-conf-postinstall viab-conf-p12 lazyssh dnsmasq-wrapper \
- viab-heartbeat $RPM_BUILD_ROOT/usr/sbin
+ viab-heartbeat viab-conf-iptables $RPM_BUILD_ROOT/usr/sbin
+cp viab-iptables.init $RPM_BUILD_ROOT/etc/rc.d/init.d/viab-iptables
 cp vac.d/*.conf $RPM_BUILD_ROOT/etc/vac.d
 cp viab/* $RPM_BUILD_ROOT/etc/viab
 cp squid.conf.template $RPM_BUILD_ROOT/etc/squid/squid.conf.template
@@ -45,6 +47,7 @@ rm -f /etc/vac.d/*
 /usr/sbin/viab-conf-postinstall
 
 %files
+/etc/rc.d/init.d/*
 /etc/vac.d/*
 /etc/viab/*
 /etc/squid/*

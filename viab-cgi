@@ -217,11 +217,9 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
   vacuumPipePresets = {
                        'ALICE':   { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/alice/vacuum.pipe",   "target_share": "1.0" },
                        'ATLAS':   { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/atlas/vacuum.pipe",   "target_share": "1.0" },
-                       'GridPP':  { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/gridpp/vacuum.pipe",
-                                    "target_share": "1.0",
-                                    "user_data_option_dirac_site": "CHANGEME" },
+                       'GridPP':  { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/gridpp/vacuum.pipe",  "target_share": "1.0" },
                        'Example': { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/example/vacuum.pipe", "target_share": "1.0" },
-                       'LHCb' :   { "vacuum_pipe_url": "https://lhcb-portal-dirac.cern.ch/pilot/vacuum.pipe",      "target_share": "1.0" }
+                       'LHCb' :   { "vacuum_pipe_url": "https://lhcb-portal-dirac.cern.ch/pilot/lhcb-prod.pipe",   "target_share": "1.0" }
                       }
 
   try:
@@ -1111,7 +1109,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '<input type="hidden" name="action" value="addfactories">'
   print '</form>'
 
-  cur.execute('SELECT machinetypename,machinetypes.machinetypeid,value AS target_share FROM machinetypes LEFT JOIN machinetypeopts ON machinetypes.machinetypeid=machinetypeopts.machinetypeid AND optname="target_share" WHERE spaceid=%s ORDER BY machinetypename', spaceID)
+  cur.execute('SELECT machinetypename,machinetypes.machinetypeid,value AS target_share,p12updated FROM machinetypes LEFT JOIN machinetypeopts ON machinetypes.machinetypeid=machinetypeopts.machinetypeid AND optname="target_share" WHERE spaceid=%s ORDER BY machinetypename', spaceID)
   
   rows = cur.fetchall()
 
@@ -1121,7 +1119,7 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletemachinetypes">'
 
     print '<table class="center">'
-    print '<tr><th class="oddeven">machinetype name</th><th class="oddeven">Target&nbsp;share</th>'
+    print '<tr><th class="oddeven">machinetype name</th><th class="oddeven">Target&nbsp;share</th><th class="oddeven">Cert&nbsp;updated</th>'
     print '<th class="oddeven"><input type="checkbox" onchange="for (var i = 0; i < this.form.length; ++i) { if (this.form[i].type == \'checkbox\') { form[i].checked = this.checked; } }"></th></tr>'
 
     n=0    
@@ -1130,9 +1128,15 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
         targetShare = float(row['target_share'])
       except:
         targetShare = 0.0
+        
+      if row['p12updated']:        
+        p12Updated = str(row['p12updated'])
+      else:
+        p12Updated = '&nbsp;'
 
       print ('<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + siteName + '/' + spaceName + '/machinetypes/' + row['machinetypename'] + '/">' + row['machinetypename'] + '</a></td>' +
              '<td class="' + oddEven(n) + '">' + str(targetShare) + '</td>' +
+             '<td class="' + oddEven(n) + '">' + p12Updated + '</td>' +
              '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['machinetypeid']) + '"></td>' +
              '</tr>\n') 
       n += 1
