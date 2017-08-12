@@ -1388,7 +1388,7 @@ def oneSite(requestURI, userDN, cgiForm, siteName, siteID):
 
   htmlHeader('Site ' + siteName)
   
-  cur.execute('SELECT spacename,published,version,spaceid FROM spaces WHERE siteid=%s ORDER BY spacename', siteID)
+  cur.execute('SELECT spacename,CONVERT_TZ(published, @@session.time_zone, "+00:00") AS published,version,spaceid FROM spaces WHERE siteid=%s ORDER BY spacename', siteID)
   
   rows = cur.fetchall()
 
@@ -1746,7 +1746,7 @@ if siteName:
 
 if spaceName:
   try:
-    cur.execute('SELECT spaceid,published,version FROM spaces WHERE siteid=%s AND spacename=%s', (siteID, spaceName))
+    cur.execute('SELECT spaceid,CONVERT_TZ(published, @@session.time_zone, "+00:00") AS published,version FROM spaces WHERE siteid=%s AND spacename=%s', (siteID, spaceName))
     rows         = cur.fetchall() 
     spaceID      = int(rows[0]['spaceid'])
     published    = rows[0]['published']
