@@ -417,7 +417,7 @@ logLine('Creating viab-usb.iso')
 os.mkdir(tempDir + '/isolinux')
 
 for fileName in [ '/var/lib/viab/' + isolinuxDir + '/vmlinuz',
-                  '/var/lib/viab/' + isolinuxDir + '/boot.cat',
+#                  '/var/lib/viab/' + isolinuxDir + '/boot.cat',
                   '/var/lib/viab/' + isolinuxDir + '/vesamenu.c32',
                   '/var/lib/viab/' + isolinuxDir + '/isolinux.bin',
                   '/var/lib/viab/' + isolinuxDir + '/memtest',
@@ -433,8 +433,9 @@ isolinuxCfg = isolinuxCfg.replace('##VIAB_SITENAME##', siteName).replace('##VIAB
 open(tempDir + '/isolinux/isolinux.cfg', 'w').write(isolinuxCfg)
 
 os.system('/usr/bin/genisoimage -o /var/lib/viab/www/iso/' + siteName + '/' + spaceName + '/viab-usb.iso -b isolinux.bin ' +
-          '-c boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -input-charset default -V "Vac-in-a-Box" -volset "Vac-in-a-Box" -R -J -v -T ' +
-          tempDir + '/isolinux')
+#          '-c boot.cat ' +
+          '-no-emul-boot -boot-load-size 4 -boot-info-table -input-charset default -V "Vac-in-a-Box" -volset "Vac-in-a-Box" -R -J -v -T ' +
+          tempDir + '/' + isolinuxDir)
 
 os.system('/usr/bin/isohybrid /var/lib/viab/www/iso/' + siteName + '/' + spaceName + '/viab-usb.iso')
 
