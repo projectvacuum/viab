@@ -545,6 +545,8 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
   print '<input type="hidden" name="action" value="updatefactory">'
 
   print '<tr><td colspan=2>Remember that changes will only take effect once you have republished the configuration RPM and the factory has done its hourly automatic yum update!<p></td></tr>'
+  
+  print '<tr><td colspan=2><a href="./%s.iso">Installation .iso</a></td></tr>' % factoryName.split('.')[0]
 
   print '<tr><td colspan=2 style="text-align: center"><b><big>Information from last Vac-in-a-Box heartbeat</big></b></td></tr>'
   print '<tr><td>Vac-in-a-Box heartbeat:</td><td>' + str(rows[0]['time_received']) + ' UTC</td></tr>'
@@ -575,6 +577,63 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
 
  
   htmlFooter(userDN)
+
+def factoryISO(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, factoryName, factoryID):
+
+  global cur
+
+  cur.execute('SELECT * FROM factories WHERE factoryID=%s', factoryID)
+  factoriesRows = cur.fetchall()
+
+  ip = factoriesRows[0]['ip']
+  ipSplit = [int(i) for i in ip.split('.')]
+  
+  cur.execute('SELECT * FROM subnets WHERE spaceid=%s', spaceID)
+  subnetsRows = cur.fetchall()
+  
+  router = None
+  nameservers = None
+  
+  for subnetsRow in subnetsRows:
+    subnet = subnetsRow['subnet']
+    subnetSplit  = [int(i) for i in subnet.split('.')]
+
+    netmask = subnetsRow['netmask']
+    netmaskSplit = [int(i) for i in netmask.split('.')]
+    
+    if (ipSplit[0] & netmaskSplit[0] == subnetSplit[0]) and 
+       (ipSplit[1] & netmaskSplit[1] == subnetSplit[1]) and 
+       (ipSplit[2] & netmaskSplit[2] == subnetSplit[2]) and 
+       (ipSplit[3] & netmaskSplit[3] == subnetSplit[3]):
+      router = subnetsRow['router']
+      nameservers = subnetsRow['nameservers'].split()
+      break
+
+    subnet  = None
+    netmask = None
+
+  if not ip or not subnet or not netmask or not router or not nameservers:
+    # Print something
+    return 
+  
+  # Set up the temporary directory tree
+  try:
+    tempDir = tempfile.mkdtemp(prefix='viab-cgi-')
+  except:
+    return 
+  
+  os.system('/var/lib/viab/etc/' + spaceVersion + '/viab-make-iso ' + tempDir + ' ' + 
+            siteName + ' ' + 
+            spaceName + ' ' +
+            factoryName + ' ' +
+            ip + ' ' +
+            subnet + ' ' +
+            netmask + ' ' +
+            router + ' ' +
+            nameservers)
+  
+  # Clean up our temporary directory tree
+  shutil.rmtree(tempDir)
 
 def secondsToString(timeStamp):
 
@@ -1701,6 +1760,7 @@ machinetypeName = None
 machinetypeID   = None
 factoryName   = None
 factoryID     = None
+isoFileName   = None
 
 uriElements = requestURI.split('/')
 
@@ -1775,6 +1835,14 @@ if factoryName:
     print 'Location: https://viab.gridpp.ac.uk/dashboard/' + siteName + '/' + spaceName + '/'
     print
     sys.exit(0)
+    
+  try:
+    isoFileName = uriElements[6]
+  except:
+    pass
+  else:
+    if not isoFileName.endswith('.iso') or not factoryName.startswith(isoFileName.split('.')[0]):
+      isoFileName = None    
 
 if machinetypeName:
   try:
@@ -1813,7 +1881,9 @@ if action:
       htmlFooter(userDN)
       sys.exit(0)
 
-if factoryName:
+if factoryName and isoFileName:
+  factoryISO(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, factoryName, factoryID)
+elif factoryName:
   oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, factoryName, factoryID)
 elif machinetypeName:
   oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, spaceVersion, machinetypeName, machinetypeID)

@@ -433,9 +433,9 @@ isolinuxCfg = isolinuxCfg.replace('##VIAB_SITENAME##', siteName).replace('##VIAB
 open(tempDir + '/isolinux/isolinux.cfg', 'w').write(isolinuxCfg)
 
 os.system('/usr/bin/genisoimage -o /var/lib/viab/www/iso/' + siteName + '/' + spaceName + '/viab-usb.iso -b isolinux.bin ' +
-#          '-c boot.cat ' +
+          '-c boot.cat ' +
           '-no-emul-boot -boot-load-size 4 -boot-info-table -input-charset default -V "Vac-in-a-Box" -volset "Vac-in-a-Box" -R -J -v -T ' +
-          tempDir + '/' + isolinuxDir)
+          tempDir + '/isolinux')
 
 os.system('/usr/bin/isohybrid /var/lib/viab/www/iso/' + siteName + '/' + spaceName + '/viab-usb.iso')
 
