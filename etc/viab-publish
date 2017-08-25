@@ -58,7 +58,7 @@ cur = None
 # formHashSalt  = '1234567890'
 #
 
-isolinuxDir = 'isolinux7'
+isolinuxDir = 'boot-CentOS7/isolinux'
 
 sys.path.append('/var/lib/viab/bin')
 import viab_cgi_conf

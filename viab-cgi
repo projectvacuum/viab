@@ -458,7 +458,7 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
 
   htmlFooter(userDN)
 
-def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, factoryName, factoryID):
+def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, spaceVersion, factoryName, factoryID):
 
   global cur
             
@@ -546,7 +546,8 @@ def oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
 
   print '<tr><td colspan=2>Remember that changes will only take effect once you have republished the configuration RPM and the factory has done its hourly automatic yum update!<p></td></tr>'
   
-  print '<tr><td colspan=2><a href="./%s.iso">Installation .iso</a></td></tr>' % factoryName.split('.')[0]
+  if spaceVersion >= '00.36':
+    print '<tr><td colspan=2>If this is the first factory in the space, you can boot it with <a href="./%s.iso">this installation .iso USB image</a></td></tr>' % factoryName.split('.')[0]
 
   print '<tr><td colspan=2 style="text-align: center"><b><big>Information from last Vac-in-a-Box heartbeat</big></b></td></tr>'
   print '<tr><td>Vac-in-a-Box heartbeat:</td><td>' + str(rows[0]['time_received']) + ' UTC</td></tr>'
@@ -601,9 +602,9 @@ def factoryISO(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
     netmask = subnetsRow['netmask']
     netmaskSplit = [int(i) for i in netmask.split('.')]
     
-    if (ipSplit[0] & netmaskSplit[0] == subnetSplit[0]) and 
-       (ipSplit[1] & netmaskSplit[1] == subnetSplit[1]) and 
-       (ipSplit[2] & netmaskSplit[2] == subnetSplit[2]) and 
+    if (ipSplit[0] & netmaskSplit[0] == subnetSplit[0]) and \
+       (ipSplit[1] & netmaskSplit[1] == subnetSplit[1]) and \
+       (ipSplit[2] & netmaskSplit[2] == subnetSplit[2]) and \
        (ipSplit[3] & netmaskSplit[3] == subnetSplit[3]):
       router = subnetsRow['router']
       nameservers = subnetsRow['nameservers'].split()
@@ -614,6 +615,10 @@ def factoryISO(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
 
   if not ip or not subnet or not netmask or not router or not nameservers:
     # Print something
+    htmlHeader('Factory ' + factoryName + ' .iso USB image')
+    print '<h1>Problem</h1>'
+    print '<p>The factory has no IP address or no matching subnet is configured for this space!'
+    htmlFooter(userDN)
     return 
   
   # Set up the temporary directory tree
@@ -630,7 +635,7 @@ def factoryISO(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
             subnet + ' ' +
             netmask + ' ' +
             router + ' ' +
-            nameservers)
+            ' '.join(nameservers))
   
   # Clean up our temporary directory tree
   shutil.rmtree(tempDir)
@@ -1006,11 +1011,15 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '<input type="submit" value="Publish configuration RPM">'
   print '</form>'
 
-  if published:
-    print '<p>If you need to (re)install this space from scratch, boot the first factory using the '
-    print '<a href="/iso/' + siteName + '/' + spaceName + '/viab-usb.iso">USB .iso image</a>.'
+  if spaceVersion >= '00.36':
+      print '<p>If you need to (re)install this space from scratch, boot the first factory using the '
+      print 'USB .iso image you can find on the factory\'s own page.'    
   else:
-    print '<p>Once the RPM has been publihsed, you will be able to download the USB .iso boot image.'
+    if published:
+      print '<p>If you need to (re)install this space from scratch, boot the first factory using the '
+      print '<a href="/iso/' + siteName + '/' + spaceName + '/viab-usb.iso">USB .iso image</a>.'
+    else:
+      print '<p>Once the RPM has been publihsed, you will be able to download the USB .iso boot image.'
   
   # Change version paragraph
 
@@ -1884,7 +1893,7 @@ if action:
 if factoryName and isoFileName:
   factoryISO(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, factoryName, factoryID)
 elif factoryName:
-  oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, factoryName, factoryID)
+  oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, spaceVersion, factoryName, factoryID)
 elif machinetypeName:
   oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, spaceVersion, machinetypeName, machinetypeID)
 elif spaceName:
