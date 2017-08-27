@@ -18,10 +18,17 @@ cp -a /var/lib/viab/boot-CentOS7 .
 
 cd boot-CentOS7
 
+sed -i \
+ -e "s/##SITENAME##/$siteName/" \
+ -e "s/##SPACENAME##/$spaceName/" \
+ -e "s/##IP##/$ip::$router:$netmask:$factory::none/" \
+ -e "s/##NAMESERVERS##/$nameservers/" \
+ isolinux/isolinux.cfg
+
 genisoimage -U -r -v -T -J -joliet-long \
- -V      "ViaB 7 CentOS 7" \
- -volset "ViaB 7 CentOS 7" \
- -A      "ViaB 7 CentOS 7" \
+ -V      "ViaB CentOS 7" \
+ -volset "ViaB CentOS 7" \
+ -A      "ViaB CentOS 7" \
  -b isolinux/isolinux.bin \
  -c isolinux/boot.cat \
  -no-emul-boot -boot-load-size 4 -boot-info-table \

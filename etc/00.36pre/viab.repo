@@ -7,7 +7,7 @@
 #
 [ViaB]
 name=ViaB
-baseurl=https://viab.gridpp.ac.uk/repo/##VIAB_SITENAME##/##VIAB_FACTORYNAME##/
+baseurl=https://viab.gridpp.ac.uk/repo/##VIAB_SITENAME##/##VIAB_SPACEVERSION2##/##VIAB_FACTORYNAME##/
 gpgcheck=0
 metadata_expire=5m
 proxy=_none_
@@ -22,53 +22,47 @@ name=MJF
 baseurl=https://viab.gridpp.ac.uk/machinejobfeatures/mjf-scripts/00/RPMS/
 gpgcheck=0
 
-[SL6]
-name=SL6
-baseurl=http://www.mirrorservice.org/sites/ftp.scientificlinux.org/linux/scientific/6.6/x86_64/os/
+[CENTOS7]
+name=CentOS7
+baseurl=http://www.mirrorservice.org/sites/mirror.centos.org/7/os/x86_64/
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-sl
 
-[SL6-security]
-name=SL6-security
-baseurl=http://www.mirrorservice.org/sites/ftp.scientificlinux.org/linux/scientific/6.6/x86_64/updates/security/
+[CENTOS7-updates]
+name=CentOS7-updates
+baseurl=http://www.mirrorservice.org/sites/mirror.centos.org/7/updates/x86_64/
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-sl
 
-[SL6-fastbugs]
-name=SL6-fastbugs
-baseurl=http://www.mirrorservice.org/sites/ftp.scientificlinux.org/linux/scientific/6.6/x86_64/updates/fastbugs/
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-sl
-
-[Epel-6]
-name=Epel-6
-baseurl=http://www.mirrorservice.org/sites/dl.fedoraproject.org/pub/epel/6/x86_64/
+[Epel-7]
+name=Epel-7
+baseurl=http://www.mirrorservice.org/sites/dl.fedoraproject.org/pub/epel/7/x86_64/
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6
 gpgcheck=1
 
 [LCG-trustanchors]
 name=LCG-trustanchors
 baseurl=http://cern.ch/lcg-ca/distribution/current/
-gpgkey=https://lcg-ca.web.cern.ch/lcg-ca/distribution/current/GPG-KEY-EUGridPMA-RPM-3
+gpgkey=https://cern.ch/lcg-ca/distribution/current/
 gpgcheck=1
 enabled=1
 
-[UMD-3-base]
-name=UMD 3 base (SL6)
-baseurl=http://repository.egi.eu/sw/production/umd/3/sl6/$basearch/base
+[UMDbase]
+name=UMDbase (CentOS 7)
+baseurl=http://repository.egi.eu/sw/production/umd/4/centos7/x86_64/base/
 protect=1
 enabled=1
 # To use priorities you must have yum-priorities installed
 priority=1
 gpgcheck=1
-gpgkey=http://emisoft.web.cern.ch/emisoft/dist/EMI/3/RPM-GPG-KEY-emi http://repo-rpm.ige-project.eu/RPM-GPG-KEY-IGE http://repository.egi.eu/sw/production/umd/UMD-RPM-PGP-KEY http://apps.man.poznan.pl/qcg-packages/sl6/RPM-GPG-KEY-QCG http://download.nordugrid.org/RPM-GPG-KEY-nordugrid http://fedoraproject.org/static/0608B895.txt 
+gpgkey=http://repository.egi.eu/sw/production/umd/4/centos7/x86_64/base/
 
 [UMD-3-updates]
-name=UMD 3 updates (SL6)
-baseurl=http://repository.egi.eu/sw/production/umd/3/sl6/$basearch/updates
+name=UMDupdates (CentOS 7)
+baseurl=http://repository.egi.eu/sw/production/umd/4/centos7/x86_64/base/
 protect=1
 enabled=1
 # To use priorities you must have yum-priorities installed
 priority=1
 gpgcheck=1
-gpgkey=http://emisoft.web.cern.ch/emisoft/dist/EMI/3/RPM-GPG-KEY-emi http://repo-rpm.ige-project.eu/RPM-GPG-KEY-IGE http://repository.egi.eu/sw/production/umd/UMD-RPM-PGP-KEY http://apps.man.poznan.pl/qcg-packages/sl6/RPM-GPG-KEY-QCG http://download.nordugrid.org/RPM-GPG-KEY-nordugrid http://fedoraproject.org/static/0608B895.txt 
+gpgkey=http://repository.egi.eu/sw/production/umd/4/centos7/x86_64/base/

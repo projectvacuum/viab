@@ -59,7 +59,7 @@ service sshd reload
 # Create /etc/hosts listing all factories and this factory's VMs
 (
 echo '127.0.0.1 localhost localhost.localdomain localhost4 localhost4.localdomain4'
-sed 's/[0-9a-f:]* \([a-z0-9.-]*\) \([0-9.]*\)/\2 \1/' /etc/viab/factories-network 
+sed 's/[0-9a-f:]* \([a-z0-9.-]*\) \([0-9.]*\) \([A-Z0-9]*\)/\2 \1/' /etc/viab/factories-network
 i=0
 while [ $i -lt 100 ]
 do
@@ -100,7 +100,7 @@ cp -f /etc/squid/squid.conf.template /etc/squid/squid.conf.tmp
 # Host entries for other factories
 cat /etc/viab/factories-network | (
 
-while read mac factory ip
+while read mac factory ip iphex
 do
   echo "host $factory { hardware ethernet $mac; filename \"pxelinux.0\"; fixed-address $ip; next-server $HOSTNAME; }" >>/etc/dhcp/dhcpd.conf.tmp
 
@@ -142,7 +142,14 @@ service squid reload
 
 mkdir -p /var/lib/tftpboot/pxelinux.cfg
 
+# Host entries for other factories
+cat /etc/viab/factories-network | (
+
+while read mac factory ip iphex router netmask nameserversList
+do
 (
+
+nameservers=`echo ",$nameserversList" | sed 's/,/ nameserver=/g'`
 
 cat <<EOF
 default install
@@ -152,11 +159,12 @@ label install
 EOF
 
 # Using our kickstart file means hosts installing from this host use its Squid cache
-echo "  append ks=http://viab.gridpp.ac.uk/ks/$VIAB_SITENAME/$VIAB_SPACENAME/ks-$HOSTNAME.cfg ksdevice=bootif initrd=initrd.img text"
+echo "  append inst.ks=http://viab.gridpp.ac.uk/ks/$VIAB_SITENAME/ks-proxy-$HOSTNAME.cfg initrd=initrd.img inst.ksexec ip=$ip::$router:$netmask:$factory::none $nameservers text"
     
-) > /var/lib/tftpboot/pxelinux.cfg/default.tmp
+) > /var/lib/tftpboot/pxelinux.cfg/$iphex
 
-mv -f /var/lib/tftpboot/pxelinux.cfg/default.tmp /var/lib/tftpboot/pxelinux.cfg/default
+)
+
 
 # Make sure tftpd is not disabled
 sed -i 's/^[[:space:]]*disable.*/disable = no/' /etc/xinetd.d/tftp
