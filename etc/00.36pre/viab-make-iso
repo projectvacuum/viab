@@ -12,23 +12,27 @@ ip="$5"
 subnet="$6"
 netmask="$7"
 router="$8"
-nameservers="$9 $10 $11 $12"
+
+for i in $9 ${10} ${11} ${12}
+do
+  nameservers="$nameservers nameserver=$i"
+done
 
 cp -a /var/lib/viab/boot-CentOS7 .
 
 cd boot-CentOS7
 
 sed -i \
- -e "s/##SITENAME##/$siteName/" \
+ -e "s/##SITENAME##/$siteName/"\
  -e "s/##SPACENAME##/$spaceName/" \
- -e "s/##IP##/$ip::$router:$netmask:$factory::none/" \
+ -e "s/##IP##/$ip::$router:$netmask:$factoryName::none/" \
  -e "s/##NAMESERVERS##/$nameservers/" \
  isolinux/isolinux.cfg
 
 genisoimage -U -r -v -T -J -joliet-long \
- -V      "ViaB CentOS 7" \
- -volset "ViaB CentOS 7" \
- -A      "ViaB CentOS 7" \
+ -V      "ViaB-CentOS-7" \
+ -volset "ViaB-CentOS-7" \
+ -A      "ViaB-CentOS-7" \
  -b isolinux/isolinux.bin \
  -c isolinux/boot.cat \
  -no-emul-boot -boot-load-size 4 -boot-info-table \
