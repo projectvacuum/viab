@@ -1,0 +1,47 @@
+#!/bin/bash
+#
+# viab-iptables		Run viab-conf-iptables
+#
+# chkconfig: 345 98 08
+# description: Run viab-conf-iptables to set up firewall holes need for Vac-in-a-Box
+
+# Source function library.
+. /etc/init.d/functions
+
+
+start() {
+	[ "$EUID" != "0" ] && exit 1
+
+        # Create new files in temporary directory
+        echo -n $"Set up Vac-in-a-Box iptables rules: "
+
+        /usr/sbin/viab-conf-iptables
+        echo_success
+        echo
+	return 0
+}
+
+stop() {
+	[ "$EUID" != "0" ] && exit 3
+
+        echo -n $"Vac-in-a-Box iptables stop function: "
+        echo_success
+        echo
+	return 0
+}
+
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart|force-reload|reload)
+        stop
+	start
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|restart|force-reload|reload}"
+	exit 4
+esac

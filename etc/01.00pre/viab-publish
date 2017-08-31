@@ -1,0 +1,472 @@
+#!/usr/bin/python
+#
+#  viab-publish - Vac-in-a-Box Python publisher
+#
+#  Andrew McNab, University of Manchester.
+#  Copyright (c) 2015-7. All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or
+#  without modification, are permitted provided that the following
+#  conditions are met:
+#
+#    o Redistributions of source code must retain the above
+#      copyright notice, this list of conditions and the following
+#      disclaimer. 
+#    o Redistributions in binary form must reproduce the above
+#      copyright notice, this list of conditions and the following
+#      disclaimer in the documentation and/or other materials
+#      provided with the distribution. 
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+#  CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+#  INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+#  BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+#  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+#  TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+#  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+#  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+#  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+#  Contacts: Andrew.McNab@cern.ch  http://www.gridpp.ac.uk/vac/
+#
+
+import os
+import re
+import sys
+import cgi
+import stat
+import time
+import shutil
+import hashlib
+import tempfile
+import inspect
+import MySQLdb
+import textwrap
+
+db  = None
+cur = None
+
+# viab_cgi_conf.py must define these variables:
+#
+# mysqlUser     = 'username'
+# mysqlPassword = 'PAsSWoRd'
+# adminDNs      = [ '/DC=com/DC=example/CN=name' ] 
+# formHashSalt  = '1234567890'
+#
+
+isolinuxDir = 'boot-CentOS7/isolinux'
+
+sys.path.append('/var/lib/viab/bin')
+import viab_cgi_conf
+
+def logLine(text):
+  print time.strftime('==== %b %d %H:%M:%S : ') + text
+  sys.stdout.flush()
+
+#
+# PROGRAM MAIN
+#
+
+try:
+  tempDir      = sys.argv[1]
+  siteName     = sys.argv[2]
+  spaceName    = sys.argv[3]
+  spaceVersion = sys.argv[4]
+except:
+  logLine('Failed reading command line: ' + str(sys.argv))
+  sys.exit(1)  
+
+logLine('Creating files in ' + tempDir + ' for space ' + spaceName + ' at site ' + siteName + ' at version ' + spaceVersion)
+
+try:
+  db  = MySQLdb.connect(host="localhost", user=viab_cgi_conf.mysqlUser, passwd=viab_cgi_conf.mysqlPassword, db='viab')
+  cur = db.cursor(MySQLdb.cursors.DictCursor)
+except Exception as e:
+  logLine('Failed with database problem (' + str(e) + ')')
+  sys.exit(2) 
+
+# Get space/site numbers 
+cur.execute('SELECT spaces.spaceid AS spaceid,spaces.siteid AS siteid,cookie,cvmfsproxies,natips FROM spaces LEFT JOIN sites ON spaces.siteid=sites.siteid WHERE sitename=%s AND spacename=%s', (siteName, spaceName))
+rows = cur.fetchall()
+
+htaccessStr  = 'SSLRequire \\\n'
+spaceID      = int(rows[0]['spaceid'])
+majorVersion = spaceVersion[:2]
+siteID       = int(rows[0]['siteid'])
+passwordHash = '!!'
+cookie       = rows[0]['cookie']
+cvmfsProxies = rows[0]['cvmfsproxies']
+natIPs       = rows[0]['natips']
+
+# Set up the temporary directory tree
+logLine('Making temporary directory tree')
+try:
+    os.mkdir(tempDir + '/viab-conf')
+    os.mkdir(tempDir + '/viab-conf/vac.d')
+    os.mkdir(tempDir + '/viab-conf/viab')
+    os.mkdir(tempDir + '/viab-conf/machinetypes')
+    open(tempDir + '/viab-conf/viab/sitename',  'w').write(siteName)
+    open(tempDir + '/viab-conf/viab/spacename', 'w').write(spaceName)
+    open(tempDir + '/viab-conf/viab/version',   'w').write(spaceVersion)
+    open(tempDir + '/viab-conf/viab/cookie', 'w').write(cookie)
+    open(tempDir + '/viab-conf/viab/cvmfsproxies', 'w').write(cvmfsProxies)
+
+except:
+    logLine('Failed after problem making directories (' + str(e) + ')')
+    sys.exit(3)
+
+# Create the authorized_keys file from site sshkeys (or empty file if none)
+logLine('Creating authorized_keys file')
+try:
+    cur.execute('SELECT keytype,keyvalue,keyid FROM sshkeys WHERE siteid=%s', siteID)
+    rows = cur.fetchall()
+
+    f = open(tempDir + '/viab-conf/authorized_keys', 'w')
+    for row in rows:
+      f.write(row['keytype'] + ' ' + row['keyvalue'] + ' ' + str(row['keyid']) + '\n')
+    f.close()
+except:
+    sys.exit(2)
+
+# Create the sshrules file from site sshrules (or empty file if none)
+logLine('Creating sshrules file')
+try:
+    cur.execute('SELECT ip,netmask FROM sshrules WHERE siteid=%s', siteID)
+    rows = cur.fetchall()
+
+    f = open(tempDir + '/viab-conf/viab/sshrules', 'w')
+    for row in rows:
+      f.write(row['ip'] + ' ' + row['netmask'] + '\n')
+    f.close()
+except:
+    sys.exit(2)
+
+# Create the passwordhash and APEL .p12 file for the site (or empty file if none)
+logLine('Creating passwordhash and APEL .p12 files')
+try:
+    cur.execute('SELECT apelp12,passwordhash FROM sites WHERE sitename=%s', siteName)
+    rows = cur.fetchall()
+
+    f = open(tempDir + '/viab-conf/viab/passwordhash', 'w')
+    
+    try:
+      passwordHash = rows[0]['passwordhash']
+    
+      if not passwordHash or not passwordHash.startswith('$6$'):
+        passwordHash = '!!'
+        
+      f.write(passwordHash)
+    except:
+      pass
+
+    f.close()  
+    os.chmod(tempDir + '/viab-conf/viab/passwordhash', stat.S_IRUSR)
+
+    f = open(tempDir + '/viab-conf/viab/vac-apel-certkey.p12', 'w')
+    
+    try:
+      f.write(rows[0]['apelp12'])
+    except:
+      pass
+      
+    f.close()  
+    os.chmod(tempDir + '/viab-conf/viab/vac-apel-certkey.p12', stat.S_IRUSR)
+except:
+    sys.exit(3)
+    
+subnets = []
+
+# Create the subnets file from space subnets (or empty file if none)
+logLine('Creating subnets file')
+try:
+    cur.execute('SELECT subnet,netmask,router,nameservers,ntpservers FROM subnets WHERE spaceid=%s', spaceID)
+    rows = cur.fetchall()
+
+    f = open(tempDir + '/viab-conf/viab/subnets', 'w')
+    for row in rows:
+    
+      nameserversList = row['nameservers'].split()
+      nameservers     = nameserversList[0]
+
+      for i in range(1, len(nameserversList)):
+        nameservers += ',' + nameserversList[i]
+    
+      ntpserversList = row['ntpservers'].split()
+      ntpservers     = ntpserversList[0]
+
+      for i in range(1, len(ntpserversList)):
+        ntpservers += ',' + ntpserversList[i]
+    
+      f.write(row['subnet'] + ' ' + row['netmask'] + ' ' + row['router'] + ' ' + nameservers + ' ' + ntpservers + '\n')
+      
+      subnetSplit  = [int(i) for i in row['subnet'].split('.')]
+      netmaskSplit = [int(i) for i in row['netmask'].split('.')]
+      
+      subnets.append( { 'subnet'     : row['subnet'], 
+                        'subnetInt'  : 16777216 * subnetSplit[0] + 65536 * subnetSplit[1] + 256 * subnetSplit[2] + subnetSplit[3],
+                        'netmask'    : row['netmask'], 
+                        'netmaskInt' : 16777216 * netmaskSplit[0] + 65536 * netmaskSplit[1] + 256 * netmaskSplit[2] + netmaskSplit[3],
+                        'router'     : row['router'], 
+                        'nameservers': ','.join(nameserversList) } )
+      
+    f.close()
+except Exception as e: 
+    logLine('Create subnets fails with ' + str(e))
+    sys.exit(3)
+
+# Find the version of Vac for this ViaB version
+try:
+  vacMajorMinor = open('/var/lib/viab/etc/' + spaceVersion + '/VAC_MAJOR_MINOR', 'r').readline().strip()
+except Exception as e:
+  logLine('Failed to read VAC_MAJOR_MINOR (' + str(e) + ')')
+  sys.exit(7)
+  
+# Make proxy-less ks-noproxy.cfg for USB-based installation
+logLine('Creating ks-noproxy.cfg')
+try:
+  os.makedirs('/var/lib/viab/www/ks/' + siteName + '/' + spaceName)
+except:
+  pass
+  
+try:
+  kickstartStr = open('/var/lib/viab/etc/' + spaceVersion + '/ks.cfg', 'r').read()
+  oneKickstart = kickstartStr.replace('##INSTALL_COMMAND##','install').replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##VIAB_PASSWORD_HASH##',passwordHash).replace('##VAC_MAJOR_MINOR##',vacMajorMinor)
+  open('/var/lib/viab/www/ks/' + siteName + '/' + spaceName + '/ks-noproxy.cfg', 'w').write(oneKickstart)
+except Exception as e:
+  logLine('Failed to read, substitute, and write kickstart file (' + str(e) + ')')
+  sys.exit(7)
+
+# Create per-factory references in files (network, settings, htaccess, kickstart)
+logLine('Creating per-factory files')
+try:
+    cur.execute('SELECT * FROM factories WHERE spaceid=%s', spaceID)
+    rows = cur.fetchall()
+
+    fFactoriesNetwork  = open(tempDir + '/viab-conf/viab/factories-network', 'w')
+    fFactoriesSettings = open(tempDir + '/viab-conf/viab/factories-settings', 'w')
+
+    for row in rows:
+      ipSplit = [int(i) for i in row['ip'].split('.')]
+      ipInt = 16777216 * ipSplit[0] + 65536 * ipSplit[1] + 256 * ipSplit[2] + ipSplit[3]
+      
+      subnet = None
+      
+      for i in subnets:
+        if ipInt & i['netmaskInt'] == i['subnetInt']:
+          subnet = i
+          break
+      
+      fFactoriesNetwork.write('%s %s %s %02X%02X%02X%02X %s %s %s %s\n' % (row['mac'], row['factoryname'], row['ip'],
+                                                                        ipSplit[0], ipSplit[1], ipSplit[2], ipSplit[3],
+                                                                        subnet['subnet'],
+                                                                        subnet['netmask'],
+                                                                        subnet['router'],
+                                                                        subnet['nameservers']))
+      fFactoriesSettings.write(row['factoryname'] +
+                           ';vac_space = '                + spaceName +
+                           ';gocdb_sitename = '           + siteName +
+                           ';mb_per_processor = '         + str(row['mb_per_cpu']) +
+                           ';udp_timeout_seconds = '      + str(row['udp_timeout_seconds']) +
+                           ';processors_per_superslot = ' + str(row['cpu_per_machine']) +
+                           ';hs06_per_processor = '       + str(row['hs06_per_cpu']) +
+                           (';total_processors = 0' if row['draining'] == 1 else '') +
+                          '\n')
+
+      htaccessStr += ' %{REMOTE_ADDR} == \"' + row['ip'] + '\" or \\\n'
+
+      oneKickstart = kickstartStr.replace('##INSTALL_COMMAND##','install --proxy=http://' + row['ip'] + ':3128/').replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##VIAB_PASSWORD_HASH##',passwordHash).replace('##VAC_MAJOR_MINOR##',vacMajorMinor)
+      open('/var/lib/viab/www/ks/' + siteName + '/' + spaceName + '/ks-proxy-' + row['factoryname'] + '.cfg', 'w').write(oneKickstart)
+
+      try:
+        os.remove('/var/lib/viab/www/repo/' + siteName + '/' + majorVersion + '/' + row['factoryname'])
+      except:
+        pass
+
+      try:
+        os.symlink('/var/lib/viab/www/repo/' + siteName + '/' + spaceName, 
+                   '/var/lib/viab/www/repo/' + siteName + '/' + majorVersion + '/' + row['factoryname'])
+      except Exception as e:
+        logLine('Failed to create symbolic link /var/lib/viab/www/repo/' + siteName + '/' + majorVersion + '/' + row['factoryname'] + '! (' + str(e) + ')')
+
+    fFactoriesNetwork.close()
+    fFactoriesSettings.close()
+
+except Exception as e:
+    logLine('Exception ' + str(e))
+    sys.exit(3)
+
+# Create admins-list file
+logLine('Creating admins-list file')
+try:
+    fAdminsList  = open(tempDir + '/viab-conf/viab/admins-list', 'w')
+
+    for dn in viab_cgi_conf.adminDNs:
+      fAdminsList.write(dn + '\n')
+      htaccessStr += ' %{SSL_CLIENT_S_DN} == \"' + dn + '\" or \\\n'
+
+    cur.execute('SELECT dn FROM siteadmins WHERE siteid=%s', siteID)
+    rows = cur.fetchall()
+
+    for row in rows:
+      fAdminsList.write(row['dn'] + '\n')
+      htaccessStr += ' %{SSL_CLIENT_S_DN} == \"' + row['dn'] + '\" or \\\n'
+
+    fAdminsList.close()
+
+except:
+    sys.exit(3)
+    
+# Any NAT IPs in .htaccesss
+logLine('Adding NAT IPs to .htaccess list')
+try:
+    for natIP in natIPs.split():
+      if natIP.strip():
+        htaccessStr += ' %{REMOTE_ADDR} == \"' + natIP.strip() + '\" or \\\n'
+except:
+    sys.exit(3)
+
+# Create the machinetypes directories, p12 files, and .conf files for this space
+logLine('Creating the machinetypes directories')
+try:
+    cur.execute('SELECT machinetypename,machinetypeid,p12 FROM machinetypes WHERE spaceid=%s', spaceID)
+    machinetypeRows = cur.fetchall()
+
+    for machinetypeRow in machinetypeRows:
+      os.mkdir(tempDir + '/viab-conf/machinetypes/' + machinetypeRow['machinetypename'])
+      os.mkdir(tempDir + '/viab-conf/machinetypes/' + machinetypeRow['machinetypename'] + '/files')
+
+      if 'p12' in machinetypeRow:
+        f = open(tempDir + '/viab-conf/machinetypes/' + machinetypeRow['machinetypename'] + '/x509certkey.p12', 'w')
+        f.write(machinetypeRow['p12'])
+        f.close()
+        os.chmod(tempDir + '/viab-conf/machinetypes/' + machinetypeRow['machinetypename'] + '/x509certkey.p12', stat.S_IRUSR)
+    
+      cur.execute('SELECT optname,value FROM machinetypeopts WHERE machinetypeid=%s', machinetypeRow['machinetypeid'])
+      optRows = cur.fetchall()
+
+      if optRows:
+        f = open(tempDir + '/viab-conf/vac.d/' + machinetypeRow['machinetypename'] + '.conf', 'w')
+        f.write('[machinetype ' + machinetypeRow['machinetypename'] + ']\n')
+        
+        for optRow in optRows:
+          f.write(optRow['optname'] + ' = ' + optRow['value'] + '\n')
+
+        f.close()                      
+except:
+    sys.exit(3)
+
+# Ensure web directories exist; ignore exceptions if they do
+try:
+    os.makedirs('/var/lib/viab/www/repo/' + siteName + '/' + spaceName)
+except:
+    pass
+
+try:
+    os.makedirs('/var/lib/viab/www/ks/'   + siteName + '/' + spaceName)
+except:
+    pass
+
+try:
+    os.makedirs('/var/lib/viab/www/iso/'  + siteName + '/' + spaceName)
+except:
+    pass
+
+# Update HTTPS access control
+logLine('Writing HTTPS access control .htaccess for Apache')
+htaccessStr += ' 1==2\n'
+
+open('/var/lib/viab/www/repo/' + siteName + '/' + spaceName + '/.htaccess', 'w').write(htaccessStr)
+open('/var/lib/viab/www/ks/'   + siteName + '/.htaccess', 'w').write(htaccessStr)
+
+# Set up to build RPM
+
+os.mkdir(tempDir + '/SOURCES')
+os.mkdir(tempDir + '/SPECS')
+os.mkdir(tempDir + '/BUILD')
+os.mkdir(tempDir + '/RPMS')
+os.mkdir(tempDir + '/RPMS/noarch')
+os.mkdir(tempDir + '/BUILDROOT')
+
+for fileName in [ '/var/lib/viab/etc/' + spaceVersion + '/viab-conf-postinstall',
+                  '/var/lib/viab/etc/' + spaceVersion + '/viab-conf-p12',
+                  '/var/lib/viab/etc/' + spaceVersion + '/viab-conf-iptables',
+                  '/var/lib/viab/etc/' + spaceVersion + '/viab-iptables.init',
+                  '/var/lib/viab/etc/' + spaceVersion + '/viab-heartbeat',
+                  '/var/lib/viab/etc/' + spaceVersion + '/lazyssh',
+                  '/var/lib/viab/etc/' + spaceVersion + '/dnsmasq-wrapper',
+                  '/var/lib/viab/etc/' + spaceVersion + '/squid.conf.template' ]:
+  shutil.copy2(fileName, tempDir + '/viab-conf')
+
+try:
+  viabRepo = open('/var/lib/viab/etc/' + spaceVersion + '/viab.repo', 'r').read().replace('##VIAB_SITENAME##',siteName).replace('##MAJOR_VERSION##',majorVersion).replace('##VAC_MAJOR_MINOR##',vacMajorMinor)
+  open(tempDir + '/viab-conf/viab/viab.repo','w').write(viabRepo)
+except Exception as e:
+  logLine('Failed to create viab.repo (' + str(e) + ')')
+  sys.exit(7)
+
+logLine('Building viab-conf RPM')
+rpmVersion = str(time.strftime('%Y%m%d%H%M%S'))
+
+try:
+  specFile = open('/var/lib/viab/etc/' + spaceVersion + '/viab-conf.spec', 'r').read().replace('##RPM_VERSION##',rpmVersion).replace('##RPM_RELEASE##',spaceVersion)
+  open(tempDir + '/viab-conf.spec','w').write(specFile)
+except Exception as e:
+  logLine('Failed to create RPM spec file (' + str(e) + ')')
+  sys.exit(6)
+
+os.chdir(tempDir)
+os.system('/bin/tar zcvf SOURCES/viab-conf.tgz --owner=root --group=root --exclude-backups viab-conf')
+os.system('/usr/bin/rpmbuild -ba --define "_topdir ' + tempDir + '" --buildroot ' + tempDir + '/BUILDROOT viab-conf.spec')
+shutil.copy('RPMS/noarch/viab-conf-' + rpmVersion + '-' + spaceVersion + '.noarch.rpm', '/var/lib/viab/www/repo/' + siteName + '/' + spaceName)
+
+if os.path.isfile('/var/lib/viab/www/repo/' + siteName + '/' + spaceName + '/viab-tftpboot-' + majorVersion + '-1.noarch.rpm'):
+  logLine('viab-tftpboot RPM already present in repo')
+else:
+  logLine('viab-tftpboot RPM not present in repo already, so make it')
+  os.mkdir(tempDir + '/viab-tftpboot')
+  shutil.copy2('/var/lib/viab/etc/' + spaceVersion + '/viab-tftpboot.spec', tempDir + '/viab-tftpboot.spec')
+  shutil.copy2('/var/lib/viab/' + isolinuxDir + '/vmlinuz',    tempDir + '/viab-tftpboot')
+  shutil.copy2('/var/lib/viab/' + isolinuxDir + '/initrd.img', tempDir + '/viab-tftpboot')
+
+  os.system('/bin/tar zcvf SOURCES/viab-tftpboot.tgz --owner=root --group=root --exclude-backups viab-tftpboot')
+  os.system('/usr/bin/rpmbuild -ba --define "_topdir ' + tempDir + '" --buildroot ' + tempDir + '/BUILDROOT viab-tftpboot.spec')
+  shutil.copy('RPMS/noarch/viab-tftpboot-' + majorVersion + '-1.noarch.rpm', '/var/lib/viab/www/repo/' + siteName + '/' + spaceName)
+  
+os.system('/bin/find /var/lib/viab/www/repo/' + siteName + '/' + spaceName + ' -name "viab-conf-*.rpm" -ctime +1 -exec rm -f {} \;')
+os.system('/usr/bin/createrepo /var/lib/viab/www/repo/' + siteName + '/' + spaceName)
+
+## Make viab-usb.iso boot image for first factory
+#logLine('Creating viab-usb.iso')
+#
+#os.mkdir(tempDir + '/isolinux')
+#
+#for fileName in [ '/var/lib/viab/' + isolinuxDir + '/vmlinuz',
+##                  '/var/lib/viab/' + isolinuxDir + '/boot.cat',
+#                  '/var/lib/viab/' + isolinuxDir + '/vesamenu.c32',
+#                  '/var/lib/viab/' + isolinuxDir + '/isolinux.bin',
+#                  '/var/lib/viab/' + isolinuxDir + '/memtest',
+#                  '/var/lib/viab/' + isolinuxDir + '/boot.msg',
+#                  '/var/lib/viab/' + isolinuxDir + '/grub.conf',
+#                  '/var/lib/viab/' + isolinuxDir + '/isolinux.cfg',
+#                  '/var/lib/viab/' + isolinuxDir + '/initrd.img',
+#                  '/var/lib/viab/etc/' + spaceVersion + '/splash.jpg' ]:
+#  shutil.copy2(fileName, tempDir + '/isolinux')
+#
+#isolinuxCfg = open('/var/lib/viab/etc/' + spaceVersion + '/isolinux.cfg','r').read()
+#isolinuxCfg = isolinuxCfg.replace('##VIAB_SITENAME##', siteName).replace('##VIAB_SPACENAME##', spaceName)
+#open(tempDir + '/isolinux/isolinux.cfg', 'w').write(isolinuxCfg)
+#
+#os.system('/usr/bin/genisoimage -o /var/lib/viab/www/iso/' + siteName + '/' + spaceName + '/viab-usb.iso -b isolinux.bin ' +
+#          '-c boot.cat ' +
+#          '-no-emul-boot -boot-load-size 4 -boot-info-table -input-charset default -V "Vac-in-a-Box" -volset "Vac-in-a-Box" -R -J -v -T ' +
+#          tempDir + '/isolinux')
+#
+#os.system('/usr/bin/isohybrid /var/lib/viab/www/iso/' + siteName + '/' + spaceName + '/viab-usb.iso')
+#
+# Everything seems to have worked ok
+logLine('Finished ok')
+sys.exit(0)

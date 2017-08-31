@@ -1,0 +1,100 @@
+#!/usr/bin/python
+#
+#  viab-heartbeat - ViaB status sender
+#
+#  Andrew McNab, University of Manchester.
+#  Copyright (c) 2015. All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or
+#  without modification, are permitted provided that the following
+#  conditions are met:
+#
+#    o Redistributions of source code must retain the above
+#      copyright notice, this list of conditions and the following
+#      disclaimer. 
+#    o Redistributions in binary form must reproduce the above
+#      copyright notice, this list of conditions and the following
+#      disclaimer in the documentation and/or other materials
+#      provided with the distribution. 
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+#  CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+#  INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+#  BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+#  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+#  TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+#  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+#  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+#  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+#  Contacts: Andrew.McNab@cern.ch  http://www.gridpp.ac.uk/vac/
+#
+
+import os
+import sys
+import time
+import json
+import socket
+
+# Get the values to send for the files on this factory
+
+try:
+  cookie = open('/etc/viab/cookie','r').readline().strip()
+except Exception as e:
+  print 'Failed to read /etc/viab/cookie (' + str(e) + ')'
+  sys.exit(1)
+
+try:
+  viabVersion = open('/etc/viab/version','r').readline().strip()
+except Exception as e:
+  print 'Failed to read /etc/viab/version (' + str(e) + ')'
+  sys.exit(1)
+
+try:
+  spaceName = open('/etc/viab/spacename','r').readline().strip()
+except Exception as e:
+  print 'Failed to read /etc/viab/spacename (' + str(e) + ')'
+  sys.exit(1)
+
+try:
+  vacVersion = open('/var/lib/vac/VERSION','r').readline().strip().split('=')[1]
+except Exception as e:
+  print 'Failed to read /var/lib/vac/VERSION (' + str(e) + ')'
+  sys.exit(2)
+
+try:
+  bootTime = int(time.time() - float(open('/proc/uptime','r').readline().split()[0]))
+except Exception as e:
+  print 'Failed to get bootTime (' + str(e) + ')'
+  sys.exit(3)  
+
+# Construct the JSON message
+
+message = json.dumps({ 'factory'      : os.uname()[1],
+                       'space'	      : spaceName,
+                       'cookie'       : cookie,
+                       'viab_version' : viabVersion,
+                       'vac_version'  : vacVersion,
+                       'boot_time'    : bootTime,
+                       'time_sent'    : int(time.time()) })
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.settimeout(1.0)
+
+# Send 5 copies, 1 second apart, to mitigate any packet loss
+
+for i in [1,2,3,4,5]:
+  try:
+    sock.sendto(message, ('viab.gridpp.ac.uk', 8884))
+  except Exception as e:
+    print 'Failed to send ViaB heartbeat UDP message ' + str(i) + ' (' + str(e) + ')'
+  else:
+    print 'Sent ViaB heartbeat UDP message ' + str(i)
+
+  time.sleep(1.0)
+
+sys.exit(0)

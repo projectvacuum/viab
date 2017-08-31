@@ -1,0 +1,15 @@
+#!/bin/sh
+
+if [ "$1" = "--loop" ] ; then
+  shift
+  while :
+  do
+   ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $*
+   if [ $? = 0 ] ; then
+    exit
+   fi
+   sleep 5
+  done 
+else
+  exec ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $*
+fi

@@ -1,0 +1,35 @@
+#!/bin/sh
+
+if [ ! -r /etc/viabkeys/viab-conf-passphrase ] ; then
+  echo 'You need to put your p12 files passphrase in /etc/viab-conf-passphrase !'
+  exit 1
+fi
+
+chmod go-r /etc/viabkeys/viab-conf-passphrase
+
+for i in /var/lib/vac/machinetypes/*
+do
+ cd $i
+ if [ -s x509certkey.p12 ] ; then
+  echo "Create x509/host cert/key PEM files from $i/x509certkey.p12"
+  openssl pkcs12 -in x509certkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out x509key.pem  -nodes -nocerts
+  openssl pkcs12 -in x509certkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out x509cert.pem -nokeys -clcerts
+  cp -f x509key.pem  files/hostkey.pem
+  cp -f x509cert.pem files/hostcert.pem
+ else
+  echo "Empty $i/x509certkey.p12"
+  echo > x509cert.pem
+  echo > x509key.pem
+  echo > files/hostcert.pem
+  echo > files/hostkey.pem
+ fi
+ chmod ugo-w,go-r x509key.pem files/hostkey.pem
+done
+
+if [ -r /etc/viab/vac-apel-certkey.p12 ] ; then
+ echo "Create /etc/grid-security/vac-apel-key.pem"
+ chmod u+w /etc/grid-security/vac-apel-key.pem
+ openssl pkcs12 -in /etc/viab/vac-apel-certkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out /etc/grid-security/vac-apel-key.pem  -nodes -nocerts
+ openssl pkcs12 -in /etc/viab/vac-apel-certkey.p12 -passin file:/etc/viabkeys/viab-conf-passphrase -out /etc/grid-security/vac-apel-cert.pem -nokeys -clcerts
+ chmod ugo-w,go-r /etc/grid-security/vac-apel-key.pem
+fi

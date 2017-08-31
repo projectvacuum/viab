@@ -586,6 +586,8 @@ def factoryISO(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
   cur.execute('SELECT * FROM factories WHERE factoryID=%s', factoryID)
   factoriesRows = cur.fetchall()
 
+  mac = factoriesRows[0]['mac']
+
   ip = factoriesRows[0]['ip']
   ipSplit = [int(i) for i in ip.split('.')]
   
@@ -632,6 +634,7 @@ def factoryISO(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
             spaceName + ' ' +
             factoryName + ' ' +
             ip + ' ' +
+            mac + ' ' +
             subnet + ' ' +
             netmask + ' ' +
             router + ' ' +
