@@ -287,6 +287,11 @@ try:
         pass
 
       try:
+        os.mkdir('/var/lib/viab/www/repo/' + siteName + '/' + majorVersion)
+      except:
+        pass
+        
+      try:
         os.symlink('/var/lib/viab/www/repo/' + siteName + '/' + spaceName, 
                    '/var/lib/viab/www/repo/' + siteName + '/' + majorVersion + '/' + row['factoryname'])
       except Exception as e:
@@ -439,34 +444,6 @@ else:
 os.system('/bin/find /var/lib/viab/www/repo/' + siteName + '/' + spaceName + ' -name "viab-conf-*.rpm" -ctime +1 -exec rm -f {} \;')
 os.system('/usr/bin/createrepo /var/lib/viab/www/repo/' + siteName + '/' + spaceName)
 
-## Make viab-usb.iso boot image for first factory
-#logLine('Creating viab-usb.iso')
-#
-#os.mkdir(tempDir + '/isolinux')
-#
-#for fileName in [ '/var/lib/viab/' + isolinuxDir + '/vmlinuz',
-##                  '/var/lib/viab/' + isolinuxDir + '/boot.cat',
-#                  '/var/lib/viab/' + isolinuxDir + '/vesamenu.c32',
-#                  '/var/lib/viab/' + isolinuxDir + '/isolinux.bin',
-#                  '/var/lib/viab/' + isolinuxDir + '/memtest',
-#                  '/var/lib/viab/' + isolinuxDir + '/boot.msg',
-#                  '/var/lib/viab/' + isolinuxDir + '/grub.conf',
-#                  '/var/lib/viab/' + isolinuxDir + '/isolinux.cfg',
-#                  '/var/lib/viab/' + isolinuxDir + '/initrd.img',
-#                  '/var/lib/viab/etc/' + spaceVersion + '/splash.jpg' ]:
-#  shutil.copy2(fileName, tempDir + '/isolinux')
-#
-#isolinuxCfg = open('/var/lib/viab/etc/' + spaceVersion + '/isolinux.cfg','r').read()
-#isolinuxCfg = isolinuxCfg.replace('##VIAB_SITENAME##', siteName).replace('##VIAB_SPACENAME##', spaceName)
-#open(tempDir + '/isolinux/isolinux.cfg', 'w').write(isolinuxCfg)
-#
-#os.system('/usr/bin/genisoimage -o /var/lib/viab/www/iso/' + siteName + '/' + spaceName + '/viab-usb.iso -b isolinux.bin ' +
-#          '-c boot.cat ' +
-#          '-no-emul-boot -boot-load-size 4 -boot-info-table -input-charset default -V "Vac-in-a-Box" -volset "Vac-in-a-Box" -R -J -v -T ' +
-#          tempDir + '/isolinux')
-#
-#os.system('/usr/bin/isohybrid /var/lib/viab/www/iso/' + siteName + '/' + spaceName + '/viab-usb.iso')
-#
 # Everything seems to have worked ok
 logLine('Finished ok')
 sys.exit(0)

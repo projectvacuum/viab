@@ -1,5 +1,5 @@
 Name: viab-tftpboot
-Version: 00
+Version: 01
 Release: 1
 BuildArch: noarch
 Summary: Vac-in-a-Box tftpboot files
