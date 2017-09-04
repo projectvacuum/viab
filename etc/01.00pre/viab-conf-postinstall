@@ -15,7 +15,7 @@ echo `head -1 /etc/issue` "(ViaB $VIAB_VERSION)" >/etc/issue.vac
 # Make sure hostname matches ViaB expectation (site DHCP might be different)
 HOSTIP=`hostname -I | tr ' ' '\n'| egrep -v '^169\.|^127\.' | head -1`
 if [ "$HOSTIP" ] ; then
- export HOSTNAME=`grep " $HOSTIP\$" /etc/viab/factories-network | cut -d' ' -f2`
+ export HOSTNAME=`grep " $HOSTIP " /etc/viab/factories-network | cut -d' ' -f2`
  hostname $HOSTNAME
 fi
 
@@ -26,8 +26,8 @@ sed "s/##VIAB_FACTORYNAME##/`hostname`/g" /etc/viab/viab.repo > /etc/yum.repos.d
 /usr/sbin/viab-heartbeat
 
 # 
-chkconfig yum-cron on
-service yum-cron restart
+systemctl enable yum-cron
+systemctl restart yum-cron
 sed -i 's/ = no/ = yes/' /etc/yum/yum-cron-hourly.conf 
 
 # Set up hourly auto updates and heartbeats at a random minute; update viab-conf first in case of viab.repo changes
@@ -59,7 +59,7 @@ fi
 
 # But no ssh password logins
 sed -i 's/^PasswordAuthentication.*/PasswordAuthentication=no/' /etc/ssh/sshd_config
-service sshd restart
+systemctl restart sshd 
 
 # Create /etc/hosts listing all factories and this factory's VMs
 (
@@ -133,15 +133,15 @@ do
 done
 
 mv -f /etc/dhcp/dhcpd.conf.tmp /etc/dhcp/dhcpd.conf
-chkconfig dhcpd on 
-service dhcpd restart
+systemctl enable dhcpd 
+systemctl restart dhcpd
 
-mv -f /etc/ethers.tmp /etc/ethers
-arp -f /etc/ethers
+#mv -f /etc/ethers.tmp /etc/ethers
+#arp -f /etc/ethers
 
 mv -f /etc/squid/squid.conf.tmp /etc/squid/squid.conf
-chkconfig squid on
-service squid restart
+systemctl enable squid 
+systemctl restart squid 
 
 # Make custom /var/lib/tftpboot/pxelinux.cfg/default
 
@@ -174,7 +174,7 @@ done
 
 # Make sure tftpd is not disabled
 sed -i 's/^[[:space:]]*disable.*/disable = no/' /etc/xinetd.d/tftp
-service xinetd restart
+systemctl restart xinetd
 
 # Puts CPU temperatures in /sys/devices/platform/coretemp.*/
 modprobe --quiet coretemp
@@ -182,4 +182,6 @@ modprobe --quiet coretemp
 # This isn't needed for changes to configuration, but sometimes
 # other updates to the system (eg shared libraries) mean python
 # needs to be reinitialised
+#
+# USE service STILL AS Vac PROVIDES IT FOR SL6 COMPATIBILITY
 service vacd restart
