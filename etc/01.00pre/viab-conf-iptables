@@ -11,13 +11,8 @@
 
 #echo 'Try to delete some old iptable rules'
 /sbin/iptables -D INPUT -j REJECT --reject-with icmp-host-prohibited
-/sbin/iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT
+/sbin/iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT 2>/dev/null
 /sbin/iptables -D FORWARD -p tcp --dport 25 -j DROP
-
-# Then any TFTP etc rules from old installs
-#/sbin/iptables -D INPUT -p udp -m state --state NEW -m udp --dport 67 -j ACCEPT 
-#/sbin/iptables -D INPUT -p udp -m state --state NEW -m udp --dport 68 -j ACCEPT 
-#/sbin/iptables -D INPUT -p udp -m state --state NEW -m udp --dport 69 -j ACCEPT 
 
 # Now (re)add the current ssh iptables rules
 cat /etc/viab/sshrules | (
@@ -37,6 +32,9 @@ do
  /sbin/iptables -A INPUT -s $subnet/$netmask -p udp -m state --state NEW -m udp --dport 67 -m comment --comment "ViaB boot access" -j ACCEPT 
  /sbin/iptables -A INPUT -s $subnet/$netmask -p udp -m state --state NEW -m udp --dport 68 -m comment --comment "ViaB boot access" -j ACCEPT 
  /sbin/iptables -A INPUT -s $subnet/$netmask -p udp -m state --state NEW -m udp --dport 69 -m comment --comment "ViaB boot access" -j ACCEPT 
+ /sbin/iptables -A INPUT -s $subnet/$netmask -p udp -m state --state NEW -m udp --dport 995 -m comment --comment "ViaB VacQuery access" -j ACCEPT 
+ /sbin/iptables -A INPUT -s $subnet/$netmask -p tcp -m state --state NEW -m tcp --dport 3128 -m comment --comment "ViaB Squid access" -j ACCEPT 
+ /sbin/iptables -A INPUT -s $subnet/$netmask -p tcp -m state --state NEW -m tcp --dport 3130 -m comment --comment "ViaB Squid access" -j ACCEPT
 done
 
 )
