@@ -9,7 +9,7 @@ Source: viab-conf.tgz
 URL: https://viab.gridpp.ac.uk/
 Vendor: GridPP
 Packager: Andrew McNab <Andrew.McNab@cern.ch>
-Requires: viab-tftpboot,vac,dhcp,tftp,tftp-server,syslinux-tftpboot,squid,ca-policy-lcg,xauth,tigervnc,ntp,yum-cron,apel-ssm,rpm-build
+Requires: vac,dhcp,tftp,tftp-server,syslinux-tftpboot,squid,ca-policy-lcg,xauth,tigervnc,ntp,yum-cron,apel-ssm,rpm-build,wget
 
 %description
 Configuration files and idempotent scripts for Vac-in-a-Box

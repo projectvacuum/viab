@@ -171,6 +171,10 @@ done
 
 )
 
+# Install daily wget cron to update vmlinuz and initrd.img and run it now
+/bin/echo -e '#!/bin/bash\ncd /var/lib/tftpboot/nwget --mirror http://www.mirrorservice.org/sites/mirror.centos.org/7/os/x86_64/isolinux/vmlinuz http://www.mirrorservice.org/sites/mirror.centos.org/7/os/x86_64/isolinux/initrd.img >/var/log/viab-wget-tftpboot.log 2>&1' > /etc/cron.daily/viab-wget-tftpboot
+chmod +x /etc/cron.daily/viab-wget-tftpboot
+/etc/cron.daily/viab-wget-tftpboot
 
 # Make sure tftpd is not disabled
 sed -i 's/^[[:space:]]*disable.*/disable = no/' /etc/xinetd.d/tftp

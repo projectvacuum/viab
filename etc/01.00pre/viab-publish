@@ -428,21 +428,21 @@ os.system('/bin/tar zcvf SOURCES/viab-conf.tgz --owner=root --group=root --exclu
 os.system('/usr/bin/rpmbuild -ba --define "_topdir ' + tempDir + '" --buildroot ' + tempDir + '/BUILDROOT viab-conf.spec')
 shutil.copy('RPMS/noarch/viab-conf-' + rpmVersion + '-' + spaceVersion + '.noarch.rpm', '/var/lib/viab/www/repo/' + siteName + '/' + spaceName)
 
-if os.path.isfile('/var/lib/viab/www/repo/' + siteName + '/' + spaceName + '/viab-tftpboot-' + majorVersion + '-1.noarch.rpm'):
-  logLine('viab-tftpboot RPM already present in repo')
-else:
-  logLine('viab-tftpboot RPM not present in repo already, so make it')
-  os.mkdir(tempDir + '/viab-tftpboot')
-  shutil.copy2('/var/lib/viab/etc/' + spaceVersion + '/viab-tftpboot.spec', tempDir + '/viab-tftpboot.spec')
-  shutil.copy2('/var/lib/viab/' + isolinuxDir + '/vmlinuz',    tempDir + '/viab-tftpboot')
-  shutil.copy2('/var/lib/viab/' + isolinuxDir + '/initrd.img', tempDir + '/viab-tftpboot')
-
-  os.system('/bin/tar zcvf SOURCES/viab-tftpboot.tgz --owner=root --group=root --exclude-backups viab-tftpboot')
-  os.system('/usr/bin/rpmbuild -ba --define "_topdir ' + tempDir + '" --buildroot ' + tempDir + '/BUILDROOT viab-tftpboot.spec')
-  shutil.copy('RPMS/noarch/viab-tftpboot-' + majorVersion + '-1.noarch.rpm', '/var/lib/viab/www/repo/' + siteName + '/' + spaceName)
-  
-os.system('/bin/find /var/lib/viab/www/repo/' + siteName + '/' + spaceName + ' -name "viab-conf-*.rpm" -ctime +1 -exec rm -f {} \;')
-os.system('/usr/bin/createrepo /var/lib/viab/www/repo/' + siteName + '/' + spaceName)
+#if os.path.isfile('/var/lib/viab/www/repo/' + siteName + '/' + spaceName + '/viab-tftpboot-' + majorVersion + '-1.noarch.rpm'):
+#  logLine('viab-tftpboot RPM already present in repo')
+#else:
+#  logLine('viab-tftpboot RPM not present in repo already, so make it')
+#  os.mkdir(tempDir + '/viab-tftpboot')
+#  shutil.copy2('/var/lib/viab/etc/' + spaceVersion + '/viab-tftpboot.spec', tempDir + '/viab-tftpboot.spec')
+#  shutil.copy2('/var/lib/viab/' + isolinuxDir + '/vmlinuz',    tempDir + '/viab-tftpboot')
+#  shutil.copy2('/var/lib/viab/' + isolinuxDir + '/initrd.img', tempDir + '/viab-tftpboot')
+#
+#  os.system('/bin/tar zcvf SOURCES/viab-tftpboot.tgz --owner=root --group=root --exclude-backups viab-tftpboot')
+#  os.system('/usr/bin/rpmbuild -ba --define "_topdir ' + tempDir + '" --buildroot ' + tempDir + '/BUILDROOT viab-tftpboot.spec')
+#  shutil.copy('RPMS/noarch/viab-tftpboot-' + majorVersion + '-1.noarch.rpm', '/var/lib/viab/www/repo/' + siteName + '/' + spaceName)
+#  
+#os.system('/bin/find /var/lib/viab/www/repo/' + siteName + '/' + spaceName + ' -name "viab-conf-*.rpm" -ctime +1 -exec rm -f {} \;')
+#os.system('/usr/bin/createrepo /var/lib/viab/www/repo/' + siteName + '/' + spaceName)
 
 # Everything seems to have worked ok
 logLine('Finished ok')
