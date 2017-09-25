@@ -1,0 +1,9 @@
+[Unit]
+Description=Vac-in-a-Box HTTP Server
+After=network.target
+
+[Service]
+ExecStart=/usr/sbin/viab-httpd 
+
+[Install]
+WantedBy=multi-user.target

@@ -22,23 +22,23 @@ name=MJF
 baseurl=https://viab.gridpp.ac.uk/machinejobfeatures/mjf-scripts/00/RPMS/
 gpgcheck=0
 
-[CENTOS7]
-name=CentOS7
-baseurl=http://www.mirrorservice.org/sites/mirror.centos.org/7/os/x86_64/
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 
-
-[CENTOS7-updates]
-name=CentOS7-updates
-baseurl=http://www.mirrorservice.org/sites/mirror.centos.org/7/updates/x86_64/
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 
-
-[CENTOS7-extras]
-name=CentOS7 - Extras
-mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=extras&infra=$infra
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+#[CENTOS7]
+#name=CentOS7
+#baseurl=http://www.mirrorservice.org/sites/mirror.centos.org/7/os/x86_64/
+#gpgcheck=1
+#gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 
+#
+#[CENTOS7-updates]
+#name=CentOS7-updates
+#baseurl=http://www.mirrorservice.org/sites/mirror.centos.org/7/updates/x86_64/
+#gpgcheck=1
+#gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 
+#
+#[CENTOS7-extras]
+#name=CentOS7 - Extras
+#mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=extras&infra=$infra
+#gpgcheck=1
+#gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
 
 
 [Epel-7]

@@ -104,11 +104,12 @@ AllowOverride AuthConfig
 <Location /repo/>
 ExpiresActive on
 ExpiresDefault A0
+Options Indexes FollowSymlinks
 </Location>
 
 Alias /vacproject/ /var/www/repo.gridpp.ac.uk/vacproject/
 <Directory /var/www/repo.gridpp.ac.uk/vacproject/>
-Options Indexes
+Options Indexes FollowSymlinks
 </Directory>
 
 Alias /machinejobfeatures/ /var/www/repo.gridpp.ac.uk/machinejobfeatures/

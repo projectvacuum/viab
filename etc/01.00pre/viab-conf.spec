@@ -25,17 +25,18 @@ mkdir -p $RPM_BUILD_ROOT/usr/sbin \
          $RPM_BUILD_ROOT/etc/viab \
          $RPM_BUILD_ROOT/etc/vac.d \
          $RPM_BUILD_ROOT/etc/rc.d/init.d \
+         $RPM_BUILD_ROOT/usr/lib/systemd/system \
          $RPM_BUILD_ROOT/root/.ssh \
-         $RPM_BUILD_ROOT/etc/squid \
          $RPM_BUILD_ROOT/etc/squid \
          $RPM_BUILD_ROOT/etc/yum.repos.d \
          $RPM_BUILD_ROOT/var/lib/vac/machinetypes
 
 cp -p viab-conf-postinstall viab-conf-p12 lazyssh dnsmasq-wrapper \
- viab-heartbeat viab-conf-iptables $RPM_BUILD_ROOT/usr/sbin
+ viab-heartbeat viab-conf-iptables viab-httpd $RPM_BUILD_ROOT/usr/sbin
 cp viab-iptables.init $RPM_BUILD_ROOT/etc/rc.d/init.d/viab-iptables
 cp vac.d/*.conf $RPM_BUILD_ROOT/etc/vac.d
 cp viab/* $RPM_BUILD_ROOT/etc/viab
+cp viab-httpd.service $RPM_BUILD_ROOT/usr/lib/systemd/system
 cp squid.conf.template $RPM_BUILD_ROOT/etc/squid/squid.conf.template
 cp -p authorized_keys $RPM_BUILD_ROOT/root/.ssh
 cp -a machinetypes/* $RPM_BUILD_ROOT/var/lib/vac/machinetypes
@@ -54,3 +55,4 @@ rm -f /etc/vac.d/*
 /var/lib/vac/machinetypes/*
 /usr/sbin/*
 /root/.ssh/authorized_keys
+/usr/lib/systemd/system/*

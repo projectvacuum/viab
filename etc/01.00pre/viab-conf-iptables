@@ -32,6 +32,7 @@ do
  /sbin/iptables -A INPUT -s $subnet/$netmask -p udp -m state --state NEW -m udp --dport 67 -m comment --comment "ViaB boot access" -j ACCEPT 
  /sbin/iptables -A INPUT -s $subnet/$netmask -p udp -m state --state NEW -m udp --dport 68 -m comment --comment "ViaB boot access" -j ACCEPT 
  /sbin/iptables -A INPUT -s $subnet/$netmask -p udp -m state --state NEW -m udp --dport 69 -m comment --comment "ViaB boot access" -j ACCEPT 
+ /sbin/iptables -A INPUT -s $subnet/$netmask -p tcp -m state --state NEW -m tcp --dport 80 -m comment --comment "ViaB HTTP access" -j ACCEPT
  /sbin/iptables -A INPUT -s $subnet/$netmask -p udp -m state --state NEW -m udp --dport 995 -m comment --comment "ViaB VacQuery access" -j ACCEPT 
  /sbin/iptables -A INPUT -s $subnet/$netmask -p tcp -m state --state NEW -m tcp --dport 3128 -m comment --comment "ViaB Squid access" -j ACCEPT 
  /sbin/iptables -A INPUT -s $subnet/$netmask -p tcp -m state --state NEW -m tcp --dport 3130 -m comment --comment "ViaB Squid access" -j ACCEPT

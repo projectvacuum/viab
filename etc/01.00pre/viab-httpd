@@ -1,0 +1,228 @@
+#!/usr/bin/python
+#
+#  viab-httpd - ViaB web server for viab-conf-passphrase
+#
+#  Andrew McNab, University of Manchester.
+#  Copyright (c) 2013-7. All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or
+#  without modification, are permitted provided that the following
+#  conditions are met:
+#
+#    o Redistributions of source code must retain the above
+#      copyright notice, this list of conditions and the following
+#      disclaimer. 
+#    o Redistributions in binary form must reproduce the above
+#      copyright notice, this list of conditions and the following
+#      disclaimer in the documentation and/or other materials
+#      provided with the distribution. 
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+#  CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+#  INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+#  DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+#  BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+#  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+#  TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+#  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+#  ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+#  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+#  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+#  Contacts: Andrew.McNab@cern.ch  http://www.gridpp.ac.uk/vac/
+#
+
+import re
+import os
+import errno
+import sys
+import time
+import subprocess
+import socket
+import shutil
+import tempfile
+import hashlib
+import base64
+import operator
+import stat
+import random
+import BaseHTTPServer
+import SocketServer
+
+class viabHttpdHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+
+   def log_message(self, format, *args):
+     # Custom log message 
+     sys.stderr.write("%s %d %d [%s] %s\n" %
+                      (self.address_string(),                       
+                       os.getpid(),
+                       os.getppid(),
+                       self.log_date_time_string(),
+                       format%args))
+
+   def make_GET_body(self):
+   
+     # Check source port number is below 1024   
+     ip, port = self.client_address
+     
+     if port >= 1024:
+       # Must be contacted by root a from privileged port
+       # For example, with  curl --local-port 0-1023 ...
+       return [403, None]
+     
+     # Get MAC from /proc/net/arp
+     mac = None     
+     try:
+       with open('/proc/net/arp','r') as f:
+         for line in f:
+           f_ip, f_hw, f_flags, f_mac = line.split()[:4]
+           if f_ip == ip:
+             # This is the client requesting the file
+             mac = f_mac
+             break
+     except:
+       # Weirdness
+       return [500, None]
+
+     if mac is None:
+       # No MAC. Not on this network segment? Not ok anyway.
+       return [403, None]
+
+     # Check IP and MAC match in /etc/viab/factories-network
+     ok = False     
+     try:
+       with open('/etc/viab/factories-network','r') as f:     
+
+         for line in f:
+           f_mac, f_hostname, f_ip = line.split()[:3]
+       
+           if f_ip == ip:
+             # This is the client requesting the file
+           
+             if f_mac == mac:
+               ok = True
+               break
+             else:
+               # Doesn't match! Some kind of spoofing?
+               return [403, None]           
+     except:
+       # Something wrong with the format of factories-network?
+       return [500, None]
+       
+     if not ok:
+       # We don't know about the client IP. Not ok.
+       return [403, None]
+
+     # Check asking for /passphrase-shared
+     if self.path != '/passphrase-shared':
+       # We only serve that one file
+       return [404, None]
+     
+     # Output /etc/viab/passphrase-shared     
+     try:
+       body = open('/etc/viab/passphrase-shared', 'r').readline()
+     except:
+       # The file doesn't exist. That's ok. 
+       # The site admin probably doesn't want to use this feature.
+       return [404, None]
+       
+     if body:
+       return [200, body]
+     else:
+       # Say it doesn't exist if empty too
+       return [404, None]
+
+   def do_GET(self):
+
+     try:
+       httpCode,body = self.make_GET_body()
+
+       if body is None:
+         self.send_response(httpCode)
+         self.end_headers()
+       else:
+         self.send_response(httpCode)
+         self.send_header('Content-type','text/plain')
+         self.end_headers()
+         self.wfile.write(body)
+     except Exception as e:
+       print 'Sending HTTP response fails with exception ' + str(e)
+
+class ForkingHTTPServer(SocketServer.ForkingMixIn, BaseHTTPServer.HTTPServer):
+   request_queue_size = 256      
+
+def viabHttpd():
+
+   si = file('/dev/null', 'r')
+   os.dup2(si.fileno(), sys.stdin.fileno())
+
+   so = file('/var/log/viab-httpd', 'a+')
+   os.dup2(so.fileno(), sys.stdout.fileno())
+          
+   se = file('/var/log/viab-httpd', 'a+', 0)
+   os.dup2(se.fileno(), sys.stderr.fileno())
+ 
+ # fix permissions: no public write
+   f = open('/var/run/viab-httpd.pid', 'w')
+   f.write(str(os.getpid()) + '\n')
+   f.close()
+
+   try:
+       httpd = ForkingHTTPServer(('194.36.3.85', 80), viabHttpdHandler)
+   except Exception as e:
+       print str(e)
+       return
+     
+   while True:
+   
+     try:
+       close(so)
+     except:
+       pass
+           
+     so = file('/var/log/viab-httpd', 'a+')
+     os.dup2(so.fileno(), sys.stdout.fileno())
+          
+     try:
+       close(se)
+     except:
+       pass
+
+     se = file('/var/log/viabd-httpd', 'a+', 0)
+     os.dup2(se.fileno(), sys.stderr.fileno())
+
+     try:
+       pr = open('/var/run/viab-httpd.pid', 'r')
+       pid = int(pr.read().strip())
+       pr.close()
+       
+       if pid != os.getpid():
+         print 'os.getpid ' + os.getpid() + ' does not match viab-httpd.pid ' + pid + ' - exiting'
+         sys.exit(0)
+
+     except:
+       print 'no viab-httpd.pid - exiting'
+       sys.exit(0)
+
+     # so log file is updated before we start waiting        
+     sys.stdout.flush()
+     sys.stderr.flush()
+
+     httpd.handle_request()
+
+#
+# PROGRAM MAIN !!!
+# 
+
+if __name__ == '__main__':
+
+  os.chdir("/")
+  os.umask(0) 
+
+  # If server fails to start (eg can't bind) then keep trying
+  while True:
+    viabHttpd()
+    time.sleep(10)
+    

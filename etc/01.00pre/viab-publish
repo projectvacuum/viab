@@ -278,7 +278,8 @@ try:
 
       htaccessStr += ' %{REMOTE_ADDR} == \"' + row['ip'] + '\" or \\\n'
 
-      oneKickstart = kickstartStr.replace('##INSTALL_COMMAND##','install --proxy=http://' + row['ip'] + ':3128/').replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##VIAB_PASSWORD_HASH##',passwordHash).replace('##VAC_MAJOR_MINOR##',vacMajorMinor)
+      passphraseCurlCommand = 'curl --local-port 1-1023 --fail --output /etc/viab/passphrase-shared http://%s/passphrase-shared' % row['ip']
+      oneKickstart = kickstartStr.replace('##INSTALL_COMMAND##','install --proxy=http://' + row['ip'] + ':3128/').replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##VIAB_PASSWORD_HASH##',passwordHash).replace('##VAC_MAJOR_MINOR##',vacMajorMinor).replace('##PASSPHRASE_CURL_COMMAND##',passphraseCurlCommand)
       open('/var/lib/viab/www/ks/' + siteName + '/' + spaceName + '/ks-proxy-' + row['factoryname'] + '.cfg', 'w').write(oneKickstart)
 
       try:
@@ -401,6 +402,8 @@ for fileName in [ '/var/lib/viab/etc/' + spaceVersion + '/viab-conf-postinstall'
                   '/var/lib/viab/etc/' + spaceVersion + '/viab-conf-iptables',
                   '/var/lib/viab/etc/' + spaceVersion + '/viab-iptables.init',
                   '/var/lib/viab/etc/' + spaceVersion + '/viab-heartbeat',
+                  '/var/lib/viab/etc/' + spaceVersion + '/viab-httpd',
+                  '/var/lib/viab/etc/' + spaceVersion + '/viab-httpd.service',
                   '/var/lib/viab/etc/' + spaceVersion + '/lazyssh',
                   '/var/lib/viab/etc/' + spaceVersion + '/dnsmasq-wrapper',
                   '/var/lib/viab/etc/' + spaceVersion + '/squid.conf.template' ]:
@@ -440,9 +443,9 @@ shutil.copy('RPMS/noarch/viab-conf-' + rpmVersion + '-' + spaceVersion + '.noarc
 #  os.system('/bin/tar zcvf SOURCES/viab-tftpboot.tgz --owner=root --group=root --exclude-backups viab-tftpboot')
 #  os.system('/usr/bin/rpmbuild -ba --define "_topdir ' + tempDir + '" --buildroot ' + tempDir + '/BUILDROOT viab-tftpboot.spec')
 #  shutil.copy('RPMS/noarch/viab-tftpboot-' + majorVersion + '-1.noarch.rpm', '/var/lib/viab/www/repo/' + siteName + '/' + spaceName)
-#  
-#os.system('/bin/find /var/lib/viab/www/repo/' + siteName + '/' + spaceName + ' -name "viab-conf-*.rpm" -ctime +1 -exec rm -f {} \;')
-#os.system('/usr/bin/createrepo /var/lib/viab/www/repo/' + siteName + '/' + spaceName)
+  
+os.system('/bin/find /var/lib/viab/www/repo/' + siteName + '/' + spaceName + ' -name "viab-conf-*.rpm" -ctime +1 -exec rm -f {} \;')
+os.system('/usr/bin/createrepo /var/lib/viab/www/repo/' + siteName + '/' + spaceName)
 
 # Everything seems to have worked ok
 logLine('Finished ok')
