@@ -234,7 +234,7 @@ except:
   
 try:
   kickstartStr = open('/var/lib/viab/etc/' + spaceVersion + '/ks.cfg', 'r').read()
-  oneKickstart = kickstartStr.replace('##INSTALL_COMMAND##','install').replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##VIAB_PASSWORD_HASH##',passwordHash).replace('##VAC_MAJOR_MINOR##',vacMajorMinor)
+  oneKickstart = kickstartStr.replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##VIAB_PASSWORD_HASH##',passwordHash).replace('##VAC_MAJOR_MINOR##',vacMajorMinor)
   open('/var/lib/viab/www/ks/' + siteName + '/' + spaceName + '/ks-noproxy.cfg', 'w').write(oneKickstart)
 except Exception as e:
   logLine('Failed to read, substitute, and write kickstart file (' + str(e) + ')')
@@ -279,7 +279,7 @@ try:
       htaccessStr += ' %{REMOTE_ADDR} == \"' + row['ip'] + '\" or \\\n'
 
       passphraseCurlCommand = 'curl --local-port 1-1023 --fail --output /etc/viab/passphrase-shared http://%s/passphrase-shared' % row['ip']
-      oneKickstart = kickstartStr.replace('##INSTALL_COMMAND##','install --proxy=http://' + row['ip'] + ':3128/').replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##VIAB_PASSWORD_HASH##',passwordHash).replace('##VAC_MAJOR_MINOR##',vacMajorMinor).replace('##PASSPHRASE_CURL_COMMAND##',passphraseCurlCommand)
+      oneKickstart = kickstartStr.replace('##INSTALL_OPTIONS##','--proxy=http://' + row['ip'] + ':3128/').replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##VIAB_PASSWORD_HASH##',passwordHash).replace('##VAC_MAJOR_MINOR##',vacMajorMinor).replace('##PASSPHRASE_CURL_COMMAND##',passphraseCurlCommand)
       open('/var/lib/viab/www/ks/' + siteName + '/' + spaceName + '/ks-proxy-' + row['factoryname'] + '.cfg', 'w').write(oneKickstart)
 
       try:

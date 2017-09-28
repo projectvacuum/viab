@@ -105,7 +105,7 @@ cp -f /etc/squid/squid.conf.template /etc/squid/squid.conf.tmp
 # Host entries for other factories
 cat /etc/viab/factories-network | (
 
-while read mac factory ip iphex
+while read mac factory ip iphex network netmask router nameserversList
 do
   echo "host $factory { hardware ethernet $mac; filename \"pxelinux.0\"; fixed-address $ip; next-server $HOSTNAME; }" >>/etc/dhcp/dhcpd.conf.tmp
 
@@ -150,7 +150,7 @@ mkdir -p /var/lib/tftpboot/pxelinux.cfg
 # Host entries for other factories
 cat /etc/viab/factories-network | (
 
-while read mac factory ip iphex router netmask nameserversList
+while read mac factory ip iphex network netmask router nameserversList
 do
 (
 
@@ -164,7 +164,7 @@ label install
 EOF
 
 # Using our kickstart file means hosts installing from this host use its Squid cache
-echo "  append inst.ks=http://viab.gridpp.ac.uk/ks/$VIAB_SITENAME/ks-proxy-$HOSTNAME.cfg initrd=initrd.img inst.ksexec ip=$ip::$router:$netmask:$factory::none $nameservers text"
+echo "  append inst.ks=http://viab.gridpp.ac.uk/ks/$VIAB_SITENAME/$VIAB_SPACENAME/ks-proxy-$HOSTNAME.cfg initrd=initrd.img inst.ksexec ip=$ip::$router:$netmask:$factory::none $nameservers text"
 
 ) > /var/lib/tftpboot/pxelinux.cfg/$iphex
 done
