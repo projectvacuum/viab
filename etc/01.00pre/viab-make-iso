@@ -24,6 +24,7 @@ cp -a /var/lib/viab/boot-CentOS7 .
 cd boot-CentOS7
 
 sed -i \
+ -e "s/##FACTORYNAME##/$factoryName/"\
  -e "s/##SITENAME##/$siteName/"\
  -e "s/##SPACENAME##/$spaceName/" \
  -e "s/##IFNAME##/viab0:$mac/" \
