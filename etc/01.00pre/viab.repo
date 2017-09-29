@@ -14,7 +14,7 @@ proxy=_none_
 
 [Vac]
 name=Vac
-baseurl=https://viab.gridpp.ac.uk/vacproject/vac/##VAC_MAJOR_MINOR##/RPMS/
+baseurl=https://viab.gridpp.ac.uk/vacproject/vac/##VAC_MAJOR_MINOR##/CentOS7-RPMS/
 gpgcheck=0
 
 [MJF]

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-#  viab-httpd - ViaB web server for viab-conf-passphrase
+#  viab-httpd - ViaB web server for /etc/viab/passphrase-shared
 #
 #  Andrew McNab, University of Manchester.
 #  Copyright (c) 2013-7. All rights reserved.
@@ -70,6 +70,7 @@ class viabHttpdHandler(BaseHTTPServer.BaseHTTPRequestHandler):
      if port >= 1024:
        # Must be contacted by root a from privileged port
        # For example, with  curl --local-port 0-1023 ...
+       print '%s has port %s which is >= 1024' % (ip, port)
        return [403, None]
      
      # Get MAC from /proc/net/arp
@@ -84,10 +85,12 @@ class viabHttpdHandler(BaseHTTPServer.BaseHTTPRequestHandler):
              break
      except:
        # Weirdness
+       print 'Cannot find MAC for %s in /proc/net/arp' % ip
        return [500, None]
 
      if mac is None:
        # No MAC. Not on this network segment? Not ok anyway.
+       print 'Cannot find MAC for %s in /proc/net/arp' % ip
        return [403, None]
 
      # Check IP and MAC match in /etc/viab/factories-network
@@ -106,18 +109,22 @@ class viabHttpdHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                break
              else:
                # Doesn't match! Some kind of spoofing?
+               print '%s has MAC %s but expecting %s!' % (ip, mac, f_mac)
                return [403, None]           
      except:
        # Something wrong with the format of factories-network?
+       print 'Problem reading /etc/viab/factories-network'
        return [500, None]
        
      if not ok:
        # We don't know about the client IP. Not ok.
+       print '%s not found in /etc/viab/factories-network' % ip
        return [403, None]
 
      # Check asking for /passphrase-shared
      if self.path != '/passphrase-shared':
        # We only serve that one file
+       print '%s asks for %s which is not /passphrase-shared' % (ip, self.path)
        return [404, None]
      
      # Output /etc/viab/passphrase-shared     
@@ -126,12 +133,15 @@ class viabHttpdHandler(BaseHTTPServer.BaseHTTPRequestHandler):
      except:
        # The file doesn't exist. That's ok. 
        # The site admin probably doesn't want to use this feature.
+       print '%s asks for /etc/viab/passphrase-shared which has not been set up' % ip
        return [404, None]
        
      if body:
+       print 'Return /etc/viab/passphrase-shared to %s' % ip
        return [200, body]
      else:
        # Say it doesn't exist if empty too
+       print '%s asks for /etc/viab/passphrase-shared which is empty' % ip
        return [404, None]
 
    def do_GET(self):
@@ -149,6 +159,9 @@ class viabHttpdHandler(BaseHTTPServer.BaseHTTPRequestHandler):
          self.wfile.write(body)
      except Exception as e:
        print 'Sending HTTP response fails with exception ' + str(e)
+
+     sys.stdout.flush()
+     sys.stderr.flush()
 
 class ForkingHTTPServer(SocketServer.ForkingMixIn, BaseHTTPServer.HTTPServer):
    request_queue_size = 256      
@@ -170,7 +183,13 @@ def viabHttpd():
    f.close()
 
    try:
-       httpd = ForkingHTTPServer(('194.36.3.85', 80), viabHttpdHandler)
+     ipStr = open('/etc/viab/ip','r').readline().strip()
+   except Exception as e:
+     print str(e)
+     return
+
+   try:
+       httpd = ForkingHTTPServer((ipStr, 80), viabHttpdHandler)
    except Exception as e:
        print str(e)
        return
