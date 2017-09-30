@@ -42,6 +42,8 @@ if [ $? = 0 ] ; then
 fi
 
 echo '[settings]' > /etc/vac.d/settings.conf
+echo 'singularity_user = vacsngly' >> /etc/vac.d/settings.conf
+echo 'volume_group = vac_volume_group' >> /etc/vac.d/settings.conf
 grep "^$HOSTNAME;" /etc/viab/factories-settings | sed 's/;/\n/g' | tail --lines=+2 >> /etc/vac.d/settings.conf
 echo 'vacmon_hostport = vacmon.gridpp.ac.uk:8884' >> /etc/vac.d/settings.conf
 echo 'version_logger = 24' >> /etc/vac.d/settings.conf
@@ -60,6 +62,9 @@ fi
 # But no ssh password logins
 sed -i 's/^PasswordAuthentication.*/PasswordAuthentication=no/' /etc/ssh/sshd_config
 systemctl restart sshd 
+
+# Make sure we're using the Vac singularity.conf
+cp -f /etc/singularity/singularity.vac.conf /etc/singularity/singularity.conf
 
 # Create /etc/hosts listing all factories and this factory's VMs
 (
@@ -178,6 +183,35 @@ systemctl restart xinetd
 
 # Puts CPU temperatures in /sys/devices/platform/coretemp.*/
 modprobe --quiet coretemp
+
+# Configure cvmfs
+cat <<EOF >/etc/cvmfs/default.local
+CVMFS_REPOSITORIES=grid.cern.ch,cernvm-prod.cern.ch
+CVMFS_HTTP_PROXY=http://127.0.0.1:3128
+EOF
+
+echo '/cvmfs /etc/auto.cvmfs --timeout 0' >/etc/auto.master.d/cvmfs.autofs
+
+# Softdrive is used by SKA/LOFAR
+cat <<EOF >/etc/cvmfs/config.d/softdrive.nl.conf
+CVMFS_SERVER_URL='http://cvmfs01.nikhef.nl/cvmfs/@fqrn@;http://cvmfs-egi.gridpp.rl.ac.uk:8000/cvmfs/@fqrn@'
+CVMFS_PUBLIC_KEY=/etc/cvmfs/keys/softdrive.nl.pub
+EOF
+
+cat <<EOF >/etc/cvmfs/keys/softdrive.nl.pub
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA481/kCXbrVtLuzcFZ2uO
+EmiAKx28qXIkonPwr/gSmqQ8k1zQA7dKK5YZwZSbVwgYqvhvW6i3vKWLGVDj+elH
+1u8uumPzzlAJHrS1XoR8rY4xUULjQBvV9HuJxE6OK4ZEZPvQmeGmjXd446c8J5cv
+BQFtaonRnrxAbtO+Z0KtzsNOzBNFegu9z+lT7/fxV17Qh10w5IKQjm/v6jPdj1ME
+CrG4QW2S9+Y+7YzbRP5QYaE4cl5cBI3Yb048ufgLJMfX3++uqwGM+rqNs/CzHvsW
+dO6Jznr9EbzqbIrTsFeUThNmsGPObxOT3VmB0BTTjrZSYjgf8oEE4hdhgNQgh7vs
+OwIDAQAB
+-----END PUBLIC KEY-----
+EOF
+
+# Do we want to do this?
+# cvmfs_config reload
 
 # This isn't needed for changes to configuration, but sometimes
 # other updates to the system (eg shared libraries) mean python

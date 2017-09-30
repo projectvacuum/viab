@@ -9,7 +9,7 @@ Source: viab-conf.tgz
 URL: https://viab.gridpp.ac.uk/
 Vendor: GridPP
 Packager: Andrew McNab <Andrew.McNab@cern.ch>
-Requires: vac,dhcp,tftp,tftp-server,syslinux-tftpboot,squid,ca-policy-lcg,xauth,tigervnc,ntp,yum-cron,apel-ssm,rpm-build,wget,docker,singularity
+Requires: vac,dhcp,tftp,tftp-server,syslinux-tftpboot,squid,ca-policy-lcg,xauth,tigervnc,ntp,yum-cron,apel-ssm,rpm-build,wget,docker,singularity,cvmfs
 
 %description
 Configuration files and idempotent scripts for Vac-in-a-Box
@@ -25,6 +25,7 @@ mkdir -p $RPM_BUILD_ROOT/usr/sbin \
          $RPM_BUILD_ROOT/etc/viab \
          $RPM_BUILD_ROOT/etc/vac.d \
          $RPM_BUILD_ROOT/etc/rc.d/init.d \
+         $RPM_BUILD_ROOT/etc/singularity \
          $RPM_BUILD_ROOT/usr/lib/systemd/system \
          $RPM_BUILD_ROOT/root/.ssh \
          $RPM_BUILD_ROOT/etc/squid \
@@ -35,6 +36,7 @@ cp -p viab-conf-postinstall viab-conf-p12 lazyssh dnsmasq-wrapper \
  viab-heartbeat viab-conf-iptables viab-httpd $RPM_BUILD_ROOT/usr/sbin
 cp viab-iptables.init $RPM_BUILD_ROOT/etc/rc.d/init.d/viab-iptables
 cp vac.d/*.conf $RPM_BUILD_ROOT/etc/vac.d
+cp singularity.vac.conf $RPM_BUILD_ROOT/etc/singularity
 cp viab/* $RPM_BUILD_ROOT/etc/viab
 cp viab-httpd.service $RPM_BUILD_ROOT/usr/lib/systemd/system
 cp squid.conf.template $RPM_BUILD_ROOT/etc/squid/squid.conf.template
@@ -50,6 +52,7 @@ rm -f /etc/vac.d/*
 %files
 /etc/rc.d/init.d/*
 /etc/vac.d/*
+/etc/singularity/*
 /etc/viab/*
 /etc/squid/*
 /var/lib/vac/machinetypes/*

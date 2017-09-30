@@ -278,7 +278,7 @@ try:
 
       htaccessStr += ' %{REMOTE_ADDR} == \"' + row['ip'] + '\" or \\\n'
 
-      passphraseCurlCommand = 'curl --local-port 1-1023 --fail --output /etc/viab/passphrase-shared http://%s/passphrase-shared' % row['ip']
+      passphraseCurlCommand = 'curl --verbose --local-port 1-1023 --fail --output /etc/viab/passphrase-shared http://%s/passphrase-shared' % row['ip']
       oneKickstart = kickstartStr.replace('##INSTALL_OPTIONS##','--proxy=http://' + row['ip'] + ':3128/').replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##VIAB_PASSWORD_HASH##',passwordHash).replace('##VAC_MAJOR_MINOR##',vacMajorMinor).replace('##PASSPHRASE_CURL_COMMAND##',passphraseCurlCommand)
       open('/var/lib/viab/www/ks/' + siteName + '/' + spaceName + '/ks-proxy-' + row['factoryname'] + '.cfg', 'w').write(oneKickstart)
 
@@ -406,6 +406,7 @@ for fileName in [ '/var/lib/viab/etc/' + spaceVersion + '/viab-conf-postinstall'
                   '/var/lib/viab/etc/' + spaceVersion + '/viab-httpd.service',
                   '/var/lib/viab/etc/' + spaceVersion + '/lazyssh',
                   '/var/lib/viab/etc/' + spaceVersion + '/dnsmasq-wrapper',
+                  '/var/lib/viab/etc/' + spaceVersion + '/singularity.vac.conf',
                   '/var/lib/viab/etc/' + spaceVersion + '/squid.conf.template' ]:
   shutil.copy2(fileName, tempDir + '/viab-conf')
 

@@ -62,7 +62,7 @@ enabled=1
 # To use priorities you must have yum-priorities installed
 priority=1
 gpgcheck=1
-gpgkey=https://repository.egi.eu/sw/production/umd/UMD-RPM-PGP-KEY
+gpgkey=http://repository.egi.eu/sw/production/umd/UMD-RPM-PGP-KEY
 
 [UMD-4-updates]
 name=UMDupdates (CentOS 7)
@@ -72,4 +72,4 @@ enabled=1
 # To use priorities you must have yum-priorities installed
 priority=1
 gpgcheck=1
-gpgkey=https://repository.egi.eu/sw/production/umd/UMD-RPM-PGP-KEY
+gpgkey=http://repository.egi.eu/sw/production/umd/UMD-RPM-PGP-KEY
