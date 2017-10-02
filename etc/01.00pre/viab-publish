@@ -278,7 +278,9 @@ try:
 
       htaccessStr += ' %{REMOTE_ADDR} == \"' + row['ip'] + '\" or \\\n'
 
-      passphraseCurlCommand = 'curl --verbose --local-port 1-1023 --fail --output /etc/viab/passphrase-shared http://%s/passphrase-shared' % row['ip']
+      # The curl command to try to fetch /etc/viab/passphrase-shared
+      # We use --noproxy as Anaconda sets http_proxy in the environment
+      passphraseCurlCommand = "curl --noproxy '*' --verbose --local-port 1-1023 --fail --output /etc/viab/passphrase-shared http://%s/passphrase-shared" % row['ip']
       oneKickstart = kickstartStr.replace('##INSTALL_OPTIONS##','--proxy=http://' + row['ip'] + ':3128/').replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##VIAB_PASSWORD_HASH##',passwordHash).replace('##VAC_MAJOR_MINOR##',vacMajorMinor).replace('##PASSPHRASE_CURL_COMMAND##',passphraseCurlCommand)
       open('/var/lib/viab/www/ks/' + siteName + '/' + spaceName + '/ks-proxy-' + row['factoryname'] + '.cfg', 'w').write(oneKickstart)
 
@@ -355,7 +357,7 @@ try:
       optRows = cur.fetchall()
 
       if optRows:
-        f = open(tempDir + '/viab-conf/vac.d/' + machinetypeRow['machinetypename'] + '.conf', 'w')
+        f = open(tempDir + '/viab-conf/vac.d/machinetype_' + machinetypeRow['machinetypename'] + '.conf', 'w')
         f.write('[machinetype ' + machinetypeRow['machinetypename'] + ']\n')
         
         for optRow in optRows:

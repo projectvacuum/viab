@@ -57,19 +57,13 @@ enabled=1
 [UMDbase]
 name=UMDbase (CentOS 7)
 baseurl=http://repository.egi.eu/sw/production/umd/4/centos7/x86_64/base/
-protect=1
-enabled=1
-# To use priorities you must have yum-priorities installed
-priority=1
 gpgcheck=1
+enabled=1
 gpgkey=http://repository.egi.eu/sw/production/umd/UMD-RPM-PGP-KEY
 
 [UMD-4-updates]
 name=UMDupdates (CentOS 7)
 baseurl=http://repository.egi.eu/sw/production/umd/4/centos7/x86_64/updates/
-protect=1
 enabled=1
-# To use priorities you must have yum-priorities installed
-priority=1
 gpgcheck=1
 gpgkey=http://repository.egi.eu/sw/production/umd/UMD-RPM-PGP-KEY
