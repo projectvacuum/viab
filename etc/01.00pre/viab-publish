@@ -253,7 +253,7 @@ try:
       ipSplit = [int(i) for i in row['ip'].split('.')]
       ipInt = 16777216 * ipSplit[0] + 65536 * ipSplit[1] + 256 * ipSplit[2] + ipSplit[3]
       
-      subnet = None
+      subnet = { 'subnet': row['ip'], 'netmask': '255.255.255.255', 'router': '0.0.0.0', 'nameservers': '8.8.8.8' }
       
       for i in subnets:
         if ipInt & i['netmaskInt'] == i['subnetInt']:

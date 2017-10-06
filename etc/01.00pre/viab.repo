@@ -49,7 +49,7 @@ gpgcheck=1
 
 [LCG-trustanchors]
 name=LCG-trustanchors
-baseurl=http://cern.ch/lcg-ca/distribution/current/
+baseurl=http://lcg-ca.web.cern.ch/lcg-ca/distribution/current/
 gpgkey=http://lcg-ca.web.cern.ch/lcg-ca/distribution/current/GPG-KEY-EUGridPMA-RPM-3
 gpgcheck=1
 enabled=1
