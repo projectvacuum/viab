@@ -314,7 +314,7 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
   try:
     if cgiForm['action'].value == 'addoption' and cgiForm['optname'] and cgiForm['value']:
       cur.execute('INSERT INTO machinetypeopts SET machinetypeid=%s,optname=%s,value=%s',
-                  (machinetypeID, cgiForm['optname'].value, cgiForm['value'].value.strip()))
+                  (machinetypeID, cgiForm['optname'].value.strip(), cgiForm['value'].value.strip()))
 
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
       print 'Location: https://viab.gridpp.ac.uk' + requestURI
@@ -336,11 +336,11 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
           
       if value is None:
         cur.execute('DELETE FROM machinetypeopts WHERE machinetypeid=%s AND optname=%s', 
-                    (machinetypeID, cgiForm['optname'].value))
+                    (machinetypeID, cgiForm['optname'].value.strip()))
       else:
         try:
           cur.execute('UPDATE machinetypeopts SET value=%s WHERE machinetypeid=%s AND optname=%s', 
-                      (value, machinetypeID, cgiForm['optname'].value))
+                      (value, machinetypeID, cgiForm['optname'].value.strip()))
         except:
           pass
 
