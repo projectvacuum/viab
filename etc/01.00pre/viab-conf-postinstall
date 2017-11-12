@@ -165,7 +165,7 @@ label install
 EOF
 
 # Using our kickstart file means hosts installing from this host use its Squid cache
-echo "  append inst.ks=http://viab.gridpp.ac.uk/ks/$VIAB_SITENAME/$VIAB_SPACENAME/ks-proxy-$HOSTNAME.cfg initrd=initrd.img inst.ksexec ip=$ip::$router:$netmask:$factory::none $nameservers text"
+echo "  append inst.ks=http://viab.gridpp.ac.uk/ks/$VIAB_SITENAME/$VIAB_SPACENAME/ks-proxy-$HOSTNAME.cfg initrd=initrd.img inst.ksexec ip=$ip::$router:$netmask:$factory::none $nameservers text noipv6"
 
 ) > /var/lib/tftpboot/pxelinux.cfg/$iphex
 done
