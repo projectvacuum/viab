@@ -115,7 +115,9 @@ do
   if [ "$factory" = "$HOSTNAME" ] ; then
     echo $ip > /etc/viab/ip
   else 
-    echo "cache_peer $ip sibling 3128 3130 default"	>>/etc/squid/squid.conf.tmp
+# Disable peering until this is fixed: https://bugs.squid-cache.org/show_bug.cgi?id=4223
+#    echo "cache_peer $ip sibling 3128 3130 default"	>>/etc/squid/squid.conf.tmp
+    echo "#cache_peer $ip sibling 3128 3130 default"	>>/etc/squid/squid.conf.tmp
   fi
   
   echo "acl localnet src $ip/32"			>>/etc/squid/squid.conf.tmp  
