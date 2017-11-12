@@ -35,7 +35,8 @@ acl Safe_ports port 777		# multiling http
 acl CONNECT method CONNECT
 
 # Use Apache style logging with nice timestamps rather than Unix time
-access_log daemon:/var/log/squid/access.log combined
+logformat combined2 %>a %[ui %[un [%tl] "%rm %ru HTTP/%rv" %>Hs %<st "%{Referer}>h" "%{User-Agent}>h" %Ss:%Sh %<A
+access_log daemon:/var/log/squid/access.log combined2
 
 #
 # Recommended minimum Access Permission configuration:
