@@ -3,7 +3,7 @@
 #  viabcgi - Vac-in-a-Box CGI script
 #
 #  Andrew McNab, University of Manchester.
-#  Copyright (c) 2015-7. All rights reserved.
+#  Copyright (c) 2015-8. All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or
 #  without modification, are permitted provided that the following
@@ -109,7 +109,7 @@ def deleteOrphans():
   cur.execute('DELETE FROM machinetypes WHERE spaceid NOT IN (SELECT s.spaceid FROM spaces s)')
   cur.execute('DELETE FROM machinetypeopts WHERE machinetypeid NOT IN (SELECT m.machinetypeid FROM machinetypes m)')
 
-def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, spaceVersion, machinetypeName, machinetypeID):
+def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, spaceVersion, sectionName, machinetypeName, machinetypeID):
 
   global cur
   
@@ -215,11 +215,11 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
                   }
 
   vacuumPipePresets = {
-                       'ALICE':   { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/alice/vacuum.pipe",   "target_share": "1.0" },
-                       'ATLAS':   { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/atlas/vacuum.pipe",   "target_share": "1.0" },
-                       'GridPP':  { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/gridpp/vacuum.pipe",  "target_share": "1.0" },
-                       'Example': { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/example/vacuum.pipe", "target_share": "1.0" },
-                       'LHCb' :   { "vacuum_pipe_url": "https://lhcb-portal-dirac.cern.ch/pilot/lhcb-prod.pipe",   "target_share": "1.0" }
+                       'ALICE':   { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/alice/alice.pipe",   "target_share": "1.0" },
+                       'ATLAS':   { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/atlas/atlas.pipe",   "target_share": "1.0" },
+                       'GridPP':  { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/gridpp/gridpp.pipe",  "target_share": "1.0" },
+                       'Example': { "vacuum_pipe_url": "https://repo.gridpp.ac.uk/vacproject/example/example.pipe", "target_share": "1.0" },
+                       'LHCb' :   { "vacuum_pipe_url": "https://lhcb-portal-dirac.cern.ch/pilot/lhcb.pipe",   "target_share": "1.0" }
                       }
 
   try:
@@ -287,7 +287,7 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
 
       presetmachinetypeName = cgiForm['submit'].value.strip()
 
-      if spaceVersion >= '00.35':
+      if spaceVersion >= '01.00':
         presets = vacuumPipePresets
       else:
         presets = machinetypePresets
@@ -351,14 +351,14 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
   except:
     pass
 
-  htmlHeader('machinetype ' + machinetypeName)
+  htmlHeader(sectionName.title() + ' ' + machinetypeName)
   
   print ('<div class="breadcrumbs"><a href="/dashboard/">Dashboard</a> ' + 
          '/ <a href="/dashboard/' + siteName + '/">' + siteName + '</a> ' +
          '/ <a href="/dashboard/' + siteName + '/' + spaceName + '/">' + spaceName + '</a> ' +
          '/ ' + machinetypeName + '</div>')
 
-  print '<h1>machinetype&nbsp;' + machinetypeName + '</h1>'
+  print '<h1>' + sectionName.title() + '&nbsp;' + machinetypeName + '</h1>'
 
   print '<h2>Options</h2>'
   
@@ -395,40 +395,38 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
   print '<input type="submit" value="Add option"> <input type="hidden" name="action" value="addoption">'  
   print '</form>'
 
-  print '<h3>Pre-set options</h3>'
+  if (spaceVersion < '01.00' and sectionName == 'machinetype') or (spaceVersion >= '01.00' and sectionName == 'vacuum_pipe'):
+    print '<h3>Pre-set options</h3>'
 
-  print '<p>You can use the buttons below to add a group of preset options to this '
-  print 'machinetype if they do not already exist. Some options will still need '
-  print "to be edited in line with the machinetype's own instructions and these "
-  print 'have the default value CHANGEME.'
+    print '<p>You can use the buttons below to add a group of preset options to this '
+    print sectionName + ' if they do not already exist.'
+
+    print '<form method="post" action="' + requestURI + '">'
+    print '<p style="text-align: center">' + sectionName + ' name: '
+    htmlFormCookie(userDN)
+    print '<input type="hidden" name="action" value="addpresets">'
+
+    for presetName in sorted(vacuumPipePresets if (sectionName == 'vacuum_pipe') else machinetypePresets):
+      print '<input type="submit" name="submit" value="' + presetName + '">'
+
+    print '</form>'
+
+  print '<h2>Clone ' + sectionName + ' ' + machinetypeName + '</h2>'
 
   print '<form method="post" action="' + requestURI + '">'
-  print '<p style="text-align: center">machinetype name: '
+  print 'New ' + sectionName + ' name: <input type="text" name="clonename">'
   htmlFormCookie(userDN)
-  print '<input type="hidden" name="action" value="addpresets">'
-
-  for presetName in sorted(vacuumPipePresets if (spaceVersion >= '00.35') else machinetypePresets):
-    print '<input type="submit" name="submit" value="' + presetName + '">'
-
+  print '<input type="submit" value="Clone ' + sectionName + '"><input type="hidden" name="action" value="clonemachinetype">'
   print '</form>'
-
-  print '<h2>Clone machinetype</h2>'
-
-  print '<form method="post" action="' + requestURI + '">'
-  print 'New machinetype name: <input type="text" name="clonename">'
-  htmlFormCookie(userDN)
-  print '<input type="submit" value="Clone machinetype"><input type="hidden" name="action" value="clonemachinetype">'
-  print '</form>'
-
 
   cur.execute('SELECT spaces.spaceid,spacename FROM spaces LEFT JOIN machinetypes ON machinetypes.spaceid=spaces.spaceid AND machinetypes.machinetypename=%s WHERE siteid=%s AND spaces.spaceid<>%s AND machinetypes.machinetypeid IS NULL ORDER BY spacename',
               (machinetypeName, siteID, spaceID) )
   spaceRows = cur.fetchall()
 
-  print '<h2>Move machinetype to another space</h2>'
+  print '<h2>Move ' + sectionName + ' ' + machinetypeName + ' to another space</h2>'
   
   if len(spaceRows) > 0:
-    print '<p>You can use this form to move this machinetype to another space at this site. Only spaces which do not already have a machinetype with the name &quot;' + machinetypeName + '&quot; are shown. '
+    print '<p>You can use this form to move this ' + sectionName + ' to another space at this site. Only spaces which do not already have a vacuum pipe or machinetype with the name &quot;' + machinetypeName + '&quot; are shown. '
     print '<form method="post" action="' + requestURI + '">'
     print 'New space: <select name="newspaceid">'
 
@@ -436,11 +434,11 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
       print '<option value="' + str(spaceRow['spaceid']) + '">' + spaceRow['spacename'] + '</option>'
     
     print '</select>'    
-    print '<input type="submit" value="Move machinetype"><input type="hidden" name="action" value="movemachinetype">'
+    print '<input type="submit" value="Move"><input type="hidden" name="action" value="movemachinetype">'
     htmlFormCookie(userDN)
     print '</form>'
   else:
-    print '<p>There are no spaces at this site which you can move this machinetype to, either because there are no other spaces, or because they already have a machinetype with the name &quot;' + machinetypeName + '&quot;.'
+    print '<p>There are no spaces at this site which you can move this ' + sectionName + ' to, either because there are no other spaces, or because they already have a vacuum pipe or machinetype with the name &quot;' + machinetypeName + '&quot;.'
       
   print '<h2>Certificate/key .p12 file</h2>'
 
@@ -897,24 +895,29 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
     return
 
   try:
-    if cgiForm['action'].value == 'addmachinetype' and cgiForm['machinetypename'].value:
+    if (cgiForm['action'].value == 'addmachinetype' or cgiForm['action'].value == 'addvacuumpipe') and cgiForm['name'].value:
          
-      machinetypeName = cgiForm['machinetypename'].value.strip()
+      machinetypeName = cgiForm['name'].value.strip()
+      
+      if cgiForm['action'].value == 'addvacuumpipe':
+        sectionName = 'vacuum_pipe'
+      else:
+        sectionName = 'machinetype'
 
       if machinetypeName.translate(None, 'abcdefghijklmnopqrstuvwxyz01234567890.-') != '':
         print 'Content-Type: text/html'
         print
-        print 'machinetype names are limited to lowercase letters numbers -'
+        print 'vacuum pipe and machinetype names are limited to lowercase letters numbers -'
         return
 
       # Exclude any reserved /etc/vac.d/*.conf filenames here
       if machinetypeName == 'settings':
         print 'Content-Type: text/html'
         print
-        print 'machinetypes cannot be called settings'
+        print 'vacuum pipes and machinetypes cannot be called settings'
         return
       
-      cur.execute('INSERT INTO machinetypes SET spaceid=%s,machinetypename=%s', (spaceID, machinetypeName))
+      cur.execute('INSERT INTO machinetypes SET spaceid=%s,machinetypename=%s,sectionname=%s', (spaceID, machinetypeName, sectionName))
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
       print 'Location: https://viab.gridpp.ac.uk' + requestURI
       print
@@ -1180,17 +1183,17 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   print '<input type="hidden" name="action" value="addfactories">'
   print '</form>'
 
-  cur.execute('SELECT machinetypename,machinetypes.machinetypeid,value AS target_share,p12updated FROM machinetypes LEFT JOIN machinetypeopts ON machinetypes.machinetypeid=machinetypeopts.machinetypeid AND optname="target_share" WHERE spaceid=%s ORDER BY machinetypename', spaceID)
+  cur.execute('SELECT machinetypename,machinetypes.machinetypeid,value AS target_share,p12updated,sectionname FROM machinetypes LEFT JOIN machinetypeopts ON machinetypes.machinetypeid=machinetypeopts.machinetypeid AND optname="target_share" WHERE spaceid=%s ORDER BY machinetypename', spaceID)
   
   rows = cur.fetchall()
 
-  print '<h2>Machinetypes in this space</h2>'
+  print '<h2>Vacuum pipes and machinetypes in this space</h2>'
 
   if len(rows) > 0:
     print '<form method="post" action="' + requestURI + '"><input type="hidden" name="action" value="deletemachinetypes">'
 
     print '<table class="center">'
-    print '<tr><th class="oddeven">machinetype name</th><th class="oddeven">Target&nbsp;share</th><th class="oddeven">Cert&nbsp;updated</th>'
+    print '<tr><th class="oddeven">Name</th><th class="oddeven">Type</th><th class="oddeven">Target&nbsp;share</th><th class="oddeven">Cert&nbsp;updated</th>'
     print '<th class="oddeven"><input type="checkbox" onchange="for (var i = 0; i < this.form.length; ++i) { if (this.form[i].type == \'checkbox\') { form[i].checked = this.checked; } }"></th></tr>'
 
     n=0    
@@ -1205,23 +1208,34 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
       else:
         p12Updated = '&nbsp;'
 
-      print ('<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + siteName + '/' + spaceName + '/machinetypes/' + row['machinetypename'] + '/">' + row['machinetypename'] + '</a></td>' +
+      print ('<tr><td class="' + oddEven(n) + '"><a href="/dashboard/' + siteName + '/' + spaceName + '/' + row['sectionname'] + 's/' + row['machinetypename'] + '/">' + row['machinetypename'] + '</a></td>' +
+             '<td class="' + oddEven(n) + '">' + row['sectionname'] + '</td>' +
              '<td class="' + oddEven(n) + '">' + str(targetShare) + '</td>' +
              '<td class="' + oddEven(n) + '">' + p12Updated + '</td>' +
              '<td class="' + oddEven(n) + '"><input type="checkbox" name="deletelist" value="' + str(row['machinetypeid']) + '"></td>' +
              '</tr>\n') 
       n += 1
 
-    print '<tr><td colspan="6" style="text-align: center"><input type="submit" value="Delete selected machinetypes"></td></tr>'
+    print '<tr><td colspan="6" style="text-align: center"><input type="submit" value="Delete selected items"></td></tr>'
     print '</table>'
 
     htmlFormCookie(userDN)
     print '</form>'
 
+  if spaceVersion >= '01.00':
+    print '<h3>Add a vacuum pipe</h3>'
+  
+    print '<form method="post" action="' + requestURI + '">'
+    print 'New vacuum pipe name: <input type="text" name="name">'
+    htmlFormCookie(userDN)
+    print '<input type="submit" value="Add vacuum pipe">'
+    print '<input type="hidden" name="action" value="addvacuumpipe">'
+    print '</form>'
+
   print '<h3>Add a machinetype</h3>'
   
   print '<form method="post" action="' + requestURI + '">'
-  print 'New machinetype name: <input type="text" name="machinetypename">'
+  print 'New machinetype name: <input type="text" name="name">'
   htmlFormCookie(userDN)
   print '<input type="submit" value="Add machinetype">'
   print '<input type="hidden" name="action" value="addmachinetype">'
@@ -1764,15 +1778,16 @@ if not userDN:
 db  = MySQLdb.connect(host="localhost", user=viab_cgi_conf.mysqlUser, passwd=viab_cgi_conf.mysqlPassword, db='viab')
 cur = db.cursor(MySQLdb.cursors.DictCursor)
 
-siteName   = None
-siteID     = None
-spaceName  = None
-spaceID    = None
+siteName        = None
+siteID          = None
+spaceName       = None
+spaceID         = None
+sectionName     = None
 machinetypeName = None
 machinetypeID   = None
-factoryName   = None
-factoryID     = None
-isoFileName   = None
+factoryName     = None
+factoryID       = None
+isoFileName     = None
 
 uriElements = requestURI.split('/')
 
@@ -1831,6 +1846,10 @@ if spaceName:
     
   try:
     if   uriElements[4] == 'machinetypes':
+      sectionName     = 'machinetype'
+      machinetypeName = uriElements[5]
+    elif uriElements[4] == 'vacuum_pipes':
+      sectionName     = 'vacuum_pipe'
       machinetypeName = uriElements[5]
     elif uriElements[4] == 'factories':
       factoryName   = uriElements[5]
@@ -1898,7 +1917,7 @@ if factoryName and isoFileName:
 elif factoryName:
   oneFactory(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, spaceVersion, factoryName, factoryID)
 elif machinetypeName:
-  oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, spaceVersion, machinetypeName, machinetypeID)
+  oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, spaceVersion, sectionName, machinetypeName, machinetypeID)
 elif spaceName:
   oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, published, spaceVersion)
 elif siteName:
