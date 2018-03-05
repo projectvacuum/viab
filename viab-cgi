@@ -398,7 +398,7 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
   if (spaceVersion < '01.00' and sectionName == 'machinetype') or (spaceVersion >= '01.00' and sectionName == 'vacuum_pipe'):
     print '<h3>Pre-set options</h3>'
 
-    print '<p>You can use the buttons below to add a group of preset options to this '
+    print '<p>You can use the buttons below to add suitable preset options to this '
     print sectionName + ' if they do not already exist.'
 
     print '<form method="post" action="' + requestURI + '">'
