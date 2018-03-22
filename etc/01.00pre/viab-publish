@@ -273,7 +273,7 @@ try:
                            ';udp_timeout_seconds = '      + str(row['udp_timeout_seconds']) +
                            ';processors_per_superslot = ' + str(row['cpu_per_machine']) +
                            ';hs06_per_processor = '       + str(row['hs06_per_cpu']) +
-                           (';draining = yes' if row['draining'] == 1) else '') +
+                           (';draining = yes' if row['draining'] == 1 else '') +
                           '\n')
 
       htaccessStr += ' %{REMOTE_ADDR} == \"' + row['ip'] + '\" or \\\n'
