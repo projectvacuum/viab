@@ -6,7 +6,11 @@
 # configuration.
 #
 
-# First remove the existing ViaB ssh etc, catch-all REJECT iptables rules, default ssh rule, VM SMTP block
+# Turn off IPv6 for now in case it is not set up properly by the site
+sysctl -w net.ipv6.conf.all.disable_ipv6=1
+sysctl -w net.ipv6.conf.default.disable_ipv6=1
+
+# Remove the existing ViaB ssh etc, catch-all REJECT iptables rules, default ssh rule, VM SMTP block
 /sbin/iptables-save | /bin/egrep -v 'ViaB [[:alnum:]]* access' | /sbin/iptables-restore
 
 #echo 'Try to delete some old iptable rules'
