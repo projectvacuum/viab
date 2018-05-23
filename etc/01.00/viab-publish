@@ -444,6 +444,9 @@ os.system('/bin/tar zcvf SOURCES/viab-conf.tgz --owner=root --group=root --exclu
 os.system('/usr/bin/rpmbuild -ba --define "_topdir ' + tempDir + '" --buildroot ' + tempDir + '/BUILDROOT viab-conf.spec')
 shutil.copy('RPMS/noarch/viab-conf-' + rpmVersion + '-' + spaceVersion + '.noarch.rpm', '/var/lib/viab/www/repo/' + siteName + '/' + spaceName)
 
+# For CentOS7 these are fetched by each factory from the mirror site, since CentOS7 has rolling updates.
+# The RPM is no longer built by ViaB or used.
+#
 #if os.path.isfile('/var/lib/viab/www/repo/' + siteName + '/' + spaceName + '/viab-tftpboot-' + majorVersion + '-1.noarch.rpm'):
 #  logLine('viab-tftpboot RPM already present in repo')
 #else:

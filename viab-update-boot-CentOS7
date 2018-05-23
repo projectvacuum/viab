@@ -1,0 +1,17 @@
+#!/bin/sh
+
+(
+
+cd /var/lib/viab/boot-CentOS7
+
+wget --no-host-directories \
+     --cut-dirs 5 \
+     --reject 'index.html*' \
+     --no-parent \
+     --mirror \
+      http://www.mirrorservice.org/sites/mirror.centos.org/7/os/x86_64/EFI/ \
+      http://www.mirrorservice.org/sites/mirror.centos.org/7/os/x86_64/images/ \
+      http://www.mirrorservice.org/sites/mirror.centos.org/7/os/x86_64/isolinux/
+
+) >/var/log/viab-update-boot-CentOS7 2>&1
+
