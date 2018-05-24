@@ -90,7 +90,7 @@ except Exception as e:
   sys.exit(2) 
 
 # Get space/site numbers 
-cur.execute('SELECT spaces.spaceid AS spaceid,spaces.siteid AS siteid,cookie,cvmfsproxies,natips FROM spaces LEFT JOIN sites ON spaces.siteid=sites.siteid WHERE sitename=%s AND spacename=%s', (siteName, spaceName))
+cur.execute('SELECT spaces.spaceid AS spaceid,spaces.siteid AS siteid,cookie,cvmfsproxies,natips,ksnetworkline FROM spaces LEFT JOIN sites ON spaces.siteid=sites.siteid WHERE sitename=%s AND spacename=%s', (siteName, spaceName))
 rows = cur.fetchall()
 
 htaccessStr  = 'SSLRequire \\\n'
@@ -101,6 +101,11 @@ passwordHash = '!!'
 cookie       = rows[0]['cookie']
 cvmfsProxies = rows[0]['cvmfsproxies']
 natIPs       = rows[0]['natips']
+
+if rows[0]['ksnetworkline'].strip():
+  ksNetworkLine = 'network ' + rows[0]['ksnetworkline'].strip()
+else:
+  ksNetworkLine = '#network'
 
 # Set up the temporary directory tree
 logLine('Making temporary directory tree')
@@ -234,7 +239,7 @@ except:
   
 try:
   kickstartStr = open('/var/lib/viab/etc/' + spaceVersion + '/ks.cfg', 'r').read()
-  oneKickstart = kickstartStr.replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##VIAB_PASSWORD_HASH##',passwordHash).replace('##VAC_MAJOR_MINOR##',vacMajorMinor)
+  oneKickstart = kickstartStr.replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##VIAB_PASSWORD_HASH##',passwordHash).replace('##VAC_MAJOR_MINOR##',vacMajorMinor).replace('##NETWORK_LINE##',ksNetworkLine)
   open('/var/lib/viab/www/ks/' + siteName + '/' + spaceName + '/ks-noproxy.cfg', 'w').write(oneKickstart)
 except Exception as e:
   logLine('Failed to read, substitute, and write kickstart file (' + str(e) + ')')
@@ -281,7 +286,7 @@ try:
       # The curl command to try to fetch /etc/viab/passphrase-shared
       # We use --noproxy as Anaconda sets http_proxy in the environment
       passphraseCurlCommand = "curl --noproxy '*' --verbose --local-port 1-1023 --fail --output /etc/viab/passphrase-shared http://%s/passphrase-shared" % row['ip']
-      oneKickstart = kickstartStr.replace('##INSTALL_OPTIONS##','--proxy=http://' + row['ip'] + ':3128/').replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##VIAB_PASSWORD_HASH##',passwordHash).replace('##VAC_MAJOR_MINOR##',vacMajorMinor).replace('##PASSPHRASE_CURL_COMMAND##',passphraseCurlCommand).replace('##NETWORK_LINE##',row['ks_network_line'])
+      oneKickstart = kickstartStr.replace('##INSTALL_OPTIONS##','--proxy=http://' + row['ip'] + ':3128/').replace('##VIAB_SITENAME##',siteName).replace('##VIAB_SPACENAME##',spaceName).replace('##VIAB_PASSWORD_HASH##',passwordHash).replace('##VAC_MAJOR_MINOR##',vacMajorMinor).replace('##PASSPHRASE_CURL_COMMAND##',passphraseCurlCommand).replace('##NETWORK_LINE##',ksNetworkLine)
       open('/var/lib/viab/www/ks/' + siteName + '/' + spaceName + '/ks-proxy-' + row['factoryname'] + '.cfg', 'w').write(oneKickstart)
 
       try:

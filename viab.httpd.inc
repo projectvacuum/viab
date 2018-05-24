@@ -57,7 +57,7 @@
 #  - SE linux is diabled (echo 0 >/selinux/enforce) or configured to allow
 #    httpd to access the paths in this file
 
-<VirtualHost *:80>
+<VirtualHost viab.gridpp.ac.uk:80>
 ServerName viab.gridpp.ac.uk
 DocumentRoot /var/lib/viab/www
 CustomLog "|/usr/sbin/rotatelogs /var/log/httpd/http--viab.gridpp.ac.uk-%Y%m%d 86400" combined
