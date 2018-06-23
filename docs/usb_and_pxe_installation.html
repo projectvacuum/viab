@@ -8,7 +8,7 @@ can publish the configuration RPM and download the USB .iso image that
 publishing also creates. You then need to write the .iso image to a USB
 memory stick. The procedure differs by operating system, but there is a
 <a href="http://wiki.centos.org/HowTos/InstallFromUSBkey">CentOS wiki
-page</a> explaining how to do it: ViaB uses the RHEL/CentOS/SL 6.6
+page</a> explaining how to do it: ViaB uses the RHEL/CentOS/SL 7
 installer code and the .iso image can be written directly with dd. If a 
 CD/DVD drive is present, the image can burnt to a CD-ROM disc as an
 alternative.
@@ -20,20 +20,20 @@ then try PXE or network, then try the first hard drive.
 <p>
 Boot the first factory from the USB stick but make sure you <b>remove the stick
 as soon as initrd.img has finished loading and before the hardware
-initialization message.</b> If you don't do this, the USB device is likely to be
+initialization messages.</b> If you don't do this, the USB device is likely to be
 treated as /dev/sda, preventing the real disk(s) from being configured and
 probably resulting in the corruption of the USB stick. If this happens, you
 will need to rewrite the image to the stick.
 
 <p>
-The boot image is a slightly modified version of the Scientific Linux 6
+The boot image is a slightly modified version of the CentOS 7 Linux
 installer. It will ask you for network settings twice, and then proceed with
 an automatic installation and reboot. 
 
 <p>
 For the second machine, do not use the USB stick. Let it boot via PXE
 from the first factory. The installation proceeds as before but this time
-without even the need to give the network settings. The SL6 images and RPMs
+without even the need to give the network settings. The CentOS 7 images and RPMs
 are downloaded via the Squid cache of the 
 first factory to answer the DHCP query.
 Since ViaB runs the Squids with peering, RPMs already cached on any of the
@@ -49,7 +49,7 @@ then back to running normally.
 
 <p>
 For the third and subsequent machines, installation should go much faster as
-the SL6 RPMs and images will have been cached in the Squid server(s). If you
+the CentOS 7 RPMs and images will have been cached in the Squid server(s). If you
 need to reinstall the first factory, you do not need to use the USB stick
 instead of PXE as long as at least one other factory is up and running
 correctly. 
@@ -58,3 +58,22 @@ correctly.
 When you need to <a href="upgrading_a_space">upgrade the factories</a> in
 the space, the procedure is similar to booting up these subsequent
 factories. It is not generally necessary to go back to the USB stick.
+
+<h2>Troubleshooting</h2>
+
+<p>
+You may find that previous installations of machines cause problems for the
+CentOS 7 installer. This isn't specific to Vac-in-a-Box. Symptoms include
+not being able to find /dev/root .
+
+<p>
+Deleting existing
+partitions with fdisk from the command line (Alt-Control-F2) when the
+installer is running may fix this. If you are presented with the Dracut
+command line which does not offer fdisk, then these commands may help
+by wiping the partition information:
+
+<pre>
+dd if=/dev/zero of=/dev/sda bs=512 count=16
+dd if=/dev/zero of=/dev/sdb bs=512 count=16
+</pre>

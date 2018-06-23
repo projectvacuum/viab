@@ -13,8 +13,9 @@ mac="$6"
 subnet="$7"
 netmask="$8"
 router="$9"
+isolinuxcfg="${10}"
 
-for i in ${10} ${11} ${12} ${13}
+for i in ${11} ${12} ${13} ${14}
 do
   nameservers="$nameservers nameserver=$i"
 done
@@ -23,14 +24,14 @@ cp -a /var/lib/viab/boot-CentOS7 .
 
 cd boot-CentOS7
 
-sed -i \
+sed \
  -e "s/##FACTORYNAME##/$factoryName/"\
  -e "s/##SITENAME##/$siteName/"\
  -e "s/##SPACENAME##/$spaceName/" \
  -e "s/##IFNAME##/viab0:$mac/" \
  -e "s/##IP##/$ip::$router:$netmask:$factoryName:viab0:none/" \
  -e "s/##NAMESERVERS##/$nameservers/" \
- isolinux/isolinux.cfg
+ "$isolinuxcfg" > isolinux/isolinux.cfg
 
 genisoimage -U -r -v -T -J -joliet-long \
  -V      "ViaB-CentOS-7" \

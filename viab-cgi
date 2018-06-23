@@ -255,14 +255,14 @@ def oneMachinetype(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spa
       cur.execute('SELECT p12,p12updated FROM machinetypes WHERE machinetypeid=%s', machinetypeID)
       rows = cur.fetchall()
 
-      cur.execute('INSERT INTO machinetypes SET spaceid=%s,machinetypename=%s,p12=%s,p12updated=%s',
-                  (spaceID, cloneName, rows[0]['p12'], rows[0]['p12updated']))
+      cur.execute('INSERT INTO machinetypes SET spaceid=%s,machinetypename=%s,p12=%s,p12updated=%s,sectionname=%s',
+                  (spaceID, cloneName, rows[0]['p12'], rows[0]['p12updated'], sectionName))
 
       cur.execute('INSERT INTO machinetypeopts (machinetypeid,optname,value) SELECT %s,optname,value FROM machinetypeopts WHERE machinetypeid=%s',
                   (cur.lastrowid, machinetypeID) )
 
       print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
-      print 'Location: https://viab.gridpp.ac.uk/dashboard/' + siteName + '/' + spaceName + '/machinetypes/' + cloneName + '/'
+      print 'Location: https://viab.gridpp.ac.uk/dashboard/' + siteName + '/' + spaceName + '/' +sectionName + 's/' + cloneName + '/'
       print
       return
   except:
@@ -627,7 +627,8 @@ def factoryISO(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
   except:
     return 
   
-  os.system('/var/lib/viab/etc/' + spaceVersion + '/viab-make-iso ' + tempDir + ' ' + 
+  os.system('/var/lib/viab/etc/' + spaceVersion + '/viab-make-iso ' + 
+            tempDir + ' ' + 
             siteName + ' ' + 
             spaceName + ' ' +
             factoryName + ' ' +
@@ -636,6 +637,7 @@ def factoryISO(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID
             subnet + ' ' +
             netmask + ' ' +
             router + ' ' +
+            '/var/lib/viab/etc/' + spaceVersion + '/isolinux.cfg ' +
             ' '.join(nameservers))
   
   # Clean up our temporary directory tree
