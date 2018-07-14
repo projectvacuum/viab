@@ -59,8 +59,11 @@ if [ -s /etc/viab/passwordhash ] ; then
   sed 's/.*/root:&/' /etc/viab/passwordhash | chpasswd --encrypted
 fi
 
-# But no ssh password logins
-sed -i 's/^PasswordAuthentication.*/PasswordAuthentication=no/' /etc/ssh/sshd_config
+# But no ssh password logins and force IPv4
+sed \
+  -i 's/^PasswordAuthentication.*/PasswordAuthentication=no/' \
+  -i 's/^#AddressFamily.*/AddressFamily inet/' \
+  /etc/ssh/sshd_config
 systemctl restart sshd 
 
 # Make sure we're using the Vac singularity.conf
