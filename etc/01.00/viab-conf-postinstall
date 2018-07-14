@@ -60,9 +60,9 @@ if [ -s /etc/viab/passwordhash ] ; then
 fi
 
 # But no ssh password logins and force IPv4
-sed \
-  -i 's/^PasswordAuthentication.*/PasswordAuthentication=no/' \
-  -i 's/^#AddressFamily.*/AddressFamily inet/' \
+sed -i \
+  -e 's/^PasswordAuthentication.*/PasswordAuthentication=no/' \
+  -e 's/^#AddressFamily.*/AddressFamily inet/' \
   /etc/ssh/sshd_config
 systemctl restart sshd 
 
