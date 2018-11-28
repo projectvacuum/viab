@@ -1,0 +1,40 @@
+<h1>Advanced configuration</h1>
+
+<p>
+This page explains some advanced topics which are not normally needed.
+
+<h2>Advanced network settings for spaces</h2>
+
+<p>
+On the configuration page for each space within a site is a section with
+advanced settings relating to networking. These settings will apply to all
+factories within a site and can be applied by republishing the configuration
+RPM. Unlike changes to the subnets, reinstallation is not required.
+
+<p>
+<b>NAT IPs</b> is a space separated list of IP addresses which will be
+allowed to request files from the ViaB webserver. Normally only the
+IP addresses allocated to factories are accepted, but if the factories
+are on a NAT network, then they will be making requests with the NAT
+gateway's address(es).
+
+<p>
+If <b>Kickstart network arguments</b> is given, then a network option
+will be added to the kickstart files used during installation with
+the arguments given by this setting. This can be used to bond network
+inferfaces, for example.
+
+<p>
+<b>Site cvmfs proxies</b> is a space separated list of the URLs of 
+additional HTTP proxies to pass to the VMs. The VMs are always informed
+of the Squid caching proxy running on each factory. Note: this is 
+<b>not</b> a CernVM-FS multiple proxies expression with semicolons and
+pipes; it is just a space separated list of URLs.
+
+<p>
+<b>Extra lines for /etc/hosts</b> will be appended to /etc/hosts on
+the factories, and is in the normal /etc/hosts format, with each
+line being IPADDRESS HOST1 HOST2 ... As the VMs use the DNS server
+on each factory, which first looks at /etc/hosts, then these lines
+can be used to override the IP addresses used by applications within
+VMs to achieve particular routing choices.

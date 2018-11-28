@@ -1003,27 +1003,50 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
         cvmfsProxies = cgiForm['cvmfsproxies'].value.strip()
       except:
         cvmfsProxies = ''
+      else:
+        if cvmfsProxies.translate(None, 'abcdefghijklmnopqrstuvwxyz01234567890.-/: ') != '':
+          print 'Content-Type: text/html'
+          print
+          print 'The cvmfs proxies setting can only be a space-separated list of HTTP proxy URLs'
+          return
         
       try:
         natIPs = cgiForm['natips'].value.strip()
       except:
         natIPs = ''
-        
+      else:
+        if natIPs.translate(None, '0123456789. ') != '':
+          print 'Content-Type: text/html'
+          print
+          print 'NAT IPs setting can only be a space-separated list of digits and periods'
+          return
+       
       try:
         ksnetworkLine = cgiForm['ksnetworkline'].value.strip()
       except:
         ksnetworkLine = ''  
-        
+      else:
+        if ksnetworkLine.startswith('network'):
+          print 'Content-Type: text/html'
+          print
+          print 'The Kickstart network arguments cannot include the network option itself. Just the arguments please.'
+          return
+        elif ksnetworkLine.translate(None, 'abcdefghijklmnopqrstuvwxyz01234567890.-_/:=,; ') != '':
+          print 'Content-Type: text/html'
+          print
+          print 'The Kickstart network arguments can only be letters, numbers, spaces and .-_/:=,;'
+          return
+                
       try:
         extraHosts = cgiForm['extrahosts'].value.strip()
       except:
         extraHosts = ''
-      
-      if natIPs.translate(None, '0123456789. ') != '':
-        print 'Content-Type: text/html'
-        print
-        print 'NAT IPs setting can only be a space-separated list of digits and periods'
-        return
+      else:
+        if extraHosts.translate(None, 'abcdefghijklmnopqrstuvwxyz01234567890.-:#; \n\t') != '':
+          print 'Content-Type: text/html'
+          print
+          print 'The extra hosts setting can only be letters, numbers, spaces, newlines, tabs and .-:#;'
+          return
       
       cur.execute("UPDATE spaces SET cvmfsproxies=%s,natips=%s,ksnetworkline=%s,extrahosts=%s WHERE spaceid=%s",
                     (cvmfsProxies, natIPs, ksnetworkLine, extraHosts, spaceID))
@@ -1291,14 +1314,14 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   cur.execute('SELECT cvmfsproxies,natips,ksnetworkline,extrahosts FROM spaces WHERE spaceid=%s', spaceID)
   rows = cur.fetchall()
 
-  print '<h2>Network settings</h2>'
-  print '<p>These settings apply to all factories in this space. See the documentation for their format.'
+  print '<h2>Advanced network settings</h2>'
+  print '<p>These advanced settings are not normally needed, but will apply to all factories in this space. See the documentation for their format.'
 
   print '<form method="post" action="' + requestURI + '">'
   print '<table>'
-  print '<tr><td>Site cvmfs proxies:</td><td><input type="text" name="cvmfsproxies" value="%s" maxlen="255" size="60"></td><tr>' % rows[0]['cvmfsproxies']
   print '<tr><td>NAT IPs:</td><td><input type="text" name="natips" value="%s" maxlen="255" size="60"></td></tr>' % rows[0]['natips']
   print '<tr><td>Kickstart network arguments:</td><td><input type="text" name="ksnetworkline" value="%s" maxlen="255" size="60"></td></tr>' % rows[0]['ksnetworkline']
+  print '<tr><td>Site cvmfs proxies:</td><td><input type="text" name="cvmfsproxies" value="%s" maxlen="255" size="60"></td><tr>' % rows[0]['cvmfsproxies']
   print '<tr><td colspan="2">Paste extra lines to appear in /etc/hosts here (Format: IP Hostname1 Hostname2 ...)</td></tr>' 
   print '<tr><td colspan="2"><textarea name="extrahosts" rows="4" cols="80">%s</textarea></td></tr>' % rows[0]['extrahosts']
   print '<tr><td colspan="2" style="text-align: center"><input type="submit" value="Update settings"></td><tr>'
