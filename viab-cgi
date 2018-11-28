@@ -996,6 +996,49 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   except:
     pass
          
+  try:
+    if cgiForm['action'].value == 'updatenetwork':
+    
+      try:
+        cvmfsProxies = cgiForm['cvmfsproxies'].value.strip()
+      except:
+        cvmfsProxies = ''
+        
+      try:
+        natIPs = cgiForm['natips'].value.strip()
+      except:
+        natIPs = ''
+        
+      try:
+        ksnetworkLine = cgiForm['ksnetworkline'].value.strip()
+      except:
+        ksnetworkLine = ''  
+        
+      try:
+        extraHosts = cgiForm['extrahosts'].value.strip()
+      except:
+        extraHosts = ''
+      
+      if natIPs.translate(None, '0123456789. ') != '':
+        print 'Content-Type: text/html'
+        print
+        print 'NAT IPs setting can only be a space-separated list of digits and periods'
+        return
+      
+      cur.execute("UPDATE spaces SET cvmfsproxies=%s,natips=%s,ksnetworkline=%s,extrahosts=%s WHERE spaceid=%s",
+                    (cvmfsProxies, natIPs, ksnetworkLine, extraHosts, spaceID))
+      print 'Status: 302 Found ' + str(inspect.currentframe().f_lineno)
+      print 'Location: https://viab.gridpp.ac.uk' + requestURI
+      print
+      return
+
+  except Exception as e:
+#    print 'Content-Type: text/html'
+#    print
+#    print str(cgiForm)
+#    print 'ex ',str(e)
+    pass
+          
   htmlHeader('Space ' + spaceName)
   cur.execute('SELECT factoryid,factoryname,ip,mac,cpu_per_machine,hs06_per_cpu,running_cpus,total_cpus,os_issue,factoryversions.vac_version,UNIX_TIMESTAMP(factoryversions.boot_time) AS boot_time,UNIX_TIMESTAMP(time_received) AS time_received,draining FROM factories LEFT JOIN factoryversions ON factory=factoryname AND space=%s AND site=%s WHERE spaceid=%s ORDER BY factoryname', [spaceName, siteName, spaceID])
   rows = cur.fetchall()
@@ -1241,6 +1284,27 @@ def oneSpace(requestURI, userDN, cgiForm, siteName, siteID, spaceName, spaceID, 
   htmlFormCookie(userDN)
   print '<input type="submit" value="Add machinetype">'
   print '<input type="hidden" name="action" value="addmachinetype">'
+  print '</form>'
+
+  # Network settings for this space
+
+  cur.execute('SELECT cvmfsproxies,natips,ksnetworkline,extrahosts FROM spaces WHERE spaceid=%s', spaceID)
+  rows = cur.fetchall()
+
+  print '<h2>Network settings</h2>'
+  print '<p>These settings apply to all factories in this space. See the documentation for their format.'
+
+  print '<form method="post" action="' + requestURI + '">'
+  print '<table>'
+  print '<tr><td>Site cvmfs proxies:</td><td><input type="text" name="cvmfsproxies" value="%s" maxlen="255" size="60"></td><tr>' % rows[0]['cvmfsproxies']
+  print '<tr><td>NAT IPs:</td><td><input type="text" name="natips" value="%s" maxlen="255" size="60"></td></tr>' % rows[0]['natips']
+  print '<tr><td>Kickstart network arguments:</td><td><input type="text" name="ksnetworkline" value="%s" maxlen="255" size="60"></td></tr>' % rows[0]['ksnetworkline']
+  print '<tr><td colspan="2">Paste extra lines to appear in /etc/hosts here (Format: IP Hostname1 Hostname2 ...)</td></tr>' 
+  print '<tr><td colspan="2"><textarea name="extrahosts" rows="4" cols="80">%s</textarea></td></tr>' % rows[0]['extrahosts']
+  print '<tr><td colspan="2" style="text-align: center"><input type="submit" value="Update settings"></td><tr>'
+  htmlFormCookie(userDN)
+  print '<input type="hidden" name="action" value="updatenetwork">'
+  print '</table>'
   print '</form>'
 
   # Subnets for this space

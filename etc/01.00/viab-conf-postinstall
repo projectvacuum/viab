@@ -80,6 +80,7 @@ do
   echo 169.254.169.$i `hostname -s`-$ii `hostname | sed "s/^[a-z0-9-]*/&-$ii/"`
   i=`expr $i + 1`
 done
+cat /etc/viab/extrahosts
 ) > /etc/hosts     
 
 # Put our dnsmasq wrapper in place

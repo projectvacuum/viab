@@ -90,7 +90,7 @@ except Exception as e:
   sys.exit(2) 
 
 # Get space/site numbers 
-cur.execute('SELECT spaces.spaceid AS spaceid,spaces.siteid AS siteid,cookie,cvmfsproxies,natips,ksnetworkline FROM spaces LEFT JOIN sites ON spaces.siteid=sites.siteid WHERE sitename=%s AND spacename=%s', (siteName, spaceName))
+cur.execute('SELECT spaces.spaceid AS spaceid,spaces.siteid AS siteid,cookie,cvmfsproxies,natips,ksnetworkline,extrahosts FROM spaces LEFT JOIN sites ON spaces.siteid=sites.siteid WHERE sitename=%s AND spacename=%s', (siteName, spaceName))
 rows = cur.fetchall()
 
 htaccessStr  = 'SSLRequire \\\n'
@@ -101,6 +101,7 @@ passwordHash = '!!'
 cookie       = rows[0]['cookie']
 cvmfsProxies = rows[0]['cvmfsproxies']
 natIPs       = rows[0]['natips']
+extraHosts   = rows[0]['extrahosts']
 
 if rows[0]['ksnetworkline'].strip():
   ksNetworkLine = 'network ' + rows[0]['ksnetworkline'].strip()
@@ -119,6 +120,7 @@ try:
     open(tempDir + '/viab-conf/viab/version',   'w').write(spaceVersion)
     open(tempDir + '/viab-conf/viab/cookie', 'w').write(cookie)
     open(tempDir + '/viab-conf/viab/cvmfsproxies', 'w').write(cvmfsProxies)
+    open(tempDir + '/viab-conf/viab/extrahosts', 'w').write(extraHosts)
 
 except:
     logLine('Failed after problem making directories (' + str(e) + ')')
